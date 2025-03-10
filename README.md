@@ -15,7 +15,7 @@ The main goal of this project is to showcase my understanding of machine learnin
 
 但这个项目更多是想用来展示我对机器学习算法的理解。
 
-#### 
+#### 日本語
 このプロジェクトは、Golang でさまざまな機械学習アルゴリズムを実装するものです。
 
 じゃあ、なんでこれをやるのか？正直、Python にはすでに優秀な PyTorch があって、自分も使い慣れているし、不満は全くない。
