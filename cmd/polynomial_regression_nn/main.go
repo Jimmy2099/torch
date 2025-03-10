@@ -10,13 +10,6 @@ import (
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 )
 
-// Layer interface for neural network layers
-type Layer interface {
-	Forward(input *matrix.Matrix) *matrix.Matrix
-	Backward(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix
-	ZeroGrad()
-}
-
 // LinearLayer implements a fully connected linear layer
 type LinearLayer struct {
 	InputDim  int
@@ -143,7 +136,7 @@ func (l *ReLULayer) ZeroGrad() {
 
 // Neural Network implementation
 type NeuralNetwork struct {
-	Layers []Layer
+	Layers []torch.Layer
 }
 
 func (nn *NeuralNetwork) Parameters() []*matrix.Matrix {
@@ -154,7 +147,7 @@ func (nn *NeuralNetwork) Parameters() []*matrix.Matrix {
 // NewNeuralNetwork creates a new neural network with the specified layer dimensions
 func NewNeuralNetwork(layerDims []int) *NeuralNetwork {
 	nn := &NeuralNetwork{
-		Layers: make([]Layer, 0, len(layerDims)+len(layerDims)-2),
+		Layers: make([]torch.Layer, 0, len(layerDims)+len(layerDims)-2),
 	}
 
 	// Create layers
@@ -203,23 +196,6 @@ func (nn *NeuralNetwork) ZeroGrad() {
 	}
 }
 
-// MSE Loss function
-func mseLoss(predictions, targets *matrix.Matrix) float64 {
-	diff := matrix.Subtract(predictions, targets)
-	squaredDiff := matrix.Apply(diff, func(x float64) float64 {
-		return x * x
-	})
-
-	sum := 0.0
-	for i := 0; i < squaredDiff.Rows; i++ {
-		for j := 0; j < squaredDiff.Cols; j++ {
-			sum += squaredDiff.Data[i][j]
-		}
-	}
-
-	return sum / float64(predictions.Cols)
-}
-
 // PolynomialFeatures generates polynomial features from the input
 func polynomialFeatures(X *matrix.Matrix, degree int) *matrix.Matrix {
 	return matrix.PolynomialFeatures(X, degree)
@@ -265,7 +241,7 @@ func main() {
 	model := NewNeuralNetwork([]int{inputDim, hiddenDim, outputDim})
 
 	// Create trainer
-	trainer := torch.NewBasicTrainer(mseLoss)
+	trainer := torch.NewBasicTrainer(torch.MSE)
 
 	// Train model
 	epochs := 500
