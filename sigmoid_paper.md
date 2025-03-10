@@ -9,5 +9,5 @@
 ## 3. The Vanishing Gradient Problem During Learning Recurrent Neural Nets and Problem Solutions
 - **Link**: [Link](https://www.researchgate.net/publication/220355039_The_Vanishing_Gradient_Problem_During_Learning_Recurrent_Neural_Nets_and_Problem_Solutions)
 
-## 5. Understanding the Difficulty of Training Deep Feedforward Neural Networks
+## 4. Understanding the Difficulty of Training Deep Feedforward Neural Networks
 - **Link**: [Link](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
