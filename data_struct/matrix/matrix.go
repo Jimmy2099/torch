@@ -231,6 +231,22 @@ func PolynomialFeatures(X *Matrix, degree int) *Matrix {
 }
 
 // HadamardProduct performs element-wise multiplication
+func (a *Matrix) HadamardProduct(b *Matrix) *Matrix {
+	if a.Rows != b.Rows || a.Cols != b.Cols {
+		panic(fmt.Sprintf("Matrix dimensions don't match for Hadamard product: (%d,%d) * (%d,%d)",
+			a.Rows, a.Cols, b.Rows, b.Cols))
+	}
+
+	result := NewMatrix(a.Rows, a.Cols)
+	for i := 0; i < a.Rows; i++ {
+		for j := 0; j < a.Cols; j++ {
+			result.Data[i][j] = a.Data[i][j] * b.Data[i][j]
+		}
+	}
+	return result
+}
+
+// HadamardProduct performs element-wise multiplication
 func HadamardProduct(a, b *Matrix) *Matrix {
 	if a.Rows != b.Rows || a.Cols != b.Cols {
 		panic(fmt.Sprintf("Matrix dimensions don't match for Hadamard product: (%d,%d) * (%d,%d)",
@@ -244,6 +260,17 @@ func HadamardProduct(a, b *Matrix) *Matrix {
 		}
 	}
 	return result
+}
+
+// Sum returns the sum of all elements in the matrix
+func (m *Matrix) Sum() float64 {
+	sum := 0.0
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			sum += m.Data[i][j]
+		}
+	}
+	return sum
 }
 
 // Sum returns the sum of all elements in the matrix
