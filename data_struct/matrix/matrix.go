@@ -2,23 +2,24 @@ package matrix
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 )
 
 type Matrix struct {
-	rows, cols int
-	data       [][]float64
+	Rows, Cols int
+	Data       [][]float64
 }
 
 // NewMatrix creates a new matrix with given dimensions
 func NewMatrix(rows, cols int) *Matrix {
 	m := &Matrix{
-		rows: rows,
-		cols: cols,
-		data: make([][]float64, rows),
+		Rows: rows,
+		Cols: cols,
+		Data: make([][]float64, rows),
 	}
-	for i := range m.data {
-		m.data[i] = make([]float64, cols)
+	for i := range m.Data {
+		m.Data[i] = make([]float64, cols)
 	}
 	return m
 }
@@ -28,7 +29,7 @@ func RandomizeMatrix(rows, cols int) *Matrix {
 	m := NewMatrix(rows, cols)
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
-			m.data[i][j] = rand.Float64()*2 - 1 // Random between -1 and 1
+			m.Data[i][j] = rand.Float64()*2 - 1 // Random between -1 and 1
 		}
 	}
 	return m
@@ -36,19 +37,19 @@ func RandomizeMatrix(rows, cols int) *Matrix {
 
 // Multiply performs matrix multiplication: a * b
 func Multiply(a, b *Matrix) *Matrix {
-	if a.cols != b.rows {
+	if a.Cols != b.Rows {
 		panic(fmt.Sprintf("Matrix dimensions don't match for multiplication: (%d,%d) * (%d,%d)",
-			a.rows, a.cols, b.rows, b.cols))
+			a.Rows, a.Cols, b.Rows, b.Cols))
 	}
 
-	result := NewMatrix(a.rows, b.cols)
-	for i := 0; i < a.rows; i++ {
-		for j := 0; j < b.cols; j++ {
+	result := NewMatrix(a.Rows, b.Cols)
+	for i := 0; i < a.Rows; i++ {
+		for j := 0; j < b.Cols; j++ {
 			sum := 0.0
-			for k := 0; k < a.cols; k++ {
-				sum += a.data[i][k] * b.data[k][j]
+			for k := 0; k < a.Cols; k++ {
+				sum += a.Data[i][k] * b.Data[k][j]
 			}
-			result.data[i][j] = sum
+			result.Data[i][j] = sum
 		}
 	}
 	return result
@@ -56,15 +57,15 @@ func Multiply(a, b *Matrix) *Matrix {
 
 // Add performs element-wise addition: a + b
 func Add(a, b *Matrix) *Matrix {
-	if a.rows != b.rows || a.cols != b.cols {
+	if a.Rows != b.Rows || a.Cols != b.Cols {
 		panic(fmt.Sprintf("Matrix dimensions don't match for addition: (%d,%d) + (%d,%d)",
-			a.rows, a.cols, b.rows, b.cols))
+			a.Rows, a.Cols, b.Rows, b.Cols))
 	}
 
-	result := NewMatrix(a.rows, a.cols)
-	for i := 0; i < a.rows; i++ {
-		for j := 0; j < a.cols; j++ {
-			result.data[i][j] = a.data[i][j] + b.data[i][j]
+	result := NewMatrix(a.Rows, a.Cols)
+	for i := 0; i < a.Rows; i++ {
+		for j := 0; j < a.Cols; j++ {
+			result.Data[i][j] = a.Data[i][j] + b.Data[i][j]
 		}
 	}
 	return result
@@ -72,15 +73,15 @@ func Add(a, b *Matrix) *Matrix {
 
 // Subtract performs element-wise subtraction: a - b
 func Subtract(a, b *Matrix) *Matrix {
-	if a.rows != b.rows || a.cols != b.cols {
+	if a.Rows != b.Rows || a.Cols != b.Cols {
 		panic(fmt.Sprintf("Matrix dimensions don't match for subtraction: (%d,%d) - (%d,%d)",
-			a.rows, a.cols, b.rows, b.cols))
+			a.Rows, a.Cols, b.Rows, b.Cols))
 	}
 
-	result := NewMatrix(a.rows, a.cols)
-	for i := 0; i < a.rows; i++ {
-		for j := 0; j < a.cols; j++ {
-			result.data[i][j] = a.data[i][j] - b.data[i][j]
+	result := NewMatrix(a.Rows, a.Cols)
+	for i := 0; i < a.Rows; i++ {
+		for j := 0; j < a.Cols; j++ {
+			result.Data[i][j] = a.Data[i][j] - b.Data[i][j]
 		}
 	}
 	return result
@@ -88,10 +89,116 @@ func Subtract(a, b *Matrix) *Matrix {
 
 // Transpose returns the transpose of a matrix
 func Transpose(m *Matrix) *Matrix {
-	result := NewMatrix(m.cols, m.rows)
-	for i := 0; i < m.rows; i++ {
-		for j := 0; j < m.cols; j++ {
-			result.data[j][i] = m.data[i][j]
+	result := NewMatrix(m.Cols, m.Rows)
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			result.Data[j][i] = m.Data[i][j]
+		}
+	}
+	return result
+}
+
+// Copy creates a deep copy of a matrix
+func Copy(m *Matrix) *Matrix {
+	result := NewMatrix(m.Rows, m.Cols)
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			result.Data[i][j] = m.Data[i][j]
+		}
+	}
+	return result
+}
+
+// Power raises each element of the matrix to the given power
+func Power(m *Matrix, power float64) *Matrix {
+	result := NewMatrix(m.Rows, m.Cols)
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			result.Data[i][j] = math.Pow(m.Data[i][j], power)
+		}
+	}
+	return result
+}
+
+// Apply applies a function to each element of the matrix
+func Apply(m *Matrix, fn func(float64) float64) *Matrix {
+	result := NewMatrix(m.Rows, m.Cols)
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			result.Data[i][j] = fn(m.Data[i][j])
+		}
+	}
+	return result
+}
+
+// Concatenate 垂直拼接列向量
+func Concatenate(matrices []*Matrix) *Matrix {
+	if len(matrices) == 0 {
+		return NewMatrix(0, 0)
+	}
+
+	features := matrices[0].Rows
+	samples := len(matrices)
+
+	// 验证所有矩阵特征数一致
+	for _, m := range matrices {
+		if m.Rows != features {
+			panic("All matrices must have same number of features")
+		}
+		if m.Cols != 1 {
+			panic("Each matrix should be a column vector")
+		}
+	}
+
+	result := NewMatrix(features, samples)
+	for s := 0; s < samples; s++ {
+		for f := 0; f < features; f++ {
+			result.Data[f][s] = matrices[s].Data[f][0]
+		}
+	}
+	return result
+}
+
+func PolynomialFeatures(X *Matrix, degree int) *Matrix {
+	// 输入X的维度为(features, samples)
+	// 输出维度为(new_features, samples)
+
+	// 计算新特征的数量
+	// 对于 degree=3，特征数为：1（截距） + 2（x1, x2） + 2（x1^2, x2^2） + 2（x1^3, x2^3） = 7
+	newFeaturesCount := 1 + X.Rows*degree
+
+	// 创建结果矩阵
+	result := NewMatrix(newFeaturesCount, X.Cols)
+
+	// 填充结果矩阵
+	for s := 0; s < X.Cols; s++ { // 遍历每个样本
+		// 截距项
+		result.Data[0][s] = 1.0
+
+		// 原始特征和多项式特征
+		idx := 1
+		for d := 1; d <= degree; d++ {
+			for f := 0; f < X.Rows; f++ {
+				result.Data[idx][s] = math.Pow(X.Data[f][s], float64(d))
+				idx++
+			}
+		}
+	}
+
+	return result
+}
+
+// HadamardProduct performs element-wise multiplication
+func HadamardProduct(a, b *Matrix) *Matrix {
+	if a.Rows != b.Rows || a.Cols != b.Cols {
+		panic(fmt.Sprintf("Matrix dimensions don't match for Hadamard product: (%d,%d) * (%d,%d)",
+			a.Rows, a.Cols, b.Rows, b.Cols))
+	}
+
+	result := NewMatrix(a.Rows, a.Cols)
+	for i := 0; i < a.Rows; i++ {
+		for j := 0; j < a.Cols; j++ {
+			result.Data[i][j] = a.Data[i][j] * b.Data[i][j]
 		}
 	}
 	return result
