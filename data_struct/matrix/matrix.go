@@ -393,3 +393,33 @@ func NewMatrixFromSlice(data [][]float64) *Matrix {
 	}
 	return m
 }
+
+// GetRows 获取指定行的子矩阵
+func (m *Matrix) GetRows(start, end int) *Matrix {
+	if start < 0 || end > m.Rows || start >= end {
+		panic("invalid row range")
+	}
+
+	result := NewMatrix(end-start, m.Cols)
+	for i := start; i < end; i++ {
+		copy(result.Data[i-start], m.Data[i])
+	}
+	return result
+}
+
+// ReorderRows 根据索引重新排列行
+func (m *Matrix) ReorderRows(indices []int) *Matrix {
+	if len(indices) != m.Rows {
+		panic("indices length must match matrix rows")
+	}
+
+	result := NewMatrix(m.Rows, m.Cols)
+	for i, idx := range indices {
+		copy(result.Data[i], m.Data[idx])
+	}
+	return result
+}
+
+func (m *Matrix) Size() int {
+	return m.Cols * m.Rows
+}
