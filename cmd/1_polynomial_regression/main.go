@@ -252,7 +252,7 @@ func main() {
 	test_sample := matrix.NewMatrix(2, 1)
 
 	test_sample.Data[0][0] = 0.2 //[0.0,1.0)
-	test_sample.Data[1][0] = 0.2 //[0.0,1.0)
+	test_sample.Data[1][0] = 0.3 //[0.0,1.0)
 
 	test_sample_poly := polynomialFeatures(test_sample, degree)
 	prediction := model.Forward(test_sample_poly)
