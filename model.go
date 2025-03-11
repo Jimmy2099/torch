@@ -10,13 +10,6 @@ type Model interface {
 	ZeroGrad()
 }
 
-// Layer interface for neural network layers
-type Layer interface {
-	Forward(input *matrix.Matrix) *matrix.Matrix
-	Backward(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix
-	ZeroGrad()
-}
-
 // Trainer 定义训练器接口
 type Trainer interface {
 	Train(model Model, inputs, targets *matrix.Matrix, epochs int, learningRate float64)
