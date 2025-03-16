@@ -10,97 +10,16 @@ import (
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 )
 
-// LinearLayer implements a fully connected linear layer
-type LinearLayer struct {
-	InputDim  int
-	OutputDim int
-	Weights   *matrix.Matrix
-	Bias      *matrix.Matrix
-	Input     *matrix.Matrix
-	Output    *matrix.Matrix
-	GradInput *matrix.Matrix
-}
-
-// NewLinearLayer creates a new linear layer with random weights
-func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
-	weights := matrix.NewRandomMatrix(outputDim, inputDim)
-	bias := matrix.NewMatrix(outputDim, 1)
-
-	// Initialize bias with small random values
-	for i := 0; i < outputDim; i++ {
-		bias.Data[i][0] = rand.Float64()*0.2 - 0.1
-	}
-
-	return &LinearLayer{
-		InputDim:  inputDim,
-		OutputDim: outputDim,
-		Weights:   weights,
-		Bias:      bias,
-	}
-}
-
-// Forward performs forward pass through the linear layer
-func (l *LinearLayer) Forward(input *matrix.Matrix) *matrix.Matrix {
-	l.Input = input
-	// Y = W * X + b
-	l.Output = l.Weights.Multiply(input)
-
-	// Add bias to each column
-	for i := 0; i < l.OutputDim; i++ {
-		for j := 0; j < input.Cols; j++ {
-			l.Output.Data[i][j] += l.Bias.Data[i][0]
-		}
-	}
-
-	return l.Output
-}
-
-// Backward performs backward pass through the linear layer
-func (l *LinearLayer) Backward(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix {
-	// Compute gradients
-	inputT := l.Input.Transpose()
-
-	// Gradient of weights: dW = dY * X^T
-	dWeights := gradOutput.Multiply(inputT)
-
-	// Gradient of bias: db = sum(dY, dim=1)
-	dBias := matrix.NewMatrix(l.OutputDim, 1)
-	for i := 0; i < l.OutputDim; i++ {
-		sum := 0.0
-		for j := 0; j < gradOutput.Cols; j++ {
-			sum += gradOutput.Data[i][j]
-		}
-		dBias.Data[i][0] = sum
-	}
-
-	// Gradient of input: dX = W^T * dY
-	weightsT := l.Weights.Transpose()
-	l.GradInput = weightsT.Multiply(gradOutput)
-
-	// Update weights and bias
-	for i := 0; i < l.Weights.Rows; i++ {
-		for j := 0; j < l.Weights.Cols; j++ {
-			l.Weights.Data[i][j] -= learningRate * dWeights.Data[i][j]
-		}
-	}
-
-	for i := 0; i < l.Bias.Rows; i++ {
-		l.Bias.Data[i][0] -= learningRate * dBias.Data[i][0]
-	}
-
-	return l.GradInput
-}
-
-func (l *LinearLayer) ZeroGrad() {
-	// Reset gradients
-	l.GradInput = nil
-}
-
 // ReLULayer implements the ReLU activation function
 type ReLULayer struct {
 	Input     *matrix.Matrix
 	Output    *matrix.Matrix
 	GradInput *matrix.Matrix
+}
+
+func (l *ReLULayer) Parameters() []*matrix.Matrix {
+	//TODO implement me
+	panic("implement me")
 }
 
 // NewReLULayer creates a new ReLU layer
@@ -152,7 +71,7 @@ func NewNeuralNetwork(layerDims []int) *NeuralNetwork {
 
 	// Create layers
 	for i := 0; i < len(layerDims)-1; i++ {
-		nn.Layers = append(nn.Layers, NewLinearLayer(layerDims[i], layerDims[i+1]))
+		nn.Layers = append(nn.Layers, torch.NewLinearLayer(layerDims[i], layerDims[i+1]))
 
 		// Add ReLU activation except for the last layer
 		if i < len(layerDims)-2 {
@@ -176,7 +95,7 @@ func (nn *NeuralNetwork) Forward(input *matrix.Matrix) *matrix.Matrix {
 func (nn *NeuralNetwork) Backward(targets *matrix.Matrix, learningRate float64) {
 	// Compute MSE loss gradient
 	lastLayer := nn.Layers[len(nn.Layers)-1]
-	output := lastLayer.(*LinearLayer).Output
+	output := lastLayer.(*torch.LinearLayer).Output
 
 	// dL/dY = (Y - T) * 2/n
 	gradOutput := matrix.Subtract(output, targets)

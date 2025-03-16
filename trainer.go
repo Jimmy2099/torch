@@ -46,14 +46,12 @@ func (t *BasicTrainer) Train(model Model, inputs, targets *matrix.Matrix, epochs
 
 	// 绘制损失曲线
 	if t.Verbose {
-		plotLoss(lossHistory)
+		printLoss(lossHistory)
 	}
 }
 
 // plotLoss 绘制损失曲线
-func plotLoss(lossHistory []float64) {
-	// 这里可以使用你喜欢的绘图库，如gonum/plot
-	// 由于篇幅限制，具体实现略
+func printLoss(lossHistory []float64) {
 	fmt.Println("\nTraining complete! Loss history:")
 	for i, loss := range lossHistory {
 		if i%50 == 0 {
