@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// y =a + wx+ wx + wx + b
+
 // NeuronCellUnit represents a neuron, storing weights, bias, forward propagation output, and error term
 type NeuronCellUnit struct {
 	weights []float64
