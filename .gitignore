@@ -2,3 +2,5 @@
 dataset
 *.gguf
 etc/
+data_loader/pytorch/fc1_bias.csv
+data_loader/pytorch/fc1_weight.csv
