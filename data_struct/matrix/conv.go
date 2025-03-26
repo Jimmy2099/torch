@@ -1,85 +1,125 @@
 package matrix
 
+import "math"
 
 // Conv2D 实现二维卷积操作
 func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-    // 输入维度：(1, height, width) 对于MNIST单通道图像
-    // 权重维度：(out_channels, kernelSize*kernelSize)
-    // 输出维度：(out_channels, out_height, out_width)
+	// 输入维度：(1, height, width) 对于MNIST单通道图像
+	// 权重维度：(out_channels, kernelSize*kernelSize)
+	// 输出维度：(out_channels, out_height, out_width)
 
-    // 计算输出空间尺寸
-    outHeight := (m.Rows+2*pad-kernelSize)/stride + 1
-    outWidth := (m.Cols+2*pad-kernelSize)/stride + 1
+	// 计算输出空间尺寸
+	outHeight := (m.Rows+2*pad-kernelSize)/stride + 1
+	outWidth := (m.Cols+2*pad-kernelSize)/stride + 1
 
-    // 执行im2col展开
-    unfolded := m.im2col(kernelSize, stride, pad)
+	// 执行im2col展开
+	unfolded := m.im2col(kernelSize, stride, pad)
 
-    // 矩阵乘法：weights * unfolded
-    result := weights.Multiply(unfolded)
+	// 矩阵乘法：weights * unfolded
+	result := weights.Multiply(unfolded)
 
-    // 重新排列为输出形状
-    return result.Reshape(weights.Rows, outHeight*outWidth)
+	// 重新排列为输出形状
+	return result.Reshape(weights.Rows, outHeight*outWidth)
 }
 
-// im2col 将输入矩阵展开为卷积运算需要的二维形式
+// im2col_get_pixel 实现边界检查的像素获取
+func im2col_get_pixel(im []float64, height, width, channels int,
+	row, col, channel, pad int) float64 {
+	row -= pad
+	col -= pad
+
+	if row < 0 || col < 0 || row >= height || col >= width {
+		return 0
+	}
+	return im[col+width*(row+height*channel)]
+}
+
+// im2col 基于Caffe实现的高效版本，使用一维数组和前置递增
 func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
-    // 输入维度：(1, height, width) 对于MNIST单通道图像
-    // 输出维度：(kernelSize*kernelSize, out_h*out_w)
+	channels := m.Rows
+	height := int(math.Sqrt(float64(m.Cols))) // 假设是方阵
+	width := height
 
-    // 添加padding
-    padded := m.Pad2D(pad)
+	height_col := (height+2*pad-kernelSize)/stride + 1
+	width_col := (width+2*pad-kernelSize)/stride + 1
+	channels_col := channels * kernelSize * kernelSize
 
-    // 计算输出尺寸
-    outH := (padded.Rows-kernelSize)/stride + 1
-    outW := (padded.Cols-kernelSize)/stride + 1
+	// 将输入数据展平为一维数组
+	im := make([]float64, 0, channels*height*width)
+	for c := 0; c < channels; c++ {
+		im = append(im, m.Data[c]...)
+	}
 
-    // 展开操作 - 对于单通道输入，输出维度是 kernelSize^2 x (outH*outW)
-    cols := NewMatrix(kernelSize*kernelSize, outH*outW)
+	// 创建一维输出数组
+	cols := NewMatrix(channels_col, height_col*width_col)
+	data_col := make([]float64, channels_col*height_col*width_col)
 
-    // 遍历每个 patch
-    for h := 0; h < outH; h++ {
-        for w := 0; w < outW; w++ {
-            // 获取当前感受野的位置
-            rowStart := h * stride
-            rowEnd := rowStart + kernelSize
-            colStart := w * stride
-            colEnd := colStart + kernelSize
+	for c := 0; c < channels_col; c++ {
+		w_offset := c % kernelSize
+		h_offset := (c / kernelSize) % kernelSize
+		c_im := c / kernelSize / kernelSize
 
-            // 提取当前的感受野
-            patch := padded.GetRows(rowStart, rowEnd).GetCols(colStart, colEnd)
-            
-            // 展平patch为一个列向量
-            flattened := make([]float64, kernelSize*kernelSize)
-            idx := 0
-            for i := 0; i < patch.Rows; i++ {
-                for j := 0; j < patch.Cols; j++ {
-                    flattened[idx] = patch.Data[i][j]
-                    idx++
-                }
-            }
+		h := 0
+		for h < height_col {
+			w := 0
+			for w < width_col {
+				im_row := h_offset + h*stride
+				im_col := w_offset + w*stride
+				col_index := (c*height_col+h)*width_col + w
+				data_col[col_index] = im2col_get_pixel(im, height, width, channels,
+					im_row, im_col, c_im, pad)
+				w++
+			}
+			h++
+		}
+	}
 
-            // 设置到对应的列
-            for i := 0; i < kernelSize*kernelSize; i++ {
-                cols.Data[i][h*outW+w] = flattened[i]
-            }
-        }
-    }
+	// 将一维数组转换回Matrix格式
+	for c := 0; c < channels_col; c++ {
+		start := c * height_col * width_col
+		end := start + height_col*width_col
+		cols.Data[c] = data_col[start:end]
+	}
 
-    return cols
+	return cols
 }
+
+func (m *Matrix) Pad2D(pad int) *Matrix {
+	if pad == 0 {
+		return m.Clone()
+	}
+
+	channels := m.Rows
+	size := int(math.Sqrt(float64(m.Cols))) // 原始尺寸
+	newSize := size + 2*pad
+
+	padded := NewMatrix(channels, newSize*newSize)
+
+	for c := 0; c < channels; c++ {
+		for i := 0; i < size; i++ {
+			for j := 0; j < size; j++ {
+				padded.Data[c][(i+pad)*newSize+(j+pad)] = m.Data[c][i*size+j]
+			}
+		}
+	}
+
+	return padded
+}
+
 // Repeat 将矩阵沿行和列方向重复
 func (m *Matrix) Repeat(rowRepeat, colRepeat int) *Matrix {
-    newRows := m.Rows * rowRepeat
-    newCols := m.Cols * colRepeat
-    result := NewMatrix(newRows, newCols)
-    
-    for i := 0; i < newRows; i++ {
-        for j := 0; j < newCols; j++ {
-            result.Data[i][j] = m.Data[i%m.Rows][j%m.Cols]
-        }
-    }
-    return result
+	newRows := m.Rows * rowRepeat
+	newCols := m.Cols * colRepeat
+	result := NewMatrix(newRows, newCols)
+
+	for i := 0; i < newRows; i++ {
+		for j := 0; j < newCols; j++ {
+			result.Data[i][j] = m.Data[i%m.Rows][j%m.Cols]
+		}
+	}
+	return result
 }
+
 // Conv2DGradWeights 计算权重梯度
 func (m Matrix) Conv2DGradWeights(gradOutput *Matrix, kernelSize, stride, pad int) *Matrix {
 	// 输入梯度维度：(out_channels, out_hout_w)
@@ -138,7 +178,7 @@ func (m *Matrix) col2im(kernelSize, stride, pad, inHeight, inWidth int) *Matrix 
 }
 
 // Pad2D 实现二维padding
-func (m *Matrix) Pad2D(pad int) *Matrix {
+func (m *Matrix) Pad2D1(pad int) *Matrix {
 	if pad == 0 {
 		return m.Clone()
 	}

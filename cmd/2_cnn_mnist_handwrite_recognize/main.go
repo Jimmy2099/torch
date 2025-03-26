@@ -36,6 +36,16 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 }
 
 func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
+	//TODO
+	//(1,1,28,28)
+	//(1,32,28,28)
+	//(1,32,14,14)
+	//(1,64,14,14)
+	//(1,64,7,7)
+	//(1,3136)
+	//(1,128)
+	//(1,10)
+
 	fmt.Println("\n=== Starting Forward Pass ===")
 	fmt.Printf("Input shape: (%d, %d)\n", x.Rows, x.Cols)
 
