@@ -1,7 +1,6 @@
 package tensor
 
 import (
-	"fmt"
 	"math/rand"
 )
 
@@ -44,13 +43,16 @@ func NewTensorFromSlice(data [][]float64) *Tensor {
 	}
 }
 
-func (t *Tensor) Reshape(newShape []int) {
-	newSize := 1
-	for _, dim := range newShape {
-		newSize *= dim
+// Reshape changes the shape of the tensor.  It does NOT allocate new memory.
+func (t *Tensor) Reshape(shape []int) *Tensor {
+	size := 1
+	for _, dim := range shape {
+		size *= dim
 	}
-	if newSize != len(t.Data) {
-		panic(fmt.Sprintf("New shape %v is incompatible with data size %d", newShape, len(t.Data)))
+	if size != t.Size() {
+		panic("New shape is not compatible with existing size")
 	}
-	t.Shape = newShape
+
+	t.Shape = shape
+	return t
 }

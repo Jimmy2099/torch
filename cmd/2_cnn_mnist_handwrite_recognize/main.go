@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
+	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"log"
 	"math/rand"
 	"os"
@@ -195,6 +196,7 @@ func main() {
 	//Y_train := trainData.Labels
 
 	// 创建CNN模型
+	tensor.NewTensor([]float64{}, []int{1, 1, 28, 28})
 	model := NewCNN()
 	//trainer := torch.NewBasicTrainer(CrossEntropyLoss)
 

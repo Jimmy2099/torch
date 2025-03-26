@@ -4,11 +4,6 @@ import (
 	"fmt"
 )
 
-type Matrix struct {
-	Rows, Cols int
-	Data       [][]float64
-}
-
 // Copy creates a deep copy of a matrix
 func Copy(m *Matrix) *Matrix {
 	result := NewMatrix(m.Rows, m.Cols)

@@ -1,18 +1,5 @@
 package tensor
 
-import (
-	"fmt"
-)
-
-type Tensor struct {
-	Data  []float64
-	Shape []int
-}
-
-func NewTensor(data []float64, shape []int) *Tensor {
-	return &Tensor{Data: data, Shape: shape}
-}
-
 // Copy 创建张量的深拷贝
 func Copy(t *Tensor) *Tensor {
 	data := make([]float64, len(t.Data))
@@ -34,7 +21,7 @@ func (t *Tensor) At(indices ...int) float64 {
 	if len(indices) != len(t.Shape) {
 		panic("number of indices must match tensor rank")
 	}
-	
+
 	pos := 0
 	stride := 1
 	for i := len(t.Shape) - 1; i >= 0; i-- {
@@ -44,21 +31,6 @@ func (t *Tensor) At(indices ...int) float64 {
 		pos += indices[i] * stride
 		stride *= t.Shape[i]
 	}
-	
-	return t.Data[pos]
-}
 
-// Reshape 改变张量形状但保持元素总数不变
-func (t *Tensor) Reshape(newShape ...int) *Tensor {
-	newSize := 1
-	for _, dim := range newShape {
-		newSize *= dim
-	}
-	
-	if newSize != t.Size() {
-		panic(fmt.Sprintf("Cannot reshape tensor of size %v to %v: total elements must match",
-			t.Shape, newShape))
-	}
-	
-	return NewTensor(append([]float64{}, t.Data...), newShape)
+	return t.Data[pos]
 }

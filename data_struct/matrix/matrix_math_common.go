@@ -5,11 +5,6 @@ import (
 	"math"
 )
 
-type Matrix struct {
-	Rows, Cols int
-	Data       [][]float64
-}
-
 // Multiply performs matrix multiplication: a * b
 func Multiply(a, b *Matrix) *Matrix {
 	if a.Cols != b.Rows {

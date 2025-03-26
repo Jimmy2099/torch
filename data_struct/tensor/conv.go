@@ -1,109 +1,199 @@
 package tensor
 
-import "math"
+import (
+	"errors"
+	"fmt"
+)
 
-type Matrix struct {
-	Rows, Cols int
-	Data       [][]float64
+// Dimensions returns the number of dimensions of the tensor.
+func (t *Tensor) Dimensions() int {
+	return len(t.Shape)
 }
 
-// Conv2D 实现二维卷积操作
-func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入维度：(1, height, width) 对于MNIST单通道图像
-	// 权重维度：(out_channels, kernelSize*kernelSize)
-	// 输出维度：(out_channels, out_height, out_width)
-
-	// 计算输出空间尺寸
-	outHeight := (m.Rows+2*pad-kernelSize)/stride + 1
-	outWidth := (m.Cols+2*pad-kernelSize)/stride + 1
-
-	// 执行im2col展开
-	unfolded := m.im2col(kernelSize, stride, pad)
-
-	// 矩阵乘法：weights * unfolded
-	result := weights.Multiply(unfolded)
-
-	// 重新排列为输出形状
-	return result.Reshape(weights.Rows, outHeight*outWidth)
+// DimSize returns the size of a specific dimension.
+func (t *Tensor) DimSize(dim int) int {
+	if dim < 0 || dim >= len(t.Shape) {
+		panic("invalid dimension")
+	}
+	return t.Shape[dim]
 }
 
-// im2col_get_pixel 实现边界检查的像素获取
-func im2col_get_pixel(im []float64, height, width, channels int,
-	row, col, channel, pad int) float64 {
+// Clone creates a deep copy of the tensor.
+func (t *Tensor) Clone() *Tensor {
+	newData := make([]float64, len(t.Data))
+	copy(newData, t.Data)
+	newShape := make([]int, len(t.Shape))
+	copy(newShape, t.Shape)
+	return &Tensor{
+		Data:  newData,
+		Shape: newShape,
+	}
+}
+
+// Multiply performs element-wise multiplication with another tensor.
+func (t *Tensor) Multiply(other *Tensor) *Tensor {
+	if !sameShape(t.Shape, other.Shape) {
+		panic("Tensors must have the same shape for element-wise multiplication")
+	}
+
+	resultData := make([]float64, len(t.Data))
+	for i := 0; i < len(t.Data); i++ {
+		resultData[i] = t.Data[i] * other.Data[i]
+	}
+
+	return &Tensor{
+		Data:  resultData,
+		Shape: t.Shape,
+	}
+}
+
+// Transpose transposes the tensor (only works for 2D tensors).
+func (t *Tensor) Transpose() *Tensor {
+	if len(t.Shape) != 2 {
+		panic("Transpose only works for 2D tensors")
+	}
+
+	rows := t.Shape[0]
+	cols := t.Shape[1]
+
+	newData := make([]float64, len(t.Data))
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			newData[j*rows+i] = t.Data[i*cols+j]
+		}
+	}
+
+	newShape := []int{cols, rows}
+
+	return &Tensor{
+		Data:  newData,
+		Shape: newShape,
+	}
+}
+
+func (t *Tensor) String() string {
+	return fmt.Sprintf("Tensor{Data: %v, Shape: %v}", t.Data, t.Shape)
+}
+
+// sameShape checks if two shapes are the same.
+func sameShape(shape1, shape2 []int) bool {
+	if len(shape1) != len(shape2) {
+		return false
+	}
+	for i := 0; i < len(shape1); i++ {
+		if shape1[i] != shape2[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// Conv2D implements a 2D convolution operation.
+// It assumes the input Tensor has shape [channels, height, width] and the weights
+// Tensor has shape [out_channels, in_channels, kernel_height, kernel_width].
+func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
+	// Input dimension: (channels, height, width)
+	// Weights dimension: (out_channels, in_channels, kernel_height, kernel_width)
+
+	// Validate input shapes
+	if len(t.Shape) != 3 {
+		return nil, errors.New("input tensor must have shape [channels, height, width]")
+	}
+	if len(weights.Shape) != 4 {
+		return nil, errors.New("weights tensor must have shape [out_channels, in_channels, kernel_height, kernel_width]")
+	}
+
+	channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2]
+	outChannels, inChannels, kernelHeight, kernelWidth := weights.Shape[0], weights.Shape[1], weights.Shape[2], weights.Shape[3]
+
+	if inChannels != channels {
+		return nil, errors.New("input channels must match weight in_channels")
+	}
+	if kernelSize != kernelHeight || kernelSize != kernelWidth {
+		return nil, errors.New("Kernel size must be the same for both height and width in weights")
+	}
+
+	// Calculate output spatial dimensions
+	outHeight := (height+2*pad-kernelSize)/stride + 1
+	outWidth := (width+2*pad-kernelSize)/stride + 1
+
+	// Pad the input
+	paddedInput := t.Pad2D(pad)
+
+	// Perform im2col unfolding
+	unfolded, err := paddedInput.im2col(kernelSize, stride)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reshape weights for matrix multiplication (out_channels, kernel_size * kernel_size * in_channels)
+	reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
+
+	// Matrix multiplication: reshaped_weights * unfolded
+	result := reshapedWeights.Multiply(unfolded)
+
+	// Reshape to output dimensions
+	return result.Reshape([]int{outChannels, outHeight * outWidth}), nil
+}
+
+// im2col_get_pixel implements boundary check for pixel access.
+func (t *Tensor) im2col_get_pixel(row, col, channel, pad int) float64 {
+	height, width := t.Shape[1], t.Shape[2]
+
 	row -= pad
 	col -= pad
 
 	if row < 0 || col < 0 || row >= height || col >= width {
 		return 0
 	}
-	return im[col+width*(row+height*channel)]
+
+	return t.Data[col+width*(row+height*channel)]
 }
 
-// im2col 基于Caffe实现的高效版本，使用一维数组和前置递增
-func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
-	channels := m.Rows
-	height := int(math.Sqrt(float64(m.Cols))) // 假设是方阵
-	width := height
+// im2col unfolds the input tensor into columns.
+func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
+	channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2]
 
-	height_col := (height+2*pad-kernelSize)/stride + 1
-	width_col := (width+2*pad-kernelSize)/stride + 1
-	channels_col := channels * kernelSize * kernelSize
+	heightCol := (height-kernelSize)/stride + 1
+	widthCol := (width-kernelSize)/stride + 1
+	channelsCol := channels * kernelSize * kernelSize
 
-	// 将输入数据展平为一维数组
-	im := make([]float64, 0, channels*height*width)
-	for c := 0; c < channels; c++ {
-		im = append(im, m.Data[c]...)
-	}
+	cols := NewTensor(make([]float64, channelsCol*heightCol*widthCol), []int{channelsCol, heightCol * widthCol})
+	dataCol := cols.Data
 
-	// 创建一维输出数组
-	cols := NewMatrix(channels_col, height_col*width_col)
-	data_col := make([]float64, channels_col*height_col*width_col)
+	for c := 0; c < channelsCol; c++ {
+		wOffset := c % kernelSize
+		hOffset := (c / kernelSize) % kernelSize
+		cIm := c / kernelSize / kernelSize
 
-	for c := 0; c < channels_col; c++ {
-		w_offset := c % kernelSize
-		h_offset := (c / kernelSize) % kernelSize
-		c_im := c / kernelSize / kernelSize
-
-		h := 0
-		for h < height_col {
-			w := 0
-			for w < width_col {
-				im_row := h_offset + h*stride
-				im_col := w_offset + w*stride
-				col_index := (c*height_col+h)*width_col + w
-				data_col[col_index] = im2col_get_pixel(im, height, width, channels,
-					im_row, im_col, c_im, pad)
-				w++
+		for h := 0; h < heightCol; h++ {
+			for w := 0; w < widthCol; w++ {
+				imRow := hOffset + h*stride
+				imCol := wOffset + w*stride
+				colIndex := (c*heightCol+h)*widthCol + w
+				dataCol[colIndex] = t.im2col_get_pixel(imRow, imCol, cIm, 0)
 			}
-			h++
 		}
 	}
 
-	// 将一维数组转换回Matrix格式
-	for c := 0; c < channels_col; c++ {
-		start := c * height_col * width_col
-		end := start + height_col*width_col
-		cols.Data[c] = data_col[start:end]
-	}
-
-	return cols
+	return cols, nil
 }
 
-func (m *Matrix) Pad2D(pad int) *Matrix {
+// Pad2D adds 2D padding to the tensor.
+func (t *Tensor) Pad2D(pad int) *Tensor {
 	if pad == 0 {
-		return m.Clone()
+		return t.Clone()
 	}
 
-	channels := m.Rows
-	size := int(math.Sqrt(float64(m.Cols))) // 原始尺寸
+	channels, size, _ := t.Shape[0], t.Shape[1], t.Shape[2] // assuming a square tensor for simplicity
 	newSize := size + 2*pad
 
-	padded := NewMatrix(channels, newSize*newSize)
+	padded := NewTensor(make([]float64, channels*newSize*newSize), []int{channels, newSize, newSize})
 
 	for c := 0; c < channels; c++ {
 		for i := 0; i < size; i++ {
 			for j := 0; j < size; j++ {
-				padded.Data[c][(i+pad)*newSize+(j+pad)] = m.Data[c][i*size+j]
+				padded.Data[(i+pad)*newSize+(j+pad)+c*newSize*newSize] = t.Data[i*size+j+c*size*size]
 			}
 		}
 	}
@@ -111,249 +201,256 @@ func (m *Matrix) Pad2D(pad int) *Matrix {
 	return padded
 }
 
-// Repeat 将矩阵沿行和列方向重复
-func (m *Matrix) Repeat(rowRepeat, colRepeat int) *Matrix {
-	newRows := m.Rows * rowRepeat
-	newCols := m.Cols * colRepeat
-	result := NewMatrix(newRows, newCols)
+// Repeat duplicates the tensor along rows and columns.
+func (t *Tensor) Repeat(rowRepeat, colRepeat int) *Tensor {
+	if len(t.Shape) != 2 {
+		panic("Repeat only works for 2D tensors")
+	}
+	rows, cols := t.Shape[0], t.Shape[1]
+
+	newRows := rows * rowRepeat
+	newCols := cols * colRepeat
+	result := NewTensor(make([]float64, newRows*newCols), []int{newRows, newCols})
 
 	for i := 0; i < newRows; i++ {
 		for j := 0; j < newCols; j++ {
-			result.Data[i][j] = m.Data[i%m.Rows][j%m.Cols]
+			result.Data[i*newCols+j] = t.Data[(i%rows)*cols+(j%cols)]
 		}
 	}
 	return result
 }
 
-// Conv2DGradWeights 计算权重梯度
-func (m Matrix) Conv2DGradWeights(gradOutput *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入梯度维度：(out_channels, out_hout_w)
-	// 输出梯度维度：(out_channels, in_channelskernelSizekernelSize)
+// Conv2DGradWeights calculates the gradient of the weights in a convolution operation.
+func (t *Tensor) Conv2DGradWeights(gradOutput *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
+	// Input gradient dimension: (out_channels, out_height*out_width)
+	// Output gradient dimension: (out_channels, in_channels*kernelSize*kernelSize)
 
-	// 执行im2col展开输入
-	unfolded := m.im2col(kernelSize, stride, pad)
+	//channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2]
 
-	// 矩阵乘法：gradOutput * unfolded^T
-	return gradOutput.Multiply(unfolded.Transpose())
+	// Unfold the input
+	unfolded, err := t.im2col(kernelSize, stride)
+	if err != nil {
+		return nil, err
+	}
+
+	// Matrix multiplication: gradOutput * unfolded^T
+	return gradOutput.Multiply(unfolded.Transpose()), nil
 }
 
-// Conv2DGradInput 计算输入梯度
-func (m *Matrix) Conv2DGradInput(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入梯度维度：(out_channels, out_hout_w)
-	// 输出梯度维度：(in_channels, in_hin_w)
+// Conv2DGradInput calculates the gradient of the input in a convolution operation.
+func (t *Tensor) Conv2DGradInput(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
+	// Input gradient dimension: (out_channels, out_height*out_width)
+	// Output gradient dimension: (in_channels, in_height*in_width)
 
-	// 转置权重矩阵
+	// Transpose weights matrix
 	wT := weights.Transpose()
 
-	// 矩阵乘法：wT * gradOutput
-	result := wT.Multiply(m)
+	// Matrix multiplication: wT * gradOutput
+	result := wT.Multiply(t)
 
-	// 执行col2im操作
-	return result.col2im(kernelSize, stride, pad, m.Rows, m.Cols)
+	// Perform col2im operation
+	return result.col2im(kernelSize, stride, pad, t.Shape[1], t.Shape[2])
 }
 
-// col2im 将展开的列重新排列为图像格式
-func (m *Matrix) col2im(kernelSize, stride, pad, inHeight, inWidth int) *Matrix {
-	// 计算原始尺寸（包含padding）
-	origHeight := inHeight + 2
-	origWidth := inWidth + 2
+// col2im rearranges the unfolded columns back into an image format.
+func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) (*Tensor, error) {
+	// Input: (out_channels, out_height * out_width)
+	// Output: (in_channels, in_height, in_width)
 
-	// 初始化输出矩阵
-	output := NewMatrix(origHeight, origWidth)
+	if len(t.Shape) != 2 {
+		return nil, fmt.Errorf("input tensor must be 2D for col2im operation")
+	}
 
-	// 遍历所有列
-	for i := 0; i < m.Cols; i++ {
-		// 计算原始位置
+	//outChannels := t.Shape[0]
+	origHeight := inHeight + 2*pad
+	origWidth := inWidth + 2*pad
+
+	output := NewTensor(make([]float64, origHeight*origWidth), []int{origHeight, origWidth})
+
+	for i := 0; i < t.Shape[1]; i++ {
 		h := (i / origWidth) * stride
 		w := (i % origWidth) * stride
 
-		// 获取当前patch并reshape
-		patch := m.GetCol(i).Reshape(kernelSize, kernelSize)
+		// Extract patch from unfolded tensor
+		patchData := t.GetCol(i) // Assumes GetCol returns 1D tensor
 
-		// 累加到对应位置
 		for dh := 0; dh < kernelSize; dh++ {
 			for dw := 0; dw < kernelSize; dw++ {
-				output.Data[h+dh][w+dw] += patch.Data[dh][dw]
+				index := dh*kernelSize + dw
+				if index < len(patchData.Data) {
+					output.Data[h+dh+(w+dw)*origHeight] += patchData.Data[index]
+				} else {
+					fmt.Printf("index out of bounds %d \n", index) //debug statement - needs deletion
+				}
+
 			}
 		}
 	}
 
-	// 去除padding
-	return output.GetRows(pad, origHeight-pad).GetCols(pad, origWidth-pad)
+	cropped := output.Crop(pad)
+
+	return cropped, nil
 }
 
-// Pad2D 实现二维padding
-func (m *Matrix) Pad2D1(pad int) *Matrix {
-	if pad == 0 {
-		return m.Clone()
+// Pad adds padding around the tensor.
+func (t *Tensor) Pad(padding int) *Tensor {
+
+	rows, cols := t.Shape[0], t.Shape[1]
+	newRows := rows + 2*padding
+	newCols := cols + 2*padding
+
+	paddedData := make([]float64, newRows*newCols)
+	padded := NewTensor(paddedData, []int{newRows, newCols})
+
+	// Copy original data to the center of the padded tensor
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			padded.Data[(i+padding)*newCols+(j+padding)] = t.Data[i*cols+j]
+		}
 	}
 
-	newRows := m.Rows + 2*pad
-	newCols := m.Cols + 2*pad
-	padded := NewMatrix(newRows, newCols)
-
-	for i := 0; i < m.Rows; i++ {
-		copy(padded.Data[i+pad][pad:], m.Data[i])
-	}
 	return padded
 }
 
-// Flatten 展平矩阵为列向量
-func (m *Matrix) Flatten() *Matrix {
-	return m.Reshape(m.Cols*m.Rows, 1)
+// Crop removes padding around the tensor.
+func (t *Tensor) Crop(padding int) *Tensor {
+	if padding == 0 {
+		return t
+	}
+	rows, cols := t.Shape[0], t.Shape[1]
+	newRows := rows - 2*padding
+	newCols := cols - 2*padding
+
+	croppedData := make([]float64, newRows*newCols)
+	cropped := NewTensor(croppedData, []int{newRows, newCols})
+
+	for i := 0; i < newRows; i++ {
+		for j := 0; j < newCols; j++ {
+			cropped.Data[i*newCols+j] = t.Data[(i+padding)*cols+(j+padding)]
+		}
+	}
+
+	return cropped
 }
 
-func (m *Matrix) FlattenByDim(startDim, endDim int) *Matrix {
-	if startDim < 0 || startDim >= m.Dimensions() {
+// FlattenByDim flattens the tensor from startDim to endDim.
+func (t *Tensor) FlattenByDim(startDim, endDim int) *Tensor {
+	if startDim < 0 || startDim >= len(t.Shape) {
 		panic("Invalid startDim")
 	}
-	if endDim < -1 || endDim >= m.Dimensions() {
+	if endDim < -1 || endDim >= len(t.Shape) {
 		panic("Invalid endDim")
 	}
 
 	if endDim == -1 {
-		endDim = m.Dimensions() - 1 // -1 代表最后一个维度
+		endDim = len(t.Shape) - 1 // -1 means the last dimension
 	}
 
-	// 计算展平后矩阵的维度
 	rows := 1
 	cols := 1
 
-	// 计算从 startDim 到 endDim 展平的维度
+	// Calculate the flattened dimensions from startDim to endDim
 	for i := startDim; i <= endDim; i++ {
-		rows *= m.DimSize(i)
+		rows *= t.Shape[i]
 	}
 
-	// 计算剩余的维度
-	for i := endDim + 1; i < m.Dimensions(); i++ {
-		cols *= m.DimSize(i)
+	// Calculate the remaining dimensions
+	for i := endDim + 1; i < len(t.Shape); i++ {
+		cols *= t.Shape[i]
 	}
 
-	// 调用 Reshape 进行展平
-	return m.Reshape(rows, cols)
+	// Reshape
+	t.Reshape([]int{rows, cols})
+	return t
 }
 
-// Dimensions 获取矩阵的维度数量
-func (m *Matrix) Dimensions() int {
-	// 对于二维矩阵，只有行和列两维
-	return 2
-}
-
-// DimSize 获取指定维度的大小，dim = 0 时返回行数，dim = 1 时返回列数
-func (m *Matrix) DimSize(dim int) int {
-	if dim == 0 {
-		return m.Rows
-	} else if dim == 1 {
-		return m.Cols
+// GetCols returns a sub-tensor containing the specified column range.
+func (t *Tensor) GetCols(start, end int) *Tensor {
+	if len(t.Shape) != 2 {
+		panic("GetCols only works for 2D tensors")
 	}
-	panic("invalid dimension")
-}
-
-// Clone 深拷贝矩阵
-func (m *Matrix) Clone() *Matrix {
-	return Copy(m)
-}
-
-// GetCols 获取指定列范围的子矩阵
-func (m *Matrix) GetCols(start, end int) *Matrix {
-	if start < 0 || end > m.Cols || start >= end {
-		panic("invalid column range")
+	if start < 0 || end > t.Shape[1] || start >= end {
+		panic("Invalid column range")
 	}
 
-	result := NewMatrix(m.Rows, end-start)
-	for i := 0; i < m.Rows; i++ {
+	rows := t.Shape[0]
+	newCols := end - start
+	resultData := make([]float64, rows*newCols)
+
+	for i := 0; i < rows; i++ {
 		for j := start; j < end; j++ {
-			result.Data[i][j-start] = m.Data[i][j]
+			resultData[i*newCols+(j-start)] = t.Data[i*t.Shape[1]+j]
 		}
 	}
-	return result
+
+	return NewTensor(resultData, []int{rows, newCols})
 }
 
-// SetCol 设置指定列的数据
-func (m *Matrix) SetCol(colIdx int, data *Matrix) {
-	if data.Rows != m.Rows || data.Cols != 1 {
-		panic("invalid column data dimensions")
+// SetCol sets the data of a specified column.
+func (t *Tensor) SetCol(colIdx int, data *Tensor) {
+	if len(t.Shape) != 2 {
+		panic("SetCol only works for 2D tensors")
+	}
+	if data.Shape[0] != t.Shape[0] || data.Shape[1] != 1 {
+		panic("Invalid column data dimensions")
 	}
 
-	for i := 0; i < m.Rows; i++ {
-		m.Data[i][colIdx] = data.Data[i][0]
+	for i := 0; i < t.Shape[0]; i++ {
+		t.Data[i*t.Shape[1]+colIdx] = data.Data[i]
 	}
 }
 
-// GetCol 获取指定列的数据
-func (m *Matrix) GetCol(colIdx int) *Matrix {
-	result := NewMatrix(m.Rows, 1)
-	for i := 0; i < m.Rows; i++ {
-		result.Data[i][0] = m.Data[i][colIdx]
+// GetCol returns a column as a Tensor.
+func (t *Tensor) GetCol(colIdx int) *Tensor {
+	if len(t.Shape) != 2 {
+		panic("GetCol only works for 2D tensors")
 	}
-	return result
+	if colIdx < 0 || colIdx >= t.Shape[1] {
+		panic("Invalid column index")
+	}
+
+	rows := t.Shape[0]
+	resultData := make([]float64, rows)
+
+	for i := 0; i < rows; i++ {
+		resultData[i] = t.Data[i*t.Shape[1]+colIdx]
+	}
+	return NewTensor(resultData, []int{rows})
+
 }
 
-// Sum 沿指定维度求和
-func (m *Matrix) SumByDim(dim int) *Matrix {
-	if dim == 0 { // 沿列求和，返回行向量
-		result := NewMatrix(1, m.Cols)
-		for j := 0; j < m.Cols; j++ {
+// SumByDim calculates the sum along a specified dimension.
+func (t *Tensor) SumByDim(dim int) *Tensor {
+
+	if len(t.Shape) != 2 {
+		panic("SumByDim works for 2D tensors")
+	}
+
+	if dim == 0 { // Sum along rows, returns a column vector
+		resultData := make([]float64, t.Shape[1])
+
+		for j := 0; j < t.Shape[1]; j++ {
 			sum := 0.0
-			for i := 0; i < m.Rows; i++ {
-				sum += m.Data[i][j]
+			for i := 0; i < t.Shape[0]; i++ {
+				sum += t.Data[i*t.Shape[1]+j]
 			}
-			result.Data[0][j] = sum
+			resultData[j] = sum
 		}
-		return result
-	} else if dim == 1 { // 沿行求和，返回列向量
-		result := NewMatrix(m.Rows, 1)
-		for i := 0; i < m.Rows; i++ {
+
+		return NewTensor(resultData, []int{t.Shape[1]})
+	} else if dim == 1 { // Sum along columns, returns a row vector
+		resultData := make([]float64, t.Shape[0])
+
+		for i := 0; i < t.Shape[0]; i++ {
 			sum := 0.0
-			for j := 0; j < m.Cols; j++ {
-				sum += m.Data[i][j]
+			for j := 0; j < t.Shape[1]; j++ {
+				sum += t.Data[i*t.Shape[1]+j]
 			}
-			result.Data[i][0] = sum
+			resultData[i] = sum
 		}
-		return result
-	}
-	panic("invalid dimension for sum")
-}
 
-// Pad 在矩阵四周添加 padding 数量的零填充
-func (m *Matrix) Pad(padding int) *Matrix {
-	newRows := m.Rows + 2*padding
-	newCols := m.Cols + 2*padding
-	// 初始化全零矩阵
-	paddedData := make([][]float64, newRows)
-	for i := range paddedData {
-		paddedData[i] = make([]float64, newCols)
-	}
-	// 将原矩阵拷贝到中间位置
-	for i := 0; i < m.Rows; i++ {
-		for j := 0; j < m.Cols; j++ {
-			paddedData[i+padding][j+padding] = m.Data[i][j]
-		}
-	}
-	return &Matrix{
-		Rows: newRows,
-		Cols: newCols,
-		Data: paddedData,
-	}
-}
+		return NewTensor(resultData, []int{t.Shape[0]})
 
-// Crop 裁剪掉矩阵四周 padding 数量的边界
-func (m *Matrix) Crop(padding int) *Matrix {
-	if padding == 0 {
-		return m
 	}
-	newRows := m.Rows - 2*padding
-	newCols := m.Cols - 2*padding
-	croppedData := make([][]float64, newRows)
-	for i := 0; i < newRows; i++ {
-		croppedData[i] = make([]float64, newCols)
-		for j := 0; j < newCols; j++ {
-			croppedData[i][j] = m.Data[i+padding][j+padding]
-		}
-	}
-	return &Matrix{
-		Rows: newRows,
-		Cols: newCols,
-		Data: croppedData,
-	}
+	panic("Invalid dimension for sum")
 }
