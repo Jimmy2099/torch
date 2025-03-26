@@ -62,6 +62,10 @@ for epoch in range(epochs):
 
     print(f'Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}')
 
+# 保存模型
+torch.save(model.state_dict(), 'mnist_cnn.pth')
+print('Model saved as mnist_cnn.pth')
+
 # 测试模型
 model.eval()
 correct = 0
