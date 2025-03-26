@@ -4,3 +4,4 @@ dataset
 etc/
 *.csv
 *.pth
+*.png

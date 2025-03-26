@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/data_loader/mnist"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -33,7 +37,7 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 
 func NewCNN() *CNN {
 	rand.Seed(time.Now().UnixNano())
-	return &CNN{
+	cnn := &CNN{
 		conv1: torch.NewConvLayer(1, 32, 3, 3, 1),
 		conv2: torch.NewConvLayer(32, 64, 3, 1, 1),
 		fc1:   torch.NewLinearLayer(64*7*7, 128),
@@ -41,6 +45,73 @@ func NewCNN() *CNN {
 		relu:  torch.NewReLULayer(),
 		pool:  torch.NewMaxPool2DLayer(2, 2, 0),
 	}
+
+	//cnn.LoadModelFromCSV()
+	layer := []string{
+		"conv1",
+		"conv2",
+		"fc1",
+		"fc2",
+	}
+	{
+		num := 0
+		d, _ := os.Getwd()
+		weightData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".weight.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.conv1.SetWeights(weightData.Data)
+		biasData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".bias.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.conv1.SetBias(biasData.Data)
+
+	}
+	{
+		num := 1
+		d, _ := os.Getwd()
+		weightData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".weight.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.conv2.SetWeights(weightData.Data)
+		biasData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".bias.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.conv2.SetBias(biasData.Data)
+	}
+	{
+		num := 2
+		d, _ := os.Getwd()
+		weightData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".weight.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.fc1.SetWeights(weightData.Data)
+		biasData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".bias.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.fc1.SetBias(biasData.Data)
+	}
+	{
+		num := 3
+		d, _ := os.Getwd()
+		weightData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".weight.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.fc2.SetWeights(weightData.Data)
+		biasData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", layer[num]+".bias.csv"))
+		if err != nil {
+			panic(err)
+		}
+		cnn.fc2.SetBias(biasData.Data)
+
+	}
+	return cnn
 }
 
 func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
@@ -105,16 +176,33 @@ func main() {
 	//trainer.Train(model, X_train, Y_train, 10, 0.01)
 	//
 	// 测试模型
-	testData, err := mnist.LoadMNIST("./dataset/MNIST/raw/t10k-images-idx3-ubyte", "./dataset/MNIST/raw/t10k-labels-idx1-ubyte")
-	if err != nil {
-		log.Fatal(err)
+	//testData, err := mnist.LoadMNIST("./dataset/MNIST/raw/t10k-images-idx3-ubyte", "./dataset/MNIST/raw/t10k-labels-idx1-ubyte")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//X_test := testData.Images
+	//Y_test := testData.Labels
+
+	{
+		directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
+
+		// Load data (images and labels)
+		images, labels, err := LoadDataFromCSVDir(directory)
+		if err != nil {
+			log.Fatalf("Error loading data: %v", err)
+		}
+
+		// Example: Print the first image matrix and its corresponding label
+		if len(images) > 0 && len(labels) > 0 {
+			fmt.Printf("First Image Matrix:\n%v\n", images[0])
+			fmt.Printf("First Image Label: %s\n", labels[0])
+		}
+		fmt.Println(model.Forward(images[0]))
 	}
-	X_test := testData.Images
-	Y_test := testData.Labels
 
 	// 计算测试集准确率
-	accuracy := Evaluate(model, X_test, Y_test)
-	fmt.Printf("Test Accuracy: %.2f%%\n", accuracy*100)
+	//accuracy := Evaluate(model, X_test, Y_test)
+	//fmt.Printf("Test Accuracy: %.2f%%\n", accuracy*100)
 }
 
 // CrossEntropyLoss 计算交叉熵损失
@@ -133,4 +221,120 @@ func Evaluate(model *CNN, inputs, targets *matrix.Matrix) float64 {
 		}
 	}
 	return float64(correct) / float64(predictions.Size())
+}
+
+// ReadCSV reads an image from a CSV file and converts it to a matrix
+func ReadCSV(filepath string) (*matrix.Matrix, error) {
+	// Open the CSV file
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Read the CSV file
+	reader := csv.NewReader(file)
+	lines, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Flattened data of the image (784 pixels for MNIST)
+	// We assume each line is a single pixel in the image, and the total number of values should be 28*28 = 784
+	rows := len(lines)
+	cols := len(lines[0])
+	if rows*cols != 784 { // Ensure it matches the MNIST image size
+		return nil, fmt.Errorf("expected 784 values in CSV, got %d", rows*cols)
+	}
+
+	// Convert the CSV data to a flat matrix (784,)
+	data := make([]float64, rows*cols)
+
+	for i, line := range lines {
+		for j, value := range line {
+			// Convert string to float64
+			val, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return nil, err
+			}
+			data[i*cols+j] = val
+		}
+	}
+
+	// Create a 28x28 matrix from the flattened image data
+	mat := matrix.NewMatrixFromSlice1D(data, 28, 28)
+	//matrix(data)
+
+	// Normalize pixel values to [0, 1] range (MNIST images are 0-255)
+	mat.DivScalar(255.0) // Normalize image pixels to [0,1]
+
+	return mat, nil
+}
+
+// LoadDataFromCSVDir loads image data from a directory of CSV files and returns matrices and labels
+func LoadDataFromCSVDir(directory string) ([]*matrix.Matrix, []string, error) {
+	var matrices []*matrix.Matrix
+	var labels []string
+
+	// Open the labels CSV file (assuming it's named 'labels.csv' and has the format: filename,label)
+	labelFilePath := filepath.Join(directory, "labels.csv")
+	labelFile, err := os.Open(labelFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not open labels file: %v", err)
+	}
+	defer labelFile.Close()
+
+	// Read labels CSV file
+	labelReader := csv.NewReader(labelFile)
+	labelLines, err := labelReader.ReadAll()
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not read labels CSV: %v", err)
+	}
+
+	// Create a map of filenames to labels (for easy access)
+	labelMap := make(map[string]string)
+	for _, line := range labelLines {
+		if len(line) < 2 {
+			continue
+		}
+		labelMap[line[0]] = line[1]
+	}
+
+	// Iterate over all CSV image files in the directory
+	err = filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories and ensure we're dealing with CSV files (except the labels CSV)
+		if info.IsDir() || strings.HasSuffix(path, "labels.csv") {
+			return nil
+		}
+
+		// Read the image CSV file
+		image, err := ReadCSV(path)
+		if err != nil {
+			log.Printf("Error reading image CSV %s: %v", path, err)
+			return nil // Skip this image and continue with the next one
+		}
+
+		// Extract the image filename (assume the file name is the same as the CSV name)
+		_, filename := filepath.Split(path)
+		label, ok := labelMap[filename]
+		if !ok {
+			label = "unknown" // If no label found, mark it as unknown
+		}
+
+		// Add the matrix and label to the slices
+		matrices = append(matrices, image)
+		labels = append(labels, label)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("error walking through directory: %v", err)
+	}
+
+	return matrices, labels, nil
 }

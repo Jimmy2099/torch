@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
@@ -36,34 +34,48 @@ func readCSV(filename string) ([]float64, error) {
 	}
 	return data, nil
 }
-func loadData(filename string) (weightData, biasData []float64, err error) {
-	d, _ := os.Getwd()
-	weightData, err = readCSV(filepath.Join(d, "py", "data", filename+".weight.csv"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	biasData, err = readCSV(filepath.Join(d, "py", "data", filename+".bias.csv"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return weightData, biasData, nil
-}
 
-func (m *CNN) loadParameter() {
+//func loadData(filename string) (weightData, biasData []float64, err error) {
+//	d, _ := os.Getwd()
+//	weightData, err = readCSV(filepath.Join(d, "py", "data", filename+".weight.csv"))
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	biasData, err = readCSV(filepath.Join(d, "py", "data", filename+".bias.csv"))
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	return weightData, biasData, nil
+//}
+
+func (m *CNN) LoadModelFromCSV() {
 	layer := []string{
 		"conv1",
 		"conv2",
 		"fc1",
 		"fc2",
 	}
+	d, _ := os.Getwd()
 
-	for k, v := range layer {
-		loadData(v)
-		fmt.Println("loading", k, v)
-		fmt.Println("loaded", k, v)
+	for k, filename := range layer {
+		fmt.Println("loading", k, filename)
+
+		//{
+		//	d, _ := os.Getwd()
+		//	weightData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", filename+".weight.csv"))
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//	biasData, err := torch.LoadMatrixFromCSV(filepath.Join(d, "py", "data", filename+".bias.csv"))
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//}
+
+		fmt.Println("loaded", k, filename)
 
 	}
-
+	fmt.Println(d)
 	//        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
 	//        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
 	//        self.fc1 = torch.nn.Linear(in_features=64 * 7 * 7, out_features=128)
