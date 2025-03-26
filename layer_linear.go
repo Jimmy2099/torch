@@ -23,6 +23,11 @@ type LinearLayer struct {
 	VBias       *tensor.Tensor // 偏置动量
 }
 
+func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+	//TODO implement me
+	panic("implement me")
+}
+
 // SetWeights 设置权重
 func (l *LinearLayer) SetWeights(data []float64) {
 	if len(data) != l.OutputDim*l.InputDim {
