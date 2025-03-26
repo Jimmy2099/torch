@@ -12,10 +12,18 @@ import (
 
 // CNN 定义简单的卷积神经网络结构
 type CNN struct {
+	//        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
+	//        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
+	//        self.fc1 = torch.nn.Linear(in_features=64 * 7 * 7, out_features=128)
+	//        self.fc2 = torch.nn.Linear(in_features=128, out_features=10)
+	//        self.relu = torch.nn.ReLU()
+	//        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 	conv1 *torch.ConvLayer
-	pool1 *torch.MaxPoolLayer
+	conv2 *torch.ConvLayer
 	fc1   *torch.LinearLayer
 	fc2   *torch.LinearLayer
+	relu  *torch.ReLULayer
+	pool  *torch.MaxPoolLayer
 }
 
 func (c *CNN) Parameters() []*matrix.Matrix {
@@ -26,31 +34,51 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 func NewCNN() *CNN {
 	rand.Seed(time.Now().UnixNano())
 	return &CNN{
-		conv1: torch.NewConvLayer(1, 8, 3, 2, 1), // 输入通道1，输出通道8，卷积核3x3
-		pool1: torch.NewMaxPoolLayer(2, 2),       // 2x2最大池化
-		fc1:   torch.NewLinearLayer(8*12*12, 64), // 全连接层1
-		fc2:   torch.NewLinearLayer(64, 10),      // 全连接层2，输出10个类别
+		conv1: torch.NewConvLayer(1, 32, 3, 3, 1),
+		conv2: torch.NewConvLayer(32, 64, 3, 1, 1),
+		fc1:   torch.NewLinearLayer(64*7*7, 128),
+		fc2:   torch.NewLinearLayer(128, 10),
+		relu:  torch.NewReLULayer(),
+		pool:  torch.NewMaxPool2DLayer(2, 2, 0),
 	}
 }
 
 func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
 	// 前向传播
+	//x = self.relu(x.conv1(x))
+	//x = self.pool(x)
+
+	//x = self.relu(self.conv2(x))
+	//x = self.pool(x)
+
+	//x = torch.flatten(x, 1)
+	//x = self.relu(self.fc1(x))
+	//x = self.fc2(x)
+
 	x = c.conv1.Forward(x)
-	x = c.pool1.Forward(x)
+	x = c.relu.Forward(x)
+
+	x = c.conv2.Forward(x)
+	x = c.relu.Forward(x)
+	x = c.pool.Forward(x)
+
 	x = x.Flatten()
+
 	x = c.fc1.Forward(x)
-	x = x.ReLU()
+	x = c.relu.Forward(x)
 	x = c.fc2.Forward(x)
-	return x.Softmax()
+
+	return x
 }
 
+// TODO Backward
 func (c *CNN) Backward(targets *matrix.Matrix, lr float64) {
-	// 反向传播
-	grad := c.fc2.Backward(targets, lr)
-	grad = c.fc1.Backward(grad, lr)
-	grad = grad.Reshape(8, 12)
-	grad = c.pool1.Backward(grad)
-	_ = c.conv1.BackwardWithLR(grad, lr)
+	//// 反向传播
+	//grad := c.fc2.Backward(targets, lr)
+	//grad = c.fc1.Backward(grad, lr)
+	//grad = grad.Reshape(8, 12)
+	//grad = c.pool1.Backward(grad)
+	//_ = c.conv1.BackwardWithLR(grad, lr)
 }
 
 func (c *CNN) ZeroGrad() {
@@ -61,21 +89,21 @@ func (c *CNN) ZeroGrad() {
 }
 
 func main() {
-	// 加载MNIST数据集
-	trainData, err := mnist.LoadMNIST("./dataset/MNIST/raw/train-images-idx3-ubyte", "./dataset/MNIST/raw/train-labels-idx1-ubyte")
-	if err != nil {
-		log.Fatal(err)
-	}
-	X_train := trainData.Images
-	Y_train := trainData.Labels
+	//// 加载MNIST数据集
+	//trainData, err := mnist.LoadMNIST("./dataset/MNIST/raw/train-images-idx3-ubyte", "./dataset/MNIST/raw/train-labels-idx1-ubyte")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//X_train := trainData.Images
+	//Y_train := trainData.Labels
 
 	// 创建CNN模型
 	model := NewCNN()
-	trainer := torch.NewBasicTrainer(CrossEntropyLoss)
+	//trainer := torch.NewBasicTrainer(CrossEntropyLoss)
 
-	// 训练模型
-	trainer.Train(model, X_train, Y_train, 10, 0.01)
-
+	//// 训练模型
+	//trainer.Train(model, X_train, Y_train, 10, 0.01)
+	//
 	// 测试模型
 	testData, err := mnist.LoadMNIST("./dataset/MNIST/raw/t10k-images-idx3-ubyte", "./dataset/MNIST/raw/t10k-labels-idx1-ubyte")
 	if err != nil {

@@ -134,6 +134,52 @@ func (m *Matrix) Flatten() *Matrix {
 	return m.Reshape(m.Cols, 1)
 }
 
+func (m *Matrix) FlattenByDim(startDim, endDim int) *Matrix {
+	if startDim < 0 || startDim >= m.Dimensions() {
+		panic("Invalid startDim")
+	}
+	if endDim < -1 || endDim >= m.Dimensions() {
+		panic("Invalid endDim")
+	}
+
+	if endDim == -1 {
+		endDim = m.Dimensions() - 1 // -1 代表最后一个维度
+	}
+
+	// 计算展平后矩阵的维度
+	rows := 1
+	cols := 1
+
+	// 计算从 startDim 到 endDim 展平的维度
+	for i := startDim; i <= endDim; i++ {
+		rows *= m.DimSize(i)
+	}
+
+	// 计算剩余的维度
+	for i := endDim + 1; i < m.Dimensions(); i++ {
+		cols *= m.DimSize(i)
+	}
+
+	// 调用 Reshape 进行展平
+	return m.Reshape(rows, cols)
+}
+
+// Dimensions 获取矩阵的维度数量
+func (m *Matrix) Dimensions() int {
+	// 对于二维矩阵，只有行和列两维
+	return 2
+}
+
+// DimSize 获取指定维度的大小，dim = 0 时返回行数，dim = 1 时返回列数
+func (m *Matrix) DimSize(dim int) int {
+	if dim == 0 {
+		return m.Rows
+	} else if dim == 1 {
+		return m.Cols
+	}
+	panic("invalid dimension")
+}
+
 // Clone 深拷贝矩阵
 func (m *Matrix) Clone() *Matrix {
 	return Copy(m)
