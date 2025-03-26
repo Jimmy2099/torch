@@ -74,5 +74,5 @@ func main() {
 	torch.NewLinearLayer(64*7*7, 128)
 	torch.NewLinearLayer(128, 10)
 	torch.NewReLULayer()
-	torch.NewMaxPoolLayer(2, 2)
+	torch.NewMaxPool2DLayer(2, 2, 0)
 }

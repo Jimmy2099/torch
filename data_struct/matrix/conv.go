@@ -199,3 +199,46 @@ func (m *Matrix) SumByDim(dim int) *Matrix {
 	}
 	panic("invalid dimension for sum")
 }
+
+// Pad 在矩阵四周添加 padding 数量的零填充
+func (m *Matrix) Pad(padding int) *Matrix {
+	newRows := m.Rows + 2*padding
+	newCols := m.Cols + 2*padding
+	// 初始化全零矩阵
+	paddedData := make([][]float64, newRows)
+	for i := range paddedData {
+		paddedData[i] = make([]float64, newCols)
+	}
+	// 将原矩阵拷贝到中间位置
+	for i := 0; i < m.Rows; i++ {
+		for j := 0; j < m.Cols; j++ {
+			paddedData[i+padding][j+padding] = m.Data[i][j]
+		}
+	}
+	return &Matrix{
+		Rows: newRows,
+		Cols: newCols,
+		Data: paddedData,
+	}
+}
+
+// Crop 裁剪掉矩阵四周 padding 数量的边界
+func (m *Matrix) Crop(padding int) *Matrix {
+	if padding == 0 {
+		return m
+	}
+	newRows := m.Rows - 2*padding
+	newCols := m.Cols - 2*padding
+	croppedData := make([][]float64, newRows)
+	for i := 0; i < newRows; i++ {
+		croppedData[i] = make([]float64, newCols)
+		for j := 0; j < newCols; j++ {
+			croppedData[i][j] = m.Data[i+padding][j+padding]
+		}
+	}
+	return &Matrix{
+		Rows: newRows,
+		Cols: newCols,
+		Data: croppedData,
+	}
+}
