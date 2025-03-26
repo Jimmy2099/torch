@@ -28,7 +28,7 @@ type CNN struct {
 	fc1   *torch.LinearLayer
 	fc2   *torch.LinearLayer
 	relu  *torch.ReLULayer
-	pool  *torch.MaxPoolLayer
+	pool  *torch.MaxPool2DLayer
 }
 
 func (c *CNN) Parameters() []*matrix.Matrix {
@@ -36,55 +36,51 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 	panic("implement me")
 }
 
-func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
-	//TODO
-	//(1,1,28,28)
-	//(1,32,28,28)
-	//(1,32,14,14)
-	//(1,64,14,14)
-	//(1,64,7,7)
-	//(1,3136)
-	//(1,128)
-	//(1,10)
-
+// Forward performs the forward pass of the CNN.
+func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting Forward Pass ===")
-	fmt.Printf("Input shape: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("Input shape: %v\n", x.Shape)
+
+	// Reshape input to (1, 1, 28, 28)
+	x = x.Reshape([]int{1, 1, 28, 28})
 
 	fmt.Println("\nConv1:")
 	x = c.conv1.Forward(x)
-	fmt.Printf("After conv1: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After conv1: %v\n", x.Shape)
 
 	fmt.Println("\nReLU1:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu1: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After relu1: %v\n", x.Shape)
 
 	fmt.Println("\nConv2:")
 	x = c.conv2.Forward(x)
-	fmt.Printf("After conv2: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After conv2: %v\n", x.Shape)
 
 	fmt.Println("\nReLU2:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu2: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After relu2: %v\n", x.Shape)
 
 	fmt.Println("\nPool:")
 	x = c.pool.Forward(x)
-	fmt.Printf("After pool: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After pool: %v\n", x.Shape)
 
 	fmt.Println("\nFlatten:")
 	x = x.Flatten()
-	fmt.Printf("After flatten: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After flatten: %v\n", x.Shape)
 
 	fmt.Println("\nFC1:")
-	x = c.fc1.Forward(x)
-	fmt.Printf("After fc1: (%d, %d)\n", x.Rows, x.Cols)
+	x = c.fc1.Forward(x) // Perform forward pass
+
+	fmt.Printf("After fc1: %v\n", x.Shape)
 
 	fmt.Println("\nReLU3:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu3: (%d, %d)\n", x.Rows, x.Cols)
+	fmt.Printf("After relu3: %v\n", x.Shape)
 
 	fmt.Println("\nFC2:")
-	x = c.fc2.Forward(x)
-	fmt.Printf("After fc2: (%d, %d)\n", x.Rows, x.Cols)
+	x = c.fc2.Forward(x) // Perform forward pass
+
+	fmt.Printf("After fc2: %v\n", x.Shape)
 
 	fmt.Println("\n=== Forward Pass Complete ===")
 	return x
@@ -196,7 +192,7 @@ func main() {
 	//Y_train := trainData.Labels
 
 	// 创建CNN模型
-	tensor.NewTensor([]float64{}, []int{1, 1, 28, 28})
+
 	model := NewCNN()
 	//trainer := torch.NewBasicTrainer(CrossEntropyLoss)
 
@@ -241,19 +237,19 @@ func CrossEntropyLoss(predictions, targets *matrix.Matrix) float64 {
 
 // Evaluate 计算模型准确率
 func Evaluate(model *CNN, inputs, targets *matrix.Matrix) float64 {
-	outputs := model.Forward(inputs)
-	predictions := outputs.ArgMax()
-	correct := 0
-	for i := 0; i < predictions.Size(); i++ {
-		if predictions.At(i, 0) == targets.At(i, 0) {
-			correct++
-		}
-	}
-	return float64(correct) / float64(predictions.Size())
+	//outputs := model.Forward(inputs)
+	//predictions := outputs.ArgMax()
+	//correct := 0
+	//for i := 0; i < predictions.Size(); i++ {
+	//	if predictions.At(i, 0) == targets.At(i, 0) {
+	//		correct++
+	//	}
+	//}
+	return 0 //float64(correct) / float64(predictions.Size())
 }
 
 // ReadCSV reads an image from a CSV file and converts it to a matrix
-func ReadCSV(filepath string) (*matrix.Matrix, error) {
+func ReadCSV(filepath string) (*tensor.Tensor, error) {
 	// Open the CSV file
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -290,19 +286,20 @@ func ReadCSV(filepath string) (*matrix.Matrix, error) {
 		}
 	}
 
-	// Create a 28x28 matrix from the flattened image data
-	mat := matrix.NewMatrixFromSlice1D(data, 28, 28)
-	//matrix(data)
+	// Create a Tensor from the flattened image data
+	tensorImage := tensor.NewTensor(data, []int{28, 28})
 
 	// Normalize pixel values to [0, 1] range (MNIST images are 0-255)
-	mat.DivScalar(255.0) // Normalize image pixels to [0,1]
+	for i := range tensorImage.Data {
+		tensorImage.Data[i] /= 255.0
+	}
 
-	return mat, nil
+	return tensorImage, nil
 }
 
 // LoadDataFromCSVDir loads image data from a directory of CSV files and returns matrices and labels
-func LoadDataFromCSVDir(directory string) ([]*matrix.Matrix, []string, error) {
-	var matrices []*matrix.Matrix
+func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
+	var tensors []*tensor.Tensor
 	var labels []string
 
 	// Open the labels CSV file (assuming it's named 'labels.csv' and has the format: filename,label)
@@ -355,7 +352,7 @@ func LoadDataFromCSVDir(directory string) ([]*matrix.Matrix, []string, error) {
 		}
 
 		// Add the matrix and label to the slices
-		matrices = append(matrices, image)
+		tensors = append(tensors, image)
 		labels = append(labels, label)
 
 		return nil
@@ -365,16 +362,17 @@ func LoadDataFromCSVDir(directory string) ([]*matrix.Matrix, []string, error) {
 		return nil, nil, fmt.Errorf("error walking through directory: %v", err)
 	}
 
-	return matrices, labels, nil
+	return tensors, labels, nil
 }
 
 // Predict function that takes in an image matrix and the model and returns the predicted label
-func Predict(model *CNN, image *matrix.Matrix) string {
+func Predict(model *CNN, image *tensor.Tensor) string {
 	// Pass the image through the model's forward pass
 	output := model.Forward(image)
 
 	// Find the index with the maximum value (this will be the predicted class)
-	predictedClass := output.ArgMax()
+	reshapedTensor := &matrix.Matrix{Data: [][]float64{output.Data}, Rows: 1, Cols: len(output.Data)} // Convert tensor to matrix
+	predictedClass := reshapedTensor.ArgMax()
 
 	// Return the label corresponding to the predicted class
 	return fmt.Sprintf("Predicted Class: %d", predictedClass)

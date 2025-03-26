@@ -2,24 +2,24 @@ package torch
 
 import (
 	"fmt"
-	"github.com/Jimmy2099/torch/data_struct/matrix"
+	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"time"
 )
 
 // BasicTrainer 实现基本的训练器
 type BasicTrainer struct {
-	LossFunc func(predictions, targets *matrix.Matrix) float64
+	LossFunc func(predictions, targets *tensor.Tensor) float64
 	Verbose  bool
 }
 
-func NewBasicTrainer(lossFunc func(predictions, targets *matrix.Matrix) float64) *BasicTrainer {
+func NewBasicTrainer(lossFunc func(predictions, targets *tensor.Tensor) float64) *BasicTrainer {
 	return &BasicTrainer{
 		LossFunc: lossFunc,
 		Verbose:  true,
 	}
 }
 
-func (t *BasicTrainer) Train(model Model, inputs, targets *matrix.Matrix, epochs int, learningRate float64) {
+func (t *BasicTrainer) Train(model Model, inputs, targets *tensor.Tensor, epochs int, learningRate float64) {
 	start := time.Now()
 
 	// 记录损失历史
@@ -60,7 +60,7 @@ func printLoss(lossHistory []float64) {
 	}
 }
 
-func (t *BasicTrainer) Validate(model Model, inputs, targets *matrix.Matrix) float64 {
+func (t *BasicTrainer) Validate(model Model, inputs, targets *tensor.Tensor) float64 {
 	outputs := model.Forward(inputs)
 	return t.LossFunc(outputs, targets)
 }
