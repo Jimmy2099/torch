@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/Jimmy2099/torch"
 	"log"
 	"os"
 	"path/filepath"
@@ -64,10 +65,14 @@ func main() {
 
 	//        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
 	//        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
-	//        self.fc1 = torch.nn.Linear(64 * 7 * 7, out_features=128)
+	//        self.fc1 = torch.nn.Linear(in_features=64 * 7 * 7, out_features=128)
 	//        self.fc2 = torch.nn.Linear(in_features=128, out_features=10)
 	//        self.relu = torch.nn.ReLU()
 	//        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-	//torch.NewConvLayer()
-
+	torch.NewConvLayer(1, 32, 3, 3, 1)
+	torch.NewConvLayer(32, 64, 3, 1, 1)
+	torch.NewLinearLayer(64*7*7, 128)
+	torch.NewLinearLayer(128, 10)
+	torch.NewReLULayer()
+	torch.NewMaxPoolLayer(2, 2)
 }
