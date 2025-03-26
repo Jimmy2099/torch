@@ -35,12 +35,56 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 	panic("implement me")
 }
 
+func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
+	fmt.Println("\n=== Starting Forward Pass ===")
+	fmt.Printf("Input shape: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nConv1:")
+	x = c.conv1.Forward(x)
+	fmt.Printf("After conv1: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nReLU1:")
+	x = c.relu.Forward(x)
+	fmt.Printf("After relu1: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nConv2:")
+	x = c.conv2.Forward(x)
+	fmt.Printf("After conv2: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nReLU2:")
+	x = c.relu.Forward(x)
+	fmt.Printf("After relu2: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nPool:")
+	x = c.pool.Forward(x)
+	fmt.Printf("After pool: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nFlatten:")
+	x = x.Flatten()
+	fmt.Printf("After flatten: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nFC1:")
+	x = c.fc1.Forward(x)
+	fmt.Printf("After fc1: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nReLU3:")
+	x = c.relu.Forward(x)
+	fmt.Printf("After relu3: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\nFC2:")
+	x = c.fc2.Forward(x)
+	fmt.Printf("After fc2: (%d, %d)\n", x.Rows, x.Cols)
+
+	fmt.Println("\n=== Forward Pass Complete ===")
+	return x
+}
+
 func NewCNN() *CNN {
 	rand.Seed(time.Now().UnixNano())
 	cnn := &CNN{
-		conv1: torch.NewConvLayer(1, 32, 3, 3, 1),
-		conv2: torch.NewConvLayer(32, 64, 3, 1, 1),
-		fc1:   torch.NewLinearLayer(64*7*7, 128),
+		conv1: torch.NewConvLayer(1, 32, 3, 1, 1),  // in=1, out=32, kernel=3, stride=1, pad=1
+		conv2: torch.NewConvLayer(32, 64, 3, 1, 1), // in=32, out=64, kernel=3, stride=1, pad=1
+		fc1:   torch.NewLinearLayer(64*7*7, 128),   // 64*7*7=3136
 		fc2:   torch.NewLinearLayer(128, 10),
 		relu:  torch.NewReLULayer(),
 		pool:  torch.NewMaxPool2DLayer(2, 2, 0),
@@ -114,34 +158,6 @@ func NewCNN() *CNN {
 	return cnn
 }
 
-func (c *CNN) Forward(x *matrix.Matrix) *matrix.Matrix {
-	// 前向传播
-	//x = self.relu(x.conv1(x))
-	//x = self.pool(x)
-
-	//x = self.relu(self.conv2(x))
-	//x = self.pool(x)
-
-	//x = torch.flatten(x, 1)
-	//x = self.relu(self.fc1(x))
-	//x = self.fc2(x)
-
-	x = c.conv1.Forward(x)
-	x = c.relu.Forward(x)
-
-	x = c.conv2.Forward(x)
-	x = c.relu.Forward(x)
-	x = c.pool.Forward(x)
-
-	x = x.Flatten()
-
-	x = c.fc1.Forward(x)
-	x = c.relu.Forward(x)
-	x = c.fc2.Forward(x)
-
-	return x
-}
-
 // TODO Backward
 func (c *CNN) Backward(targets *matrix.Matrix, lr float64) {
 	//// 反向传播
@@ -197,7 +213,8 @@ func main() {
 			fmt.Printf("First Image Matrix:\n%v\n", images[0])
 			fmt.Printf("First Image Label: %s\n", labels[0])
 		}
-		fmt.Println(model.Forward(images[0]))
+
+		fmt.Println(Predict(model, images[0]))
 	}
 
 	// 计算测试集准确率
@@ -337,4 +354,16 @@ func LoadDataFromCSVDir(directory string) ([]*matrix.Matrix, []string, error) {
 	}
 
 	return matrices, labels, nil
+}
+
+// Predict function that takes in an image matrix and the model and returns the predicted label
+func Predict(model *CNN, image *matrix.Matrix) string {
+	// Pass the image through the model's forward pass
+	output := model.Forward(image)
+
+	// Find the index with the maximum value (this will be the predicted class)
+	predictedClass := output.ArgMax()
+
+	// Return the label corresponding to the predicted class
+	return fmt.Sprintf("Predicted Class: %d", predictedClass)
 }

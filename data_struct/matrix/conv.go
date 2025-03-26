@@ -1,61 +1,85 @@
 package matrix
 
+
 // Conv2D 实现二维卷积操作
 func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入维度：(channels, height, width)
-	// 权重维度：(out_channels, in_channels * kernelSize * kernelSize)
-	// 输出维度：(out_channels, out_height, out_width)
+    // 输入维度：(1, height, width) 对于MNIST单通道图像
+    // 权重维度：(out_channels, kernelSize*kernelSize)
+    // 输出维度：(out_channels, out_height, out_width)
 
-	// 获取输入参数
-	//inChannels := m.Rows
-	inHeight := m.Cols // 假设输入是单通道展开形式，实际需要调整维度处理
-	outChannels := weights.Rows
+    // 计算输出空间尺寸
+    outHeight := (m.Rows+2*pad-kernelSize)/stride + 1
+    outWidth := (m.Cols+2*pad-kernelSize)/stride + 1
 
-	// 计算输出空间尺寸
-	outHeight := (inHeight+2*pad-kernelSize)/stride + 1
-	outWidth := outHeight // 假设输入是正方形
+    // 执行im2col展开
+    unfolded := m.im2col(kernelSize, stride, pad)
 
-	// 执行im2col展开
-	unfolded := m.im2col(kernelSize, stride, pad)
+    // 矩阵乘法：weights * unfolded
+    result := weights.Multiply(unfolded)
 
-	// 矩阵乘法：weights * unfolded
-	result := weights.Multiply(unfolded)
-
-	// 重新排列为输出形状
-	return result.Reshape(outChannels, outHeight*outWidth)
+    // 重新排列为输出形状
+    return result.Reshape(weights.Rows, outHeight*outWidth)
 }
 
 // im2col 将输入矩阵展开为卷积运算需要的二维形式
-func (m Matrix) im2col(kernelSize, stride, pad int) *Matrix {
-	// 输入维度：(channels, heightwidth)
-	// 输出维度：(kernelSizekernelSizechannels, out_hout_w)
+func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
+    // 输入维度：(1, height, width) 对于MNIST单通道图像
+    // 输出维度：(kernelSize*kernelSize, out_h*out_w)
 
-	// 添加padding
-	padded := m.Pad2D(pad)
+    // 添加padding
+    padded := m.Pad2D(pad)
 
-	// 计算输出尺寸
-	outH := (padded.Rows+2*pad-kernelSize)/stride + 1
-	outW := (padded.Cols+2*pad-kernelSize)/stride + 1
+    // 计算输出尺寸
+    outH := (padded.Rows-kernelSize)/stride + 1
+    outW := (padded.Cols-kernelSize)/stride + 1
 
-	// 展开操作
-	cols := NewMatrix(kernelSize*kernelSize*m.Rows, outH*outW)
+    // 展开操作 - 对于单通道输入，输出维度是 kernelSize^2 x (outH*outW)
+    cols := NewMatrix(kernelSize*kernelSize, outH*outW)
 
-	for h := 0; h < outH; h++ {
-		for w := 0; w < outW; w++ {
-			// 获取当前感受野
-			rowStart := h * stride
-			rowEnd := rowStart + kernelSize
-			colStart := w * stride
-			colEnd := colStart + kernelSize
+    // 遍历每个 patch
+    for h := 0; h < outH; h++ {
+        for w := 0; w < outW; w++ {
+            // 获取当前感受野的位置
+            rowStart := h * stride
+            rowEnd := rowStart + kernelSize
+            colStart := w * stride
+            colEnd := colStart + kernelSize
 
-			// 提取并展平区域
-			patch := padded.GetRows(rowStart, rowEnd).GetCols(colStart, colEnd)
-			cols.SetCol(h*outW+w, patch.Flatten())
-		}
-	}
-	return cols
+            // 提取当前的感受野
+            patch := padded.GetRows(rowStart, rowEnd).GetCols(colStart, colEnd)
+            
+            // 展平patch为一个列向量
+            flattened := make([]float64, kernelSize*kernelSize)
+            idx := 0
+            for i := 0; i < patch.Rows; i++ {
+                for j := 0; j < patch.Cols; j++ {
+                    flattened[idx] = patch.Data[i][j]
+                    idx++
+                }
+            }
+
+            // 设置到对应的列
+            for i := 0; i < kernelSize*kernelSize; i++ {
+                cols.Data[i][h*outW+w] = flattened[i]
+            }
+        }
+    }
+
+    return cols
 }
-
+// Repeat 将矩阵沿行和列方向重复
+func (m *Matrix) Repeat(rowRepeat, colRepeat int) *Matrix {
+    newRows := m.Rows * rowRepeat
+    newCols := m.Cols * colRepeat
+    result := NewMatrix(newRows, newCols)
+    
+    for i := 0; i < newRows; i++ {
+        for j := 0; j < newCols; j++ {
+            result.Data[i][j] = m.Data[i%m.Rows][j%m.Cols]
+        }
+    }
+    return result
+}
 // Conv2DGradWeights 计算权重梯度
 func (m Matrix) Conv2DGradWeights(gradOutput *Matrix, kernelSize, stride, pad int) *Matrix {
 	// 输入梯度维度：(out_channels, out_hout_w)
@@ -131,7 +155,7 @@ func (m *Matrix) Pad2D(pad int) *Matrix {
 
 // Flatten 展平矩阵为列向量
 func (m *Matrix) Flatten() *Matrix {
-	return m.Reshape(m.Cols, 1)
+	return m.Reshape(m.Cols*m.Rows, 1)
 }
 
 func (m *Matrix) FlattenByDim(startDim, endDim int) *Matrix {
