@@ -1,4 +1,4 @@
-# Torch
+# Torch - ML Library From Scratch
 
 ![CNN From Scratch](images/02_cnn.png)
 
