@@ -46,8 +46,8 @@ import numpy as np
 for name, param in model.named_parameters():
     # if name == "embedder.weight":
     #     continue
-    print(f"Layer: {name}, Shape: {param.shape}")
     param_np = param.detach().cpu().numpy()
+    print(f"Layer: {name}, Shape: {param.shape}, dim: {param_np.ndim}")
 
     # 处理四维张量（卷积层）
     if param_np.ndim == 4:

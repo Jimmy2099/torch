@@ -59,37 +59,59 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	}
 }
 
+
 func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	// 保存输入用于反向传播
 	c.InputCache = x.Clone()
 
-	// 执行卷积操作 (修改为接收两个返回值)
+	// 执行卷积操作
 	convOut, err := x.Conv2D(c.Weights, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)
 	}
 
-	// 广播偏置到与convOut相同的维度 (修改为接收两个返回值)
-	biasBroadcast := c.Bias.Repeat(1, convOut.Shape[1])
+	// 处理偏置广播 - 改进版
+	var biasBroadcast *tensor.Tensor
+	switch len(convOut.Shape) {
+	case 1: // 1D输出 (out_channels,)
+		biasBroadcast = c.Bias
+	case 2: // 2D输出 (out_channels, out_size)
+		// 将偏置从(out_channels,1)扩展到(out_channels,out_size)
+		biasBroadcast = c.Bias.Repeat(1, convOut.Shape[1])
+	case 4: // 4D输出 (batch, out_channels, height, width)
+		// 改进的4D广播方式 - 先reshape再expand
+		biasBroadcast = c.Bias.Reshape([]int{1, c.OutChannels, 1, 1})
+		// 使用Expand代替Repeat
+		biasBroadcast = biasBroadcast.Expand([]int{
+			convOut.Shape[0],  // batch
+			c.OutChannels,     // channels
+			convOut.Shape[2],  // height
+			convOut.Shape[3],  // width
+		})
+	default:
+		panic("unsupported output shape from convolution")
+	}
 
-	// 添加偏置 (修改为接收两个返回值)
+	// 添加偏置
 	result := convOut.Add(biasBroadcast)
 
 	return result
 }
+
 func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
-	// 计算权重梯度
+	// 计算权重梯度 (支持批处理)
 	gradWeights, err := c.InputCache.Conv2DGradWeights(gradOutput, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)
 	}
 	c.GradWeights = gradWeights
 
-	// 计算偏置梯度
-	gradBias := gradOutput.SumByDim(1) // 沿通道维度求和
+	// 计算偏置梯度 (支持批处理)
+	gradBias := gradOutput.SumByDim(0) // 沿批处理维度求和
+	gradBias = gradBias.SumByDim(1)    // 沿空间维度求和
 	c.GradBias = gradBias
 
-	// 计算输入梯度
+	// 计算输入梯度 (支持批处理)
 	gradInput, err := gradOutput.Conv2DGradInput(c.Weights, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)

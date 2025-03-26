@@ -26,6 +26,14 @@ class CNN(torch.nn.Module):
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):
+        #(1, 1, 28, 28)
+        #(1, 32, 28, 28)
+        #(1, 32, 14, 14)
+        #(1, 64, 14, 14)
+        #(1, 64, 7, 7)
+        #(1, 3136)
+        #(1, 128)
+        #(1, 10)
         x = self.conv1(x)
         x = self.relu(x)
         x = self.pool(x)

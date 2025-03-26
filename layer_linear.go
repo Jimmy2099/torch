@@ -1,6 +1,7 @@
 package torch
 
 import (
+	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"math"
@@ -24,20 +25,19 @@ type LinearLayer struct {
 
 // SetWeights 设置权重
 func (l *LinearLayer) SetWeights(data []float64) {
-    if len(data) != l.OutputDim*l.InputDim {
-        panic("weights data length mismatch")
-    }
-    l.Weights = tensor.NewTensor(data, []int{l.OutputDim, l.InputDim})
+	if len(data) != l.OutputDim*l.InputDim {
+		panic("weights data length mismatch")
+	}
+	l.Weights = tensor.NewTensor(data, []int{l.OutputDim, l.InputDim})
 }
 
 // SetBias 设置偏置
 func (l *LinearLayer) SetBias(data []float64) {
-    if len(data) != l.OutputDim {
-        panic("bias data length mismatch")
-    }
-    l.Bias = tensor.NewTensor(data, []int{l.OutputDim, 1})
+	if len(data) != l.OutputDim {
+		panic("bias data length mismatch")
+	}
+	l.Bias = tensor.NewTensor(data, []int{l.OutputDim, 1})
 }
-
 
 // Parameters 返回所有可训练参数
 func (l *LinearLayer) Parameters() []*tensor.Tensor {
@@ -114,8 +114,21 @@ func (l *LinearLayer) NumParams() int {
 
 func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	// 检查输入维度
-	if len(x.Shape) != 2 || x.Shape[1] != l.InputDim {
-		panic("input dimension mismatch")
+	if len(x.Shape) == 1 {
+		// 如果是一维输入，转换为二维 [1, n]
+		x = tensor.NewTensor(x.Data, []int{1, x.Shape[0]})
+	} else if len(x.Shape) != 2 {
+		panic(fmt.Sprintf("input must be 1D or 2D tensor, got %v", x.Shape))
+	}
+
+	// 确保输入的第二维与InputDim匹配
+	if x.Shape[1] != l.InputDim {
+		// 尝试转置输入矩阵
+		if x.Shape[0] == l.InputDim {
+			x = tensor.Transpose(x)
+		} else {
+			panic(fmt.Sprintf("input dimension mismatch: got %v, expected [?,%d]", x.Shape, l.InputDim))
+		}
 	}
 
 	// 矩阵乘法: Wx + b
@@ -128,13 +141,17 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 		weightsMatrix.Data[i] = l.Weights.Data[i*l.Weights.Shape[1] : (i+1)*l.Weights.Shape[1]]
 	}
 
+	// 转置输入矩阵以匹配权重矩阵的维度
 	inputMatrix := &matrix.Matrix{
-		Data: make([][]float64, x.Shape[0]),
-		Rows: x.Shape[0],
-		Cols: x.Shape[1],
+		Data: make([][]float64, x.Shape[1]),
+		Rows: x.Shape[1],
+		Cols: x.Shape[0],
 	}
-	for i := 0; i < x.Shape[0]; i++ {
-		inputMatrix.Data[i] = x.Data[i*x.Shape[1] : (i+1)*x.Shape[1]]
+	for i := 0; i < x.Shape[1]; i++ {
+		inputMatrix.Data[i] = make([]float64, x.Shape[0])
+		for j := 0; j < x.Shape[0]; j++ {
+			inputMatrix.Data[i][j] = x.Data[j*x.Shape[1]+i]
+		}
 	}
 
 	// 执行矩阵乘法

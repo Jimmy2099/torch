@@ -158,33 +158,6 @@ func (t *Tensor) DivScalar(scalar float64) *Tensor {
 	return &Tensor{Data: result, Shape: t.Shape}
 }
 
-// MatMul 矩阵乘法
-func (t *Tensor) MatMul(other *Tensor) *Tensor {
-	// 简单实现，假设是2D矩阵
-	if len(t.Shape) != 2 || len(other.Shape) != 2 {
-		panic("MatMul requires 2D tensors")
-	}
-	if t.Shape[1] != other.Shape[0] {
-		panic("matrix dimensions mismatch")
-	}
-
-	m, n := t.Shape[0], other.Shape[1]
-	k := t.Shape[1]
-	result := make([]float64, m*n)
-
-	for i := 0; i < m; i++ {
-		for j := 0; j < n; j++ {
-			sum := 0.0
-			for l := 0; l < k; l++ {
-				sum += t.Data[i*k+l] * other.Data[l*n+j]
-			}
-			result[i*n+j] = sum
-		}
-	}
-
-	return &Tensor{Data: result, Shape: []int{m, n}}
-}
-
 // Sum 不带参数的求和
 func (t *Tensor) Sum111() *Tensor {
 	sum := 0.0

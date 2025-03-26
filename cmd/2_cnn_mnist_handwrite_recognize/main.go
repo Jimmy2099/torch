@@ -41,45 +41,54 @@ func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting Forward Pass ===")
 	fmt.Printf("Input shape: %v\n", x.Shape)
 
-	// Reshape input to (1, 1, 28, 28)
-	x = x.Reshape([]int{1, 1, 28, 28})
-
+	// Conv1: (1,1,28,28) -> (1,32,28,28)
 	fmt.Println("\nConv1:")
 	x = c.conv1.Forward(x)
 	fmt.Printf("After conv1: %v\n", x.Shape)
 
+	// ReLU1: (1,32,28,28) -> (1,32,28,28)
 	fmt.Println("\nReLU1:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu1: %v\n", x.Shape)
 
+	// Pool1: (1,32,28,28) -> (1,32,14,14)
+	fmt.Println("\nPool1:")
+	x = c.pool.Forward(x)
+	fmt.Printf("After pool1: %v\n", x.Shape)
+
+	// Conv2: (1,32,14,14) -> (1,64,14,14)
 	fmt.Println("\nConv2:")
 	x = c.conv2.Forward(x)
 	fmt.Printf("After conv2: %v\n", x.Shape)
 
+	// ReLU2: (1,64,14,14) -> (1,64,14,14)
 	fmt.Println("\nReLU2:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu2: %v\n", x.Shape)
 
-	fmt.Println("\nPool:")
+	// Pool2: (1,64,14,14) -> (1,64,7,7)
+	fmt.Println("\nPool2:")
 	x = c.pool.Forward(x)
-	fmt.Printf("After pool: %v\n", x.Shape)
+	fmt.Printf("After pool2: %v\n", x.Shape)
 
+	// Flatten: (1,64,7,7) -> (1,3136)
 	fmt.Println("\nFlatten:")
 	x = x.Flatten()
 	fmt.Printf("After flatten: %v\n", x.Shape)
 
+	// FC1: (1,3136) -> (1,128)
 	fmt.Println("\nFC1:")
-	x = c.fc1.Forward(x) // Perform forward pass
-
+	x = c.fc1.Forward(x)
 	fmt.Printf("After fc1: %v\n", x.Shape)
 
+	// ReLU3: (1,128) -> (1,128)
 	fmt.Println("\nReLU3:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu3: %v\n", x.Shape)
 
+	// FC2: (1,128) -> (1,10)
 	fmt.Println("\nFC2:")
-	x = c.fc2.Forward(x) // Perform forward pass
-
+	x = c.fc2.Forward(x)
 	fmt.Printf("After fc2: %v\n", x.Shape)
 
 	fmt.Println("\n=== Forward Pass Complete ===")
@@ -117,7 +126,8 @@ func NewCNN() *CNN {
 			panic(err)
 		}
 		cnn.conv1.SetBias(biasData.Data)
-
+		cnn.conv1.Weights.Reshape([]int{32, 1, 3, 3})
+		cnn.conv1.Bias.Reshape([]int{32})
 	}
 	{
 		num := 1
@@ -132,6 +142,8 @@ func NewCNN() *CNN {
 			panic(err)
 		}
 		cnn.conv2.SetBias(biasData.Data)
+		cnn.conv2.Weights.Reshape([]int{64, 32, 3, 3})
+		cnn.conv2.Bias.Reshape([]int{64})
 	}
 	{
 		num := 2
@@ -146,6 +158,8 @@ func NewCNN() *CNN {
 			panic(err)
 		}
 		cnn.fc1.SetBias(biasData.Data)
+		cnn.fc1.Weights.Reshape([]int{128, 3136})
+		cnn.fc1.Bias.Reshape([]int{128})
 	}
 	{
 		num := 3
@@ -160,7 +174,8 @@ func NewCNN() *CNN {
 			panic(err)
 		}
 		cnn.fc2.SetBias(biasData.Data)
-
+		cnn.fc2.Weights.Reshape([]int{10, 128})
+		cnn.fc2.Bias.Reshape([]int{10})
 	}
 	return cnn
 }
@@ -222,7 +237,7 @@ func main() {
 			fmt.Printf("First Image Label: %s\n", labels[0])
 		}
 
-		fmt.Println(Predict(model, images[0]))
+		fmt.Println(Predict(model, images[4]))
 	}
 
 	// 计算测试集准确率
@@ -368,6 +383,7 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 // Predict function that takes in an image matrix and the model and returns the predicted label
 func Predict(model *CNN, image *tensor.Tensor) string {
 	// Pass the image through the model's forward pass
+	image = image.Reshape([]int{1, 1, 28, 28})
 	output := model.Forward(image)
 
 	// Find the index with the maximum value (this will be the predicted class)
