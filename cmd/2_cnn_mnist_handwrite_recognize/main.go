@@ -237,7 +237,9 @@ func main() {
 			fmt.Printf("First Image Label: %s\n", labels[0])
 		}
 
-		fmt.Println(Predict(model, images[4]))
+		num := 4
+		prediction := Predict(model, images[num])
+		fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
 	}
 
 	// 计算测试集准确率
@@ -304,92 +306,79 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 	// Create a Tensor from the flattened image data
 	tensorImage := tensor.NewTensor(data, []int{28, 28})
 
-	// Normalize pixel values to [0, 1] range (MNIST images are 0-255)
-	for i := range tensorImage.Data {
-		tensorImage.Data[i] /= 255.0
-	}
-
 	return tensorImage, nil
 }
 
-// LoadDataFromCSVDir loads image data from a directory of CSV files and returns matrices and labels
 func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 	var tensors []*tensor.Tensor
 	var labels []string
 
-	// Open the labels CSV file (assuming it's named 'labels.csv' and has the format: filename,label)
+	// 读取标签文件
 	labelFilePath := filepath.Join(directory, "labels.csv")
 	labelFile, err := os.Open(labelFilePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not open labels file: %v", err)
+		return nil, nil, fmt.Errorf("无法打开标签文件: %v", err)
 	}
 	defer labelFile.Close()
 
-	// Read labels CSV file
-	labelReader := csv.NewReader(labelFile)
-	labelLines, err := labelReader.ReadAll()
+	reader := csv.NewReader(labelFile)
+	labelRecords, err := reader.ReadAll()
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not read labels CSV: %v", err)
+		return nil, nil, fmt.Errorf("读取标签CSV失败: %v", err)
 	}
 
-	// Create a map of filenames to labels (for easy access)
+	// 创建文件名到标签的映射
 	labelMap := make(map[string]string)
-	for _, line := range labelLines {
-		if len(line) < 2 {
+	for _, record := range labelRecords {
+		if len(record) >= 2 {
+			filename := strings.TrimSpace(record[0])
+			label := strings.TrimSpace(record[1])
+			labelMap[filename] = label
+		}
+	}
+
+	// 读取图像文件
+	files, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取目录失败: %v", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || file.Name() == "labels.csv" {
 			continue
 		}
-		labelMap[line[0]] = line[1]
-	}
+		if !strings.Contains(file.Name(), "png.csv") {
+			continue
+		}
 
-	// Iterate over all CSV image files in the directory
-	err = filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		imagePath := filepath.Join(directory, file.Name())
+		image, err := ReadCSV(imagePath)
 		if err != nil {
-			return err
+			log.Printf("读取图像文件 %s 失败: %v", file.Name(), err)
+			continue
 		}
 
-		// Skip directories and ensure we're dealing with CSV files (except the labels CSV)
-		if info.IsDir() || strings.HasSuffix(path, "labels.csv") {
-			return nil
-		}
+		// 获取对应的标签
+		label := file.Name()
 
-		// Read the image CSV file
-		image, err := ReadCSV(path)
-		if err != nil {
-			log.Printf("Error reading image CSV %s: %v", path, err)
-			return nil // Skip this image and continue with the next one
-		}
-
-		// Extract the image filename (assume the file name is the same as the CSV name)
-		_, filename := filepath.Split(path)
-		label, ok := labelMap[filename]
-		if !ok {
-			label = "unknown" // If no label found, mark it as unknown
-		}
-
-		// Add the matrix and label to the slices
 		tensors = append(tensors, image)
 		labels = append(labels, label)
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, nil, fmt.Errorf("error walking through directory: %v", err)
 	}
 
 	return tensors, labels, nil
 }
 
-// Predict function that takes in an image matrix and the model and returns the predicted label
-func Predict(model *CNN, image *tensor.Tensor) string {
+func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
 	// Pass the image through the model's forward pass
 	image = image.Reshape([]int{1, 1, 28, 28})
 	output := model.Forward(image)
 
-	// Find the index with the maximum value (this will be the predicted class)
-	reshapedTensor := &matrix.Matrix{Data: [][]float64{output.Data}, Rows: 1, Cols: len(output.Data)} // Convert tensor to matrix
-	predictedClass := reshapedTensor.ArgMax()
+	// Convert tensor to matrix for argmax operation
+	outputMatrix := &matrix.Matrix{
+		Data: [][]float64{output.Data},
+		Rows: 1,
+		Cols: len(output.Data),
+	}
 
-	// Return the label corresponding to the predicted class
-	return fmt.Sprintf("Predicted Class: %d", predictedClass)
+	return outputMatrix.ArgMax()
 }
