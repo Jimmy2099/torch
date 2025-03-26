@@ -1,5 +1,7 @@
 # Torch
 
+![CNN From Scratch](images/02_cnn.png)
+
 ####  EN
 This project is a Golang implementation of various machine learning algorithms.
 
