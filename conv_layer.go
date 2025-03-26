@@ -17,6 +17,12 @@ type ConvLayer struct {
 	// ... 其他字段如输入缓存等
 }
 
+func (c *ConvLayer) SetWeights(data [][]float64) {
+	c.weights = matrix.NewMatrixFromSlice(data)
+}
+func (c *ConvLayer) SetBias(data [][]float64) {
+	c.bias = matrix.NewMatrixFromSlice(data)
+}
 func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	// Xavier初始化
 	w := matrix.NewRandomMatrix(outCh, inCh*kSize*kSize).MulScalar(1.0 / float64(inCh*kSize*kSize))
@@ -61,10 +67,10 @@ func (c *ConvLayer) Backward(gradOutput *matrix.Matrix) *matrix.Matrix {
 func (c *ConvLayer) BackwardWithLR(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix {
 	// 先计算梯度
 	gradInput := c.Backward(gradOutput)
-	
+
 	// 立即更新参数
 	c.UpdateParameters(learningRate)
-	
+
 	return gradInput
 }
 

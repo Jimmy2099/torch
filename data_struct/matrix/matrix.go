@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -48,6 +49,21 @@ func NewMatrixFromSlice(data [][]float64) *Matrix {
 		}
 		for j := 0; j < cols; j++ {
 			m.Data[i][j] = data[i][j]
+		}
+	}
+	return m
+}
+
+func NewMatrixFromSlice1D(data []float64, rows, cols int) *Matrix {
+	if len(data) != rows*cols {
+		panic(fmt.Sprintf("Data length %d does not match rows * cols (%d)", len(data), rows*cols))
+	}
+
+	m := NewMatrix(rows, cols)
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			// Calculate the correct index for the 1D slice
+			m.Data[i][j] = data[i*cols+j]
 		}
 	}
 	return m
