@@ -1,6 +1,8 @@
 import torch
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import random
 
 # 数据预处理
 transform = transforms.Compose([
@@ -24,7 +26,8 @@ class CNN(torch.nn.Module):
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):
-        x = self.relu(self.conv1(x))
+        x = self.conv1(x)
+        x = self.relu(x)
         x = self.pool(x)
         x = self.relu(self.conv2(x))
         x = self.pool(x)
@@ -38,6 +41,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CNN().to(device)
 model.load_state_dict(torch.load('mnist_cnn.pth'))
 model.eval()
+print(model)
 
 # 预测
 def predict():
@@ -48,5 +52,22 @@ def predict():
             _, predicted = torch.max(output, 1)
             print(f'Image {i + 1}: Predicted Digit: {predicted.item()}')
 
+
+# 预测并显示图像
+def predict_plot():
+    indices = random.sample(range(len(testset)), 10)
+    fig, axes = plt.subplots(1, 10, figsize=(15, 1.5))
+    with torch.no_grad():
+        for i, idx in enumerate(indices):
+            image, label = testset[idx]
+            image = image.to(device).unsqueeze(0)
+            output = model(image)
+            _, predicted = torch.max(output, 1)
+            axes[i].imshow(image.cpu().squeeze(), cmap='gray')
+            axes[i].set_title(f'{predicted.item()}', fontsize=10)
+            axes[i].axis('off')
+    plt.show()
+
 if __name__ == "__main__":
     predict()
+    predict_plot()

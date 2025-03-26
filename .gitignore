@@ -3,3 +3,5 @@ dataset
 *.gguf
 etc/
 *.csv
+*.pth
+*.png

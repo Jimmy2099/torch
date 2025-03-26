@@ -21,6 +21,12 @@ type LinearLayer struct {
 	VBias       *matrix.Matrix // 偏置动量
 }
 
+func (c *LinearLayer) SetWeights(data [][]float64) {
+	c.Weights = matrix.NewMatrixFromSlice(data)
+}
+func (c *LinearLayer) SetBias(data [][]float64) {
+	c.Bias = matrix.NewMatrixFromSlice(data)
+}
 func (l *LinearLayer) Parameters() []*matrix.Matrix {
 	//TODO implement me
 	panic("implement me")
@@ -37,14 +43,14 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 	}
 
 	return &LinearLayer{
-		InputDim:  inputDim,
-		OutputDim: outputDim,
-		Weights:   weights,
-		Bias:      bias,
-		VWeights:  matrix.NewMatrix(outputDim, inputDim),  // 初始化权重动量
-		VBias:     matrix.NewMatrix(outputDim, 1),         // 初始化偏置动量
-		WeightDecay: 0.001,  // 添加默认L2正则化系数
-		Momentum:    0.9,    // 添加默认动量系数
+		InputDim:    inputDim,
+		OutputDim:   outputDim,
+		Weights:     weights,
+		Bias:        bias,
+		VWeights:    matrix.NewMatrix(outputDim, inputDim), // 初始化权重动量
+		VBias:       matrix.NewMatrix(outputDim, 1),        // 初始化偏置动量
+		WeightDecay: 0.001,                                 // 添加默认L2正则化系数
+		Momentum:    0.9,                                   // 添加默认动量系数
 	}
 }
 

@@ -8,7 +8,7 @@ type ConvLayer struct {
 	outChannels int
 	kernelSize  int
 	stride      int
-	pad         int
+	padding     int
 	weights     *matrix.Matrix
 	bias        *matrix.Matrix
 	inputCache  *matrix.Matrix // 添加输入缓存用于反向传播
@@ -17,6 +17,12 @@ type ConvLayer struct {
 	// ... 其他字段如输入缓存等
 }
 
+func (c *ConvLayer) SetWeights(data [][]float64) {
+	c.weights = matrix.NewMatrixFromSlice(data)
+}
+func (c *ConvLayer) SetBias(data [][]float64) {
+	c.bias = matrix.NewMatrixFromSlice(data)
+}
 func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	// Xavier初始化
 	w := matrix.NewRandomMatrix(outCh, inCh*kSize*kSize).MulScalar(1.0 / float64(inCh*kSize*kSize))
@@ -26,7 +32,7 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 		outChannels: outCh,
 		kernelSize:  kSize,
 		stride:      stride,
-		pad:         pad,
+		padding:     pad,
 		weights:     w,
 		bias:        b,
 		gradWeights: matrix.NewMatrix(outCh, inCh*kSize*kSize),
@@ -35,24 +41,35 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 }
 
 func (c *ConvLayer) Forward(x *matrix.Matrix) *matrix.Matrix {
-	// 缓存输入用于反向传播
-	c.inputCache = x.Clone()
-	// 实现卷积操作
-	out := x.Conv2D(c.weights, c.kernelSize, c.stride, c.pad)
-	out.Add(c.bias)
-	return out
+	// 执行卷积操作
+	convOut := x.Conv2D(c.weights, c.kernelSize, c.stride, c.padding)
+
+	// 广播偏置到与convOut相同的维度
+	biasBroadcast := c.bias.Repeat(1, convOut.Cols)
+
+	// 添加偏置
+	return convOut.Add(biasBroadcast)
 }
+
+// func (c *ConvLayer) Forward(x *matrix.Matrix) *matrix.Matrix {
+// 	// 缓存输入用于反向传播
+// 	c.inputCache = x.Clone()
+// 	// 实现卷积操作
+// 	out := x.Conv2D(c.weights, c.kernelSize, c.stride, c.pad)
+// 	out.Add(c.bias)
+// 	return out
+// }
 
 // Backward 反向传播
 func (c *ConvLayer) Backward(gradOutput *matrix.Matrix) *matrix.Matrix {
 	// 计算权重梯度
-	c.gradWeights = c.inputCache.Conv2DGradWeights(gradOutput, c.kernelSize, c.stride, c.pad)
+	c.gradWeights = c.inputCache.Conv2DGradWeights(gradOutput, c.kernelSize, c.stride, c.padding)
 
 	// 计算偏置梯度
 	c.gradBias = gradOutput.SumByDim(1) // 沿通道维度求和
 
 	// 计算输入梯度
-	gradInput := gradOutput.Conv2DGradInput(c.weights, c.kernelSize, c.stride, c.pad)
+	gradInput := gradOutput.Conv2DGradInput(c.weights, c.kernelSize, c.stride, c.padding)
 
 	return gradInput
 }
@@ -61,10 +78,10 @@ func (c *ConvLayer) Backward(gradOutput *matrix.Matrix) *matrix.Matrix {
 func (c *ConvLayer) BackwardWithLR(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix {
 	// 先计算梯度
 	gradInput := c.Backward(gradOutput)
-	
+
 	// 立即更新参数
 	c.UpdateParameters(learningRate)
-	
+
 	return gradInput
 }
 
