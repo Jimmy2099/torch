@@ -3,6 +3,7 @@ package tensor
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 type Tensor struct {
@@ -265,4 +266,26 @@ func (t *Tensor) MatMul1(other *Tensor) *Tensor {
 	}
 
 	return &Tensor{Data: result, Shape: []int{m, n}}
+}
+
+func (t *Tensor) GetRow(row int) *Tensor {
+	if len(t.Shape) != 2 {
+		panic("GetRow requires 2D tensor")
+	}
+	if row < 0 || row >= t.Shape[0] {
+		panic("row index out of range")
+	}
+
+	data := make([]float64, t.Shape[1])
+	copy(data, t.Data[row*t.Shape[1]:(row+1)*t.Shape[1]])
+
+	return NewTensor(data, []int{1, t.Shape[1]})
+}
+
+func (t *Tensor) Sigmoid() *Tensor {
+	data := make([]float64, len(t.Data))
+	for i, val := range t.Data {
+		data[i] = 1.0 / (1.0 + math.Exp(-val))
+	}
+	return &Tensor{Data: data, Shape: t.Shape}
 }

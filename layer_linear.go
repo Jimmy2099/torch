@@ -2,7 +2,6 @@ package torch
 
 import (
 	"fmt"
-	"github.com/Jimmy2099/torch/data_struct/matrix"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"math"
 	"math/rand"
@@ -21,11 +20,6 @@ type LinearLayer struct {
 	Momentum    float64        // 动量系数
 	VWeights    *tensor.Tensor // 权重动量
 	VBias       *tensor.Tensor // 偏置动量
-}
-
-func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
-	//TODO implement me
-	panic("implement me")
 }
 
 // SetWeights 设置权重
@@ -117,67 +111,100 @@ func (l *LinearLayer) NumParams() int {
 	return l.Weights.Shape[0]*l.Weights.Shape[1] + l.Bias.Shape[0]
 }
 
+func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float64) *tensor.Tensor {
+	// 添加空指针检查
+	if l.Input == nil || l.Input.Data == nil {
+		panic("前向传播未正确保存输入数据")
+	}
+
+	batchSize := gradOutput.Shape[0]
+	dWeights := make([]float64, l.InputDim*l.OutputDim)
+	dBias := make([]float64, l.OutputDim)
+	gradInput := make([]float64, batchSize*l.InputDim)
+
+	// 计算权重梯度
+	for b := 0; b < batchSize; b++ {
+		for out := 0; out < l.OutputDim; out++ {
+			grad := gradOutput.Data[b*l.OutputDim+out]
+			// 添加索引范围检查
+			if out >= l.OutputDim || b >= batchSize {
+				panic("梯度索引越界")
+			}
+			for in := 0; in < l.InputDim; in++ {
+				dWeights[out*l.InputDim+in] += l.Input.Data[b*l.InputDim+in] * grad
+			}
+			dBias[out] += grad
+		}
+	}
+
+	// 计算输入梯度
+	for b := 0; b < batchSize; b++ {
+		for in := 0; in < l.InputDim; in++ {
+			sum := 0.0
+			for out := 0; out < l.OutputDim; out++ {
+				sum += gradOutput.Data[b*l.OutputDim+out] * l.Weights.Data[out*l.InputDim+in]
+			}
+			gradInput[b*l.InputDim+in] = sum
+		}
+	}
+
+	// 参数更新（添加动量初始化检查）
+	if l.VWeights == nil || l.VBias == nil {
+		l.VWeights = tensor.NewTensor(make([]float64, len(l.Weights.Data)), l.Weights.Shape)
+		l.VBias = tensor.NewTensor(make([]float64, len(l.Bias.Data)), l.Bias.Shape)
+	}
+
+	// 应用动量更新
+	for i := range l.Weights.Data {
+		l.VWeights.Data[i] = l.Momentum*l.VWeights.Data[i] - lr*(dWeights[i]/float64(batchSize)+l.WeightDecay*l.Weights.Data[i])
+		l.Weights.Data[i] += l.VWeights.Data[i]
+	}
+
+	for i := range l.Bias.Data {
+		l.VBias.Data[i] = l.Momentum*l.VBias.Data[i] - lr*(dBias[i]/float64(batchSize))
+		l.Bias.Data[i] += l.VBias.Data[i]
+	}
+
+	return tensor.NewTensor(gradInput, []int{batchSize, l.InputDim})
+}
+
 func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	// 检查输入维度
 	if len(x.Shape) == 1 {
 		// 如果是一维输入，转换为二维 [1, n]
 		x = tensor.NewTensor(x.Data, []int{1, x.Shape[0]})
 	} else if len(x.Shape) != 2 {
-		panic(fmt.Sprintf("input must be 1D or 2D tensor, got %v", x.Shape))
+		panic(fmt.Sprintf("输入必须为 1D 或 2D 张量，实际 %v", x.Shape))
 	}
 
-	// 确保输入的第二维与InputDim匹配
+	// 确保输入的第二维与 InputDim 匹配（关键兼容性修复）
 	if x.Shape[1] != l.InputDim {
 		// 尝试转置输入矩阵
 		if x.Shape[0] == l.InputDim {
 			x = tensor.Transpose(x)
 		} else {
-			panic(fmt.Sprintf("input dimension mismatch: got %v, expected [?,%d]", x.Shape, l.InputDim))
+			panic(fmt.Sprintf("输入维度不匹配：实际 %v，期望 [?,%d]", x.Shape, l.InputDim))
 		}
 	}
 
-	// 矩阵乘法: Wx + b
-	weightsMatrix := &matrix.Matrix{
-		Data: make([][]float64, l.Weights.Shape[0]),
-		Rows: l.Weights.Shape[0],
-		Cols: l.Weights.Shape[1],
-	}
-	for i := 0; i < l.Weights.Shape[0]; i++ {
-		weightsMatrix.Data[i] = l.Weights.Data[i*l.Weights.Shape[1] : (i+1)*l.Weights.Shape[1]]
-	}
+	batchSize := x.Shape[0]
+	outputData := make([]float64, batchSize*l.OutputDim)
 
-	// 转置输入矩阵以匹配权重矩阵的维度
-	inputMatrix := &matrix.Matrix{
-		Data: make([][]float64, x.Shape[1]),
-		Rows: x.Shape[1],
-		Cols: x.Shape[0],
-	}
-	for i := 0; i < x.Shape[1]; i++ {
-		inputMatrix.Data[i] = make([]float64, x.Shape[0])
-		for j := 0; j < x.Shape[0]; j++ {
-			inputMatrix.Data[i][j] = x.Data[j*x.Shape[1]+i]
+	// 保存转置处理后的输入用于反向传播
+	l.Input = x.Clone()
+
+	// 手动实现矩阵乘法（保持与 Forward1 逻辑一致）
+	for b := 0; b < batchSize; b++ {
+		for out := 0; out < l.OutputDim; out++ {
+			sum := l.Bias.Data[out]
+			for in := 0; in < l.InputDim; in++ {
+				// 注意：权重矩阵形状应为 [OutputDim, InputDim]
+				sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[out*l.InputDim+in]
+			}
+			outputData[b*l.OutputDim+out] = sum
 		}
 	}
 
-	// 执行矩阵乘法
-	output := weightsMatrix.Dot(inputMatrix)
-
-	// 添加偏置
-	for i := 0; i < output.Rows; i++ {
-		for j := 0; j < output.Cols; j++ {
-			output.Data[i][j] += l.Bias.Data[i]
-		}
-	}
-
-	// 保存输入用于反向传播
-	l.Input = x
-
-	// 将结果转换为Tensor
-	flatOutput := make([]float64, 0, output.Rows*output.Cols)
-	for _, row := range output.Data {
-		flatOutput = append(flatOutput, row...)
-	}
-
-	l.Output = tensor.NewTensor(flatOutput, []int{output.Rows, output.Cols})
+	l.Output = tensor.NewTensor(outputData, []int{batchSize, l.OutputDim})
 	return l.Output
 }

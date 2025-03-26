@@ -9,149 +9,143 @@ import (
 	"time"
 )
 
-// Neural Network implementation
 type NeuralNetwork struct {
 	Layers []torch.Layer
 }
 
 func (nn *NeuralNetwork) Parameters() []*tensor.Tensor {
-	//TODO implement me
-	panic("implement me")
-}
-
-// NewNeuralNetwork creates a new neural network with the specified layer dimensions
-func NewNeuralNetwork(layerDims []int) *NeuralNetwork {
-	nn := &NeuralNetwork{
-		Layers: make([]torch.Layer, 0, len(layerDims)+len(layerDims)-2),
-	}
-
-	// Create layers
-	for i := 0; i < len(layerDims)-1; i++ {
-		nn.Layers = append(nn.Layers, torch.NewLinearLayer(layerDims[i], layerDims[i+1]))
-
-		// Add ReLU activation except for the last layer
-		if i < len(layerDims)-2 {
-			nn.Layers = append(nn.Layers, torch.NewReLULayer())
+	params := make([]*tensor.Tensor, 0)
+	for _, layer := range nn.Layers {
+		if linearLayer, ok := layer.(*torch.LinearLayer); ok {
+			params = append(params, linearLayer.Weights)
+			params = append(params, linearLayer.Bias)
 		}
 	}
-
-	return nn
+	return params
 }
 
-// Forward performs forward pass through the neural network
-func (nn *NeuralNetwork) Forward(input *tensor.Tensor) *tensor.Tensor {
-	output := input
+func (nn *NeuralNetwork) ZeroGrad() {
+	for _, layer := range nn.Layers {
+		if linearLayer, ok := layer.(*torch.LinearLayer); ok {
+			linearLayer.ZeroGrad()
+		}
+	}
+}
+
+func NewNeuralNetwork(layerDims []int) *NeuralNetwork {
+	return &NeuralNetwork{
+		Layers: createLayers(layerDims),
+	}
+}
+
+func createLayers(layerDims []int) []torch.Layer {
+	layers := make([]torch.Layer, 0)
+	for i := 0; i < len(layerDims)-1; i++ {
+		layers = append(layers, torch.NewLinearLayer(layerDims[i], layerDims[i+1]))
+		if i < len(layerDims)-2 {
+			layers = append(layers, torch.NewReLULayer())
+		}
+	}
+	return layers
+}
+
+func (nn *NeuralNetwork) Forward(x *tensor.Tensor) *tensor.Tensor {
+	output := x
 	for _, layer := range nn.Layers {
 		output = layer.Forward(output)
 	}
 	return output
 }
 
-// PolynomialFeatures generates polynomial features from the input
+func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float64) {
+	lastLayer := nn.Layers[len(nn.Layers)-1].(*torch.LinearLayer)
+	output := lastLayer.Output
+
+	// 确保输出和目标形状一致
+	if !tensor.ShapeEqual(output.Shape, targets.Shape) {
+		targets = targets.Reshape(output.Shape)
+	}
+
+	// 计算梯度 (output - targets) * 2/batch_size
+	gradOutput := output.Sub(targets)
+	gradOutput = gradOutput.MulScalar(2.0 / float64(targets.Shape[0]))
+
+	// 反向传播
+	for i := len(nn.Layers) - 1; i >= 0; i-- {
+		gradOutput = nn.Layers[i].Backward(gradOutput, lr)
+	}
+}
+
+// 修正后的多项式特征生成
 func polynomialFeatures(X *tensor.Tensor, degree int) *tensor.Tensor {
-	// 实现多项式特征生成
-	features := make([]float64, 0)
-	for d := 1; d <= degree; d++ {
-		for i := 0; i < X.Shape[0]; i++ {
-			val := X.Data[i]
-			features = append(features, math.Pow(val, float64(d)))
+	numSamples, numFeatures := X.Shape[0], X.Shape[1]
+	newFeatures := numFeatures * degree
+	features := make([]float64, numSamples*newFeatures)
+
+	for s := 0; s < numSamples; s++ {
+		for f := 0; f < numFeatures; f++ {
+			val := X.Data[s*numFeatures+f]
+			for d := 1; d <= degree; d++ {
+				features[s*newFeatures+f*degree+(d-1)] = math.Pow(val, float64(d))
+			}
 		}
 	}
-	return tensor.NewTensor(features, []int{len(features)})
-}
-
-// Backward performs backward pass through the neural network
-func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, learningRate float64) {
-	// Compute MSE loss gradient
-	lastLayer := nn.Layers[len(nn.Layers)-1]
-	output := lastLayer.(*torch.LinearLayer).Output
-
-	// 确保输出形状与目标形状完全一致
-	if !tensor.ShapeEqual(output.Shape, targets.Shape) {
-		output = output.Reshape(targets.Shape)
-	}
-
-	// dL/dY = (Y - T) * 2/n
-	gradOutput := tensor.Subtract(output, targets)
-	batchSize := float64(targets.Shape[0])
-	gradOutput = gradOutput.MulScalar(2.0 / batchSize)
-
-	// Backprop through all layers
-	for i := len(nn.Layers) - 1; i >= 0; i-- {
-		gradOutput = nn.Layers[i].Backward(gradOutput, learningRate)
-	}
-}
-
-// ZeroGrad resets all gradients in the neural network
-func (nn *NeuralNetwork) ZeroGrad() {
-	for _, layer := range nn.Layers {
-		layer.ZeroGrad()
-	}
+	return tensor.NewTensor(features, []int{numSamples, newFeatures})
 }
 
 func targetFunc(x1, x2 float64) float64 {
-	return 3 + 2*x1 + 1.5*x2 + 0.5*math.Pow(x1, 2) - 0.8*math.Pow(x2, 2) + 0.3*math.Pow(x1, 3)
+	return 3 + 2*x1 + 1.5*x2 + 0.5*x1*x1 - 0.8*x2*x2 + 0.3*x1*x1*x1
 }
 
-// ... existing code ...
-
 func main() {
-	// Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
 
-	// Generate training data (10 samples, 2 features each)
-	X_data := make([]float64, 2*10)
-	for i := 0; i < 2*10; i++ {
-		X_data[i] = rand.Float64() //[0.0,1.0)
+	// 生成训练数据 (样本数, 特征数) = (10, 2)
+	X_data := make([]float64, 10*2)
+	for i := range X_data {
+		X_data[i] = rand.Float64()
 	}
-	X_train := tensor.NewTensor(X_data, []int{2, 10})
+	X_train := tensor.NewTensor(X_data, []int{10, 2}) // [样本数, 特征数]
 
-	// Define the target function
+	// 生成目标值 (样本数, 1)
 	y_data := make([]float64, 10)
 	for j := 0; j < 10; j++ {
 		x1 := X_train.Data[j*2]
 		x2 := X_train.Data[j*2+1]
 		y_data[j] = targetFunc(x1, x2)
 	}
-	y_train := tensor.NewTensor(y_data, []int{10})
+	y_train := tensor.NewTensor(y_data, []int{10, 1})
 
-	// Generate polynomial features (degree=3)
+	// 生成3次多项式特征 (10, 2*3=6)
 	degree := 3
 	X_train_poly := polynomialFeatures(X_train, degree)
-	X_train_poly = X_train_poly.Reshape([]int{degree * X_train.Shape[0], X_train.Shape[1]})
+	fmt.Printf("训练数据形状: %v\n", X_train_poly.Shape) // 应输出 [10 6]
 
-	// Print dimensions - 使用Shape代替Rows/Cols
-	fmt.Printf("X_train dimensions: %v\n", X_train.Shape)
-	fmt.Printf("X_train_poly dimensions: %v\n", X_train_poly.Shape)
-	fmt.Printf("y_train dimensions: %v\n", y_train.Shape)
+	// 创建神经网络 [6输入 -> 10隐藏 -> 1输出]
+	model := NewNeuralNetwork([]int{6, 10, 1})
 
-	// Create neural network [input -> 10 -> 1]
-	inputDim := X_train_poly.Shape[0]
-	hiddenDim := 10
-	outputDim := 1
-	model := NewNeuralNetwork([]int{inputDim, hiddenDim, outputDim})
+	// 训练前验证形状
+	fmt.Println("\n=== 形状验证 ===")
+	fmt.Printf("输入形状: %v\n", X_train_poly.Shape) // [10 6]
+	fmt.Printf("目标形状: %v\n", y_train.Shape)      // [10 1]
+	sampleOutput := model.Forward(X_train_poly)
+	fmt.Printf("模型输出形状: %v\n", sampleOutput.Shape) // 应输出 [10 1]
 
-	// Create trainer
+	// 训练配置
 	trainer := torch.NewBasicTrainer(torch.MSE)
-
-	// Train model
 	epochs := 500
 	learningRate := 0.01
+
+	// 开始训练
 	trainer.Train(model, X_train_poly, y_train, epochs, learningRate)
 
-	// Test model
-	test_data := []float64{0.2, 0.3} // 测试数据
-	test_sample := tensor.NewTensor(test_data, []int{2, 1})
-	test_sample_poly := polynomialFeatures(test_sample, degree)
-	prediction := model.Forward(test_sample_poly)
+	// 测试预测
+	test_data := []float64{0.2, 0.3}
+	test_sample := tensor.NewTensor(test_data, []int{1, 2}) // [1样本, 2特征]
+	test_poly := polynomialFeatures(test_sample, degree)    // [1, 6]
+	prediction := model.Forward(test_poly)                  // [1, 1]
 
-	// Test model prediction performance on data range [0.0,1.0)
-	fmt.Printf("\nPredicted value: %.4f\n", prediction.Data[0])
-
-	// Calculate true value
-	trueValue := targetFunc(test_data[0], test_data[1])
-	fmt.Printf("True value: %.4f\n", trueValue)
-
-	// Print error
-	fmt.Printf("Error: %.4f\n", math.Abs(prediction.Data[0]-trueValue))
+	fmt.Printf("\n预测值: %.4f\n", prediction.Data[0])
+	fmt.Printf("真实值: %.4f\n", targetFunc(test_data[0], test_data[1]))
+	fmt.Printf("误差: %.4f\n", math.Abs(prediction.Data[0]-targetFunc(test_data[0], test_data[1])))
 }
