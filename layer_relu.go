@@ -58,28 +58,28 @@ func (r *ReLULayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 // Backward 反向传播
-func (r *ReLULayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
-	if r.input == nil {
-		panic("must call Forward first")
-	}
-	if dout == nil {
-		panic("gradient tensor cannot be nil")
-	}
-	if !shapeEqual(r.input.Shape, dout.Shape) {
-		panic("input and gradient shapes must match")
-	}
-
-	// 计算ReLU梯度
-	grad := r.input.Apply(func(val float64) float64 {
-		if val > 0 {
-			return 1.0
-		}
-		return r.negative
-	})
-
-	// 与上游梯度相乘
-	return grad.Multiply(dout)
-}
+//func (r *ReLULayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
+//	if r.input == nil {
+//		panic("must call Forward first")
+//	}
+//	if dout == nil {
+//		panic("gradient tensor cannot be nil")
+//	}
+//	if !shapeEqual(r.input.Shape, dout.Shape) {
+//		panic("input and gradient shapes must match")
+//	}
+//
+//	// 计算ReLU梯度
+//	grad := r.input.Apply(func(val float64) float64 {
+//		if val > 0 {
+//			return 1.0
+//		}
+//		return r.negative
+//	})
+//
+//	// 与上游梯度相乘
+//	return grad.Multiply(dout)
+//}
 
 // shapeEqual 辅助函数：比较形状是否相同
 func shapeEqual(a, b []int) bool {
@@ -105,4 +105,36 @@ func (r *ReLULayer) ActivationType() string {
 // NegativeSlope 返回负半轴斜率
 func (r *ReLULayer) NegativeSlope() float64 {
 	return r.negative
+}
+
+func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+	if r.input == nil {
+		panic("must call Forward first")
+	}
+	if gradOutput == nil {
+		panic("gradient tensor cannot be nil")
+	}
+	if !shapeEqual(r.input.Shape, gradOutput.Shape) {
+		panic("input and gradient shapes must match")
+	}
+
+	// 计算ReLU梯度
+	grad := r.input.Apply(func(val float64) float64 {
+		if val > 0 {
+			return 1.0
+		}
+		return r.negative
+	})
+
+	// 与上游梯度相乘
+	return grad.Multiply(gradOutput)
+}
+
+func (r *ReLULayer) ZeroGrad() {
+	// ReLU层没有需要清零的梯度参数
+}
+
+func (r *ReLULayer) Parameters() []*tensor.Tensor {
+	// ReLU层没有可训练参数
+	return nil
 }
