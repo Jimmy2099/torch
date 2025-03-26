@@ -1,20 +1,22 @@
 package torch
 
-import "github.com/Jimmy2099/torch/data_struct/matrix"
+import (
+	"github.com/Jimmy2099/torch/data_struct/tensor"
+)
 
 // Layer interface for neural network layers
 type Layer interface {
-	Forward(input *matrix.Matrix) *matrix.Matrix
-	Backward(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix
+	Forward(input *tensor.Tensor) *tensor.Tensor
+	Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor
 	ZeroGrad()
-	Parameters() []*matrix.Matrix
+	Parameters() []*tensor.Tensor
 }
 
 //// DenseLayer 全连接层接口
 //type DenseLayer interface {
 //	Layer
-//	SetWeights(weights *matrix.Matrix)
-//	SetBias(bias *matrix.Matrix)
+//	SetWeights(weights *tensor.Tensor)
+//	SetBias(bias *tensor.Tensor)
 //}
 //
 //// ActivationLayer 激活函数层接口
@@ -37,7 +39,7 @@ type Layer interface {
 //// ConvLayer 卷积层接口
 //type ConvLayer interface {
 //	Layer
-//	SetKernel(kernel *matrix.Matrix)
+//	SetKernel(kernel *tensor.Tensor)
 //	SetStride(stride int)
 //	SetPadding(padding int)
 //}

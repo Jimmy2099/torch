@@ -1,161 +1,178 @@
 package torch
 
 import (
+	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
+	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"math"
 	"math/rand"
 )
 
-// LinearLayer implements a fully connected linear layer
+// LinearLayer 实现全连接线性层
 type LinearLayer struct {
 	InputDim    int
 	OutputDim   int
-	Weights     *matrix.Matrix
-	Bias        *matrix.Matrix
-	Input       *matrix.Matrix
-	Output      *matrix.Matrix
-	GradInput   *matrix.Matrix
+	Weights     *tensor.Tensor
+	Bias        *tensor.Tensor
+	Input       *tensor.Tensor
+	Output      *tensor.Tensor
+	GradInput   *tensor.Tensor
 	WeightDecay float64        // L2正则化系数
 	Momentum    float64        // 动量系数
-	VWeights    *matrix.Matrix // 权重动量
-	VBias       *matrix.Matrix // 偏置动量
+	VWeights    *tensor.Tensor // 权重动量
+	VBias       *tensor.Tensor // 偏置动量
 }
 
-func (c *LinearLayer) SetWeights(data [][]float64) {
-	c.Weights = matrix.NewMatrixFromSlice(data)
-}
-func (c *LinearLayer) SetBias(data [][]float64) {
-	c.Bias = matrix.NewMatrixFromSlice(data)
-}
-func (l *LinearLayer) Parameters() []*matrix.Matrix {
-	//TODO implement me
-	panic("implement me")
+// SetWeights 设置权重
+func (l *LinearLayer) SetWeights(data []float64) {
+	if len(data) != l.OutputDim*l.InputDim {
+		panic("weights data length mismatch")
+	}
+	l.Weights = tensor.NewTensor(data, []int{l.OutputDim, l.InputDim})
 }
 
-// NewLinearLayer creates a new linear layer with random weights
+// SetBias 设置偏置
+func (l *LinearLayer) SetBias(data []float64) {
+	if len(data) != l.OutputDim {
+		panic("bias data length mismatch")
+	}
+	l.Bias = tensor.NewTensor(data, []int{l.OutputDim, 1})
+}
+
+// Parameters 返回所有可训练参数
+func (l *LinearLayer) Parameters() []*tensor.Tensor {
+	return []*tensor.Tensor{l.Weights, l.Bias}
+}
+
+// NewLinearLayer 创建新的线性层
 func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
-	weights := matrix.NewRandomMatrix(outputDim, inputDim)
-	bias := matrix.NewMatrix(outputDim, 1)
+	// 初始化权重和偏置
+	weightsData := make([]float64, outputDim*inputDim)
+	biasData := make([]float64, outputDim)
 
-	// Initialize bias with small random values
-	for i := 0; i < outputDim; i++ {
-		bias.Data[i][0] = rand.Float64()*0.2 - 0.1
+	// Xavier初始化
+	xavierScale := math.Sqrt(2.0 / float64(inputDim))
+	for i := range weightsData {
+		weightsData[i] = rand.NormFloat64() * xavierScale
 	}
 
 	return &LinearLayer{
 		InputDim:    inputDim,
 		OutputDim:   outputDim,
-		Weights:     weights,
-		Bias:        bias,
-		VWeights:    matrix.NewMatrix(outputDim, inputDim), // 初始化权重动量
-		VBias:       matrix.NewMatrix(outputDim, 1),        // 初始化偏置动量
-		WeightDecay: 0.001,                                 // 添加默认L2正则化系数
-		Momentum:    0.9,                                   // 添加默认动量系数
+		Weights:     tensor.NewTensor(weightsData, []int{outputDim, inputDim}),
+		Bias:        tensor.NewTensor(biasData, []int{outputDim, 1}),
+		VWeights:    tensor.NewTensor(make([]float64, outputDim*inputDim), []int{outputDim, inputDim}),
+		VBias:       tensor.NewTensor(make([]float64, outputDim), []int{outputDim, 1}),
+		WeightDecay: 0.001,
+		Momentum:    0.9,
 	}
 }
 
-// Forward performs forward pass through the linear layer
-func (l *LinearLayer) Forward(input *matrix.Matrix) *matrix.Matrix {
-	l.Input = input
-	// Y = W * X + b
-	l.Output = l.Weights.Multiply(input)
-
-	// Add bias to each column
-	for i := 0; i < l.OutputDim; i++ {
-		for j := 0; j < input.Cols; j++ {
-			l.Output.Data[i][j] += l.Bias.Data[i][0]
-		}
-	}
-
-	return l.Output
-}
-
-// Backward performs backward pass through the linear layer
-func (l *LinearLayer) Backward(gradOutput *matrix.Matrix, learningRate float64) *matrix.Matrix {
-	// Compute gradients
-	inputT := l.Input.Transpose()
-
-	// Gradient of weights: dW = dY * X^T
-	dWeights := gradOutput.Multiply(inputT)
-
-	// Gradient of bias: db = sum(dY, dim=1)
-	dBias := matrix.NewMatrix(l.OutputDim, 1)
-	for i := 0; i < l.OutputDim; i++ {
-		sum := 0.0
-		for j := 0; j < gradOutput.Cols; j++ {
-			sum += gradOutput.Data[i][j]
-		}
-		dBias.Data[i][0] = sum
-	}
-
-	// Gradient of input: dX = W^T * dY
-	weightsT := l.Weights.Transpose()
-	l.GradInput = weightsT.Multiply(gradOutput)
-
-	// Update weights and bias
-	for i := 0; i < l.Weights.Rows; i++ {
-		for j := 0; j < l.Weights.Cols; j++ {
+// updateParameters 参数更新逻辑
+func (l *LinearLayer) updateParameters(dWeights, dBias *tensor.Tensor, learningRate float64) {
+	// 更新权重
+	for i := 0; i < l.Weights.Shape[0]; i++ {
+		for j := 0; j < l.Weights.Shape[1]; j++ {
 			// L2正则化梯度
-			regGrad := l.WeightDecay * l.Weights.Data[i][j]
+			regGrad := l.WeightDecay * l.Weights.Data[i*l.Weights.Shape[1]+j]
 			// 动量更新
-			l.VWeights.Data[i][j] = l.Momentum*l.VWeights.Data[i][j] -
-				learningRate*(dWeights.Data[i][j]+regGrad)
-			l.Weights.Data[i][j] += l.VWeights.Data[i][j]
+			l.VWeights.Data[i*l.VWeights.Shape[1]+j] = l.Momentum*l.VWeights.Data[i*l.VWeights.Shape[1]+j] -
+				learningRate*(dWeights.Data[i*dWeights.Shape[1]+j]+regGrad)
+			l.Weights.Data[i*l.Weights.Shape[1]+j] += l.VWeights.Data[i*l.VWeights.Shape[1]+j]
 		}
 	}
 
-	for i := 0; i < l.Bias.Rows; i++ {
-		l.VBias.Data[i][0] = l.Momentum*l.VBias.Data[i][0] -
-			learningRate*dBias.Data[i][0]
-		l.Bias.Data[i][0] += l.VBias.Data[i][0]
+	// 更新偏置
+	for i := 0; i < l.Bias.Shape[0]; i++ {
+		l.VBias.Data[i] = l.Momentum*l.VBias.Data[i] - learningRate*dBias.Data[i]
+		l.Bias.Data[i] += l.VBias.Data[i]
 	}
-
-	return l.GradInput
 }
 
+// ZeroGrad 梯度清零
 func (l *LinearLayer) ZeroGrad() {
-	// Reset gradients
 	l.GradInput = nil
-	// 重置动量
-	l.VWeights = matrix.NewMatrix(l.OutputDim, l.InputDim)
-	l.VBias = matrix.NewMatrix(l.OutputDim, 1)
+	l.VWeights = tensor.NewTensor(make([]float64, l.OutputDim*l.InputDim), []int{l.OutputDim, l.InputDim})
+	l.VBias = tensor.NewTensor(make([]float64, l.OutputDim), []int{l.OutputDim, 1})
 }
 
-// CrossEntropyLoss 交叉熵损失函数
-func CrossEntropyLoss(pred, target *matrix.Matrix) float64 {
-	// 实现softmax交叉熵
-	exp := pred.Apply(math.Exp)
-	sum := exp.Sum()
-	prob := exp.DivScalar(sum)
-	return -prob.Log().Multiply(target).Mean()
-}
-
-// XavierInit 新增初始化方法
+// XavierInit Xavier初始化
 func (l *LinearLayer) XavierInit() {
 	fanIn := float64(l.InputDim)
 	scale := math.Sqrt(2.0 / fanIn)
-	for i := 0; i < l.Weights.Rows; i++ {
-		for j := 0; j < l.Weights.Cols; j++ {
-			l.Weights.Data[i][j] = rand.NormFloat64() * scale
+	for i := 0; i < l.Weights.Shape[0]; i++ {
+		for j := 0; j < l.Weights.Shape[1]; j++ {
+			l.Weights.Data[i*l.Weights.Shape[1]+j] = rand.NormFloat64() * scale
 		}
 	}
 }
 
-// 新增参数保存方法
-func (l *LinearLayer) SaveParams(path string) error {
-	// 保存权重和偏置到文件
-	// ... 实现文件保存逻辑 ...
-	return nil
-}
-
-// 新增参数加载方法
-func (l *LinearLayer) LoadParams(path string) error {
-	// 从文件加载权重和偏置
-	// ... 实现文件加载逻辑 ...
-	return nil
-}
-
-// 新增方法：获取参数数量
+// NumParams 返回参数数量
 func (l *LinearLayer) NumParams() int {
-	return l.Weights.Rows*l.Weights.Cols + l.Bias.Rows
+	return l.Weights.Shape[0]*l.Weights.Shape[1] + l.Bias.Shape[0]
+}
+
+func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+	// 检查输入维度
+	if len(x.Shape) == 1 {
+		// 如果是一维输入，转换为二维 [1, n]
+		x = tensor.NewTensor(x.Data, []int{1, x.Shape[0]})
+	} else if len(x.Shape) != 2 {
+		panic(fmt.Sprintf("input must be 1D or 2D tensor, got %v", x.Shape))
+	}
+
+	// 确保输入的第二维与InputDim匹配
+	if x.Shape[1] != l.InputDim {
+		// 尝试转置输入矩阵
+		if x.Shape[0] == l.InputDim {
+			x = tensor.Transpose(x)
+		} else {
+			panic(fmt.Sprintf("input dimension mismatch: got %v, expected [?,%d]", x.Shape, l.InputDim))
+		}
+	}
+
+	// 矩阵乘法: Wx + b
+	weightsMatrix := &matrix.Matrix{
+		Data: make([][]float64, l.Weights.Shape[0]),
+		Rows: l.Weights.Shape[0],
+		Cols: l.Weights.Shape[1],
+	}
+	for i := 0; i < l.Weights.Shape[0]; i++ {
+		weightsMatrix.Data[i] = l.Weights.Data[i*l.Weights.Shape[1] : (i+1)*l.Weights.Shape[1]]
+	}
+
+	// 转置输入矩阵以匹配权重矩阵的维度
+	inputMatrix := &matrix.Matrix{
+		Data: make([][]float64, x.Shape[1]),
+		Rows: x.Shape[1],
+		Cols: x.Shape[0],
+	}
+	for i := 0; i < x.Shape[1]; i++ {
+		inputMatrix.Data[i] = make([]float64, x.Shape[0])
+		for j := 0; j < x.Shape[0]; j++ {
+			inputMatrix.Data[i][j] = x.Data[j*x.Shape[1]+i]
+		}
+	}
+
+	// 执行矩阵乘法
+	output := weightsMatrix.Dot(inputMatrix)
+
+	// 添加偏置
+	for i := 0; i < output.Rows; i++ {
+		for j := 0; j < output.Cols; j++ {
+			output.Data[i][j] += l.Bias.Data[i]
+		}
+	}
+
+	// 保存输入用于反向传播
+	l.Input = x
+
+	// 将结果转换为Tensor
+	flatOutput := make([]float64, 0, output.Rows*output.Cols)
+	for _, row := range output.Data {
+		flatOutput = append(flatOutput, row...)
+	}
+
+	l.Output = tensor.NewTensor(flatOutput, []int{output.Rows, output.Cols})
+	return l.Output
 }

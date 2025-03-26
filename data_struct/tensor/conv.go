@@ -88,52 +88,58 @@ func sameShape(shape1, shape2 []int) bool {
 	return true
 }
 
-// Conv2D implements a 2D convolution operation.
-// It assumes the input Tensor has shape [channels, height, width] and the weights
-// Tensor has shape [out_channels, in_channels, kernel_height, kernel_width].
-func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
-	// Input dimension: (channels, height, width)
-	// Weights dimension: (out_channels, in_channels, kernel_height, kernel_width)
-
-	// Validate input shapes
-	if len(t.Shape) != 3 {
-		return nil, errors.New("input tensor must have shape [channels, height, width]")
+// GetSample extracts a single sample from a batched tensor
+func (t *Tensor) GetSample(batchIdx int) *Tensor {
+	if len(t.Shape) != 4 {
+		panic("GetSample only works for 4D tensors")
 	}
-	if len(weights.Shape) != 4 {
-		return nil, errors.New("weights tensor must have shape [out_channels, in_channels, kernel_height, kernel_width]")
+	if batchIdx < 0 || batchIdx >= t.Shape[0] {
+		panic("invalid batch index")
 	}
 
-	channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2]
-	outChannels, inChannels, kernelHeight, kernelWidth := weights.Shape[0], weights.Shape[1], weights.Shape[2], weights.Shape[3]
+	channels, height, width := t.Shape[1], t.Shape[2], t.Shape[3]
+	sampleSize := channels * height * width
+	data := make([]float64, sampleSize)
 
-	if inChannels != channels {
-		return nil, errors.New("input channels must match weight in_channels")
+	copy(data, t.Data[batchIdx*sampleSize:(batchIdx+1)*sampleSize])
+
+	return &Tensor{
+		Data:  data,
+		Shape: []int{channels, height, width},
 	}
-	if kernelSize != kernelHeight || kernelSize != kernelWidth {
-		return nil, errors.New("Kernel size must be the same for both height and width in weights")
-	}
+}
 
-	// Calculate output spatial dimensions
-	outHeight := (height+2*pad-kernelSize)/stride + 1
-	outWidth := (width+2*pad-kernelSize)/stride + 1
-
-	// Pad the input
-	paddedInput := t.Pad2D(pad)
-
-	// Perform im2col unfolding
-	unfolded, err := paddedInput.im2col(kernelSize, stride)
-	if err != nil {
-		return nil, err
+// StackTensors combines tensors along a new dimension
+func StackTensors(tensors []*Tensor, dim int) (*Tensor, error) {
+	if len(tensors) == 0 {
+		return nil, errors.New("empty tensor list")
 	}
 
-	// Reshape weights for matrix multiplication (out_channels, kernel_size * kernel_size * in_channels)
-	reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
+	// Validate all tensors have same shape
+	baseShape := tensors[0].Shape
+	for _, t := range tensors {
+		if !sameShape(t.Shape, baseShape) {
+			return nil, errors.New("all tensors must have the same shape")
+		}
+	}
 
-	// Matrix multiplication: reshaped_weights * unfolded
-	result := reshapedWeights.Multiply(unfolded)
+	// Calculate new shape
+	newShape := make([]int, len(baseShape)+1)
+	copy(newShape, baseShape[:dim])
+	newShape[dim] = len(tensors)
+	copy(newShape[dim+1:], baseShape[dim:])
 
-	// Reshape to output dimensions
-	return result.Reshape([]int{outChannels, outHeight * outWidth}), nil
+	// Combine data
+	elementSize := len(tensors[0].Data)
+	newData := make([]float64, len(tensors)*elementSize)
+	for i, t := range tensors {
+		copy(newData[i*elementSize:(i+1)*elementSize], t.Data)
+	}
+
+	return &Tensor{
+		Data:  newData,
+		Shape: newShape,
+	}, nil
 }
 
 // im2col_get_pixel implements boundary check for pixel access.
@@ -152,7 +158,15 @@ func (t *Tensor) im2col_get_pixel(row, col, channel, pad int) float64 {
 
 // im2col unfolds the input tensor into columns.
 func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
-	channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2]
+	// Handle both 3D and 4D tensors
+	var channels, height, width int
+	if len(t.Shape) == 3 {
+		channels, height, width = t.Shape[0], t.Shape[1], t.Shape[2]
+	} else if len(t.Shape) == 4 {
+		channels, height, width = t.Shape[1], t.Shape[2], t.Shape[3]
+	} else {
+		return nil, errors.New("input tensor must be 3D or 4D")
+	}
 
 	heightCol := (height-kernelSize)/stride + 1
 	widthCol := (width-kernelSize)/stride + 1
@@ -179,21 +193,63 @@ func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
 	return cols, nil
 }
 
-// Pad2D adds 2D padding to the tensor.
 func (t *Tensor) Pad2D(pad int) *Tensor {
 	if pad == 0 {
 		return t.Clone()
 	}
 
-	channels, size, _ := t.Shape[0], t.Shape[1], t.Shape[2] // assuming a square tensor for simplicity
-	newSize := size + 2*pad
+	// Determine tensor dimensions
+	var batchSize, channels, height, width int
+	var is4D bool
 
-	padded := NewTensor(make([]float64, channels*newSize*newSize), []int{channels, newSize, newSize})
+	switch len(t.Shape) {
+	case 3:
+		// 3D tensor: (channels, height, width)
+		channels, height, width = t.Shape[0], t.Shape[1], t.Shape[2]
+		is4D = false
+	case 4:
+		// 4D tensor: (batch, channels, height, width)
+		batchSize, channels, height, width = t.Shape[0], t.Shape[1], t.Shape[2], t.Shape[3]
+		is4D = true
+	default:
+		panic("Pad2D only works for 3D or 4D tensors")
+	}
 
-	for c := 0; c < channels; c++ {
-		for i := 0; i < size; i++ {
-			for j := 0; j < size; j++ {
-				padded.Data[(i+pad)*newSize+(j+pad)+c*newSize*newSize] = t.Data[i*size+j+c*size*size]
+	newHeight := height + 2*pad
+	newWidth := width + 2*pad
+
+	// Create padded tensor
+	var padded *Tensor
+	if is4D {
+		padded = NewTensor(
+			make([]float64, batchSize*channels*newHeight*newWidth),
+			[]int{batchSize, channels, newHeight, newWidth},
+		)
+	} else {
+		padded = NewTensor(
+			make([]float64, channels*newHeight*newWidth),
+			[]int{channels, newHeight, newWidth},
+		)
+	}
+
+	// Apply padding
+	for b := 0; is4D && b < batchSize || !is4D && b < 1; b++ {
+		for c := 0; c < channels; c++ {
+			for i := 0; i < height; i++ {
+				for j := 0; j < width; j++ {
+					// Calculate source and target indices
+					srcIdx := b*channels*height*width + c*height*width + i*width + j
+					if !is4D {
+						srcIdx = c*height*width + i*width + j
+					}
+
+					targetIdx := b*channels*newHeight*newWidth + c*newHeight*newWidth + (i+pad)*newWidth + (j + pad)
+					if !is4D {
+						targetIdx = c*newHeight*newWidth + (i+pad)*newWidth + (j + pad)
+					}
+
+					padded.Data[targetIdx] = t.Data[srcIdx]
+				}
 			}
 		}
 	}
@@ -202,22 +258,67 @@ func (t *Tensor) Pad2D(pad int) *Tensor {
 }
 
 // Repeat duplicates the tensor along rows and columns.
-func (t *Tensor) Repeat(rowRepeat, colRepeat int) *Tensor {
-	if len(t.Shape) != 2 {
-		panic("Repeat only works for 2D tensors")
+// Repeat repeats the tensor along specified dimensions (supports 2D and 4D tensors)
+func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
+	if len(t.Shape) != 2 && len(t.Shape) != 4 {
+		panic("Repeat currently only supports 2D or 4D tensors")
 	}
-	rows, cols := t.Shape[0], t.Shape[1]
 
-	newRows := rows * rowRepeat
-	newCols := cols * colRepeat
-	result := NewTensor(make([]float64, newRows*newCols), []int{newRows, newCols})
+	if len(t.Shape) == 2 {
+		// Original 2D implementation
+		rows, cols := t.Shape[0], t.Shape[1]
+		var newData []float64
+		var newShape []int
 
-	for i := 0; i < newRows; i++ {
-		for j := 0; j < newCols; j++ {
-			result.Data[i*newCols+j] = t.Data[(i%rows)*cols+(j%cols)]
+		if dim == 0 {
+			newData = make([]float64, rows*repeats*cols)
+			newShape = []int{rows * repeats, cols}
+			for r := 0; r < repeats; r++ {
+				copy(newData[r*rows*cols:(r+1)*rows*cols], t.Data)
+			}
+		} else if dim == 1 {
+			newData = make([]float64, rows*cols*repeats)
+			newShape = []int{rows, cols * repeats}
+			for i := 0; i < rows; i++ {
+				for r := 0; r < repeats; r++ {
+					copy(newData[i*cols*repeats+r*cols:(i*cols*repeats)+(r+1)*cols],
+						t.Data[i*cols:(i+1)*cols])
+				}
+			}
+		} else {
+			panic("Invalid dimension for 2D tensor")
 		}
+		return NewTensor(newData, newShape)
+	} else {
+		// 4D tensor implementation (batch, channels, height, width)
+		batch, channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2], t.Shape[3]
+		var newData []float64
+		var newShape []int
+
+		switch dim {
+		case 0: // Repeat along batch dimension
+			newData = make([]float64, batch*repeats*channels*height*width)
+			newShape = []int{batch * repeats, channels, height, width}
+			for r := 0; r < repeats; r++ {
+				copy(newData[r*batch*channels*height*width:(r+1)*batch*channels*height*width],
+					t.Data)
+			}
+		case 1: // Repeat along channel dimension
+			newData = make([]float64, batch*channels*repeats*height*width)
+			newShape = []int{batch, channels * repeats, height, width}
+			for b := 0; b < batch; b++ {
+				for r := 0; r < repeats; r++ {
+					copy(newData[b*channels*repeats*height*width+r*channels*height*width:b*channels*repeats*height*width+(r+1)*channels*height*width],
+						t.Data[b*channels*height*width:(b+1)*channels*height*width])
+				}
+			}
+		case 2, 3: // Repeat along spatial dimensions (not commonly needed)
+			panic("Repeating along spatial dimensions is not yet implemented")
+		default:
+			panic("Invalid dimension for 4D tensor")
+		}
+		return NewTensor(newData, newShape)
 	}
-	return result
 }
 
 // Conv2DGradWeights calculates the gradient of the weights in a convolution operation.
