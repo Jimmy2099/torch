@@ -6,16 +6,21 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// CNN 定义简单的卷积神经网络结构
+// CNN
 type CNN struct {
 	//        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
 	//        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
@@ -208,7 +213,6 @@ func main() {
 
 	// 创建CNN模型
 
-	model := NewCNN()
 	//trainer := torch.NewBasicTrainer(CrossEntropyLoss)
 
 	//// 训练模型
@@ -223,6 +227,11 @@ func main() {
 	//Y_test := testData.Labels
 
 	{
+		{
+			//gen test data
+			d, _ := os.Getwd()
+			runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
+		}
 		directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
 
 		// Load data (images and labels)
@@ -237,9 +246,29 @@ func main() {
 			fmt.Printf("First Image Label: %s\n", labels[0])
 		}
 
-		num := 4
-		prediction := Predict(model, images[num])
-		fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
+		//num := 4
+		result := []int{}
+		for num := 0; num < len(images); num++ {
+			model := NewCNN()
+			prediction := Predict(model, images[num])
+			fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
+			result = append(result, int(prediction.Data[0][0]))
+		}
+		fmt.Println("label:", labels)
+		fmt.Println("predictions:", result)
+		fileName := []string{}
+		{
+
+			for i := 0; i < len(labels); i++ {
+				d, _ := os.Getwd()
+				name := filepath.Join(d, "py", "mnist_images", labels[i])
+				name = strings.Replace(name, ".csv", "", -1)
+				fileName = append(fileName, name)
+				fmt.Println()
+			}
+			predictPlot(fileName, result)
+		}
+
 	}
 
 	// 计算测试集准确率
@@ -381,4 +410,155 @@ func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
 	}
 
 	return outputMatrix.ArgMax()
+}
+
+func loadImage(path string) (image.Image, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return img, nil
+}
+
+// 创建并执行 Python 脚本
+func predictPlot(imagePaths []string, predictions []int) error {
+	if len(imagePaths) != len(predictions) {
+		return fmt.Errorf("image paths and predictions length mismatch")
+	}
+
+	// 随机数后缀（保证每次文件名不同，不带 * 号）
+	rand.Seed(time.Now().UnixNano())
+	suffix := fmt.Sprintf("%d", rand.Intn(1000000))
+
+	// 构造临时 Python 脚本文件名，例如：predict_plot_123456.py
+	tmpScriptFileName := filepath.Join(os.TempDir(), "predict_plot_"+suffix+".py")
+	// 构造临时数据文件名，例如：image_predictions_123456.txt
+	tmpDataFileName := filepath.Join(os.TempDir(), "image_predictions_"+suffix+".txt")
+
+	// Python 脚本内容，不包含任何数据，数据从数据文件传入
+	pythonScript := `
+import sys
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+def load_data(file_path):
+    image_paths = []
+    predictions = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split(',')
+            image_paths.append(parts[0])
+            predictions.append(int(parts[1]))
+    return image_paths, predictions
+
+def predict_plot(data_file):
+    image_paths, predictions = load_data(data_file)
+    num = len(image_paths)
+    fig, axes = plt.subplots(1, num, figsize=(15, 1.5))
+    # 如果只有一张图，则将 axes 转换为列表
+    if num == 1:
+        axes = [axes]
+    for i, (img_path, pred) in enumerate(zip(image_paths, predictions)):
+        img = mpimg.imread(img_path)
+        axes[i].imshow(img, cmap='gray')
+        axes[i].set_title(f'Pred: {pred}', fontsize=10)
+        axes[i].axis('off')
+    plt.tight_layout()
+    plt.savefig("predictions.png")
+    plt.show()
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python predict_plot.py <data_file_path>")
+        sys.exit(1)
+    data_file = sys.argv[1]
+    predict_plot(data_file)
+`
+	// 创建 Python 脚本文件
+	scriptFile, err := os.Create(tmpScriptFileName)
+	if err != nil {
+		return fmt.Errorf("unable to create temp Python script: %v", err)
+	}
+	_, err = scriptFile.WriteString(pythonScript)
+	if err != nil {
+		scriptFile.Close()
+		return fmt.Errorf("unable to write Python script: %v", err)
+	}
+	scriptFile.Close()
+	defer os.Remove(tmpScriptFileName) // 执行完后删除文件
+
+	// 创建临时数据文件，写入图片路径和预测结果，每行格式：图片路径,预测结果
+	dataFile, err := os.Create(tmpDataFileName)
+	if err != nil {
+		return fmt.Errorf("unable to create temp data file: %v", err)
+	}
+	for i := 0; i < len(imagePaths); i++ {
+		_, err := dataFile.WriteString(fmt.Sprintf("%s,%d\n", imagePaths[i], predictions[i]))
+		if err != nil {
+			dataFile.Close()
+			return fmt.Errorf("unable to write to temp data file: %v", err)
+		}
+	}
+	dataFile.Close()
+	defer os.Remove(tmpDataFileName)
+
+	// 调用 Python 脚本，将数据文件路径作为参数传入
+	cmd := exec.Command("python", tmpScriptFileName, tmpDataFileName)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error executing Python script: %v", err)
+	}
+
+	return nil
+}
+
+func runCommand(workSpace string, fileName string) {
+
+	// 执行 Python 脚本
+	cmd := exec.Command("python", fileName)
+	cmd.Dir = workSpace
+	// 实时打印输出
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(fmt.Sprintln("Error creating Stdout pipe:", err))
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		panic(fmt.Sprintln("Error creating Stderr pipe:", err))
+	}
+
+	// 启动命令
+	if err := cmd.Start(); err != nil {
+		panic(fmt.Sprintln("Error starting Python script:", err))
+	}
+
+	// 使用 Goroutines 来实时打印标准输出和错误输出
+	go func() {
+		_, err := io.Copy(os.Stdout, stdout)
+		if err != nil {
+			panic(fmt.Sprintln("Error copying stdout:", err))
+		}
+	}()
+
+	go func() {
+		_, err := io.Copy(os.Stderr, stderr)
+		if err != nil {
+			panic(fmt.Sprintln("Error copying stderr:", err))
+		}
+	}()
+
+	// 等待命令执行完成
+	if err := cmd.Wait(); err != nil {
+		panic(fmt.Sprintln("Error waiting for Python script to finish:", err))
+	}
 }
