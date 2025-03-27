@@ -12,6 +12,8 @@ type Layer interface {
 	Parameters() []*tensor.Tensor
 }
 
+//Sequential forward container TODO
+
 //// DenseLayer 全连接层接口
 //type DenseLayer interface {
 //	Layer
