@@ -25,10 +25,6 @@ import (
 //	//  )
 //	//)
 type AutoEncoder struct {
-	conv1 *torch.ConvLayer
-	conv2 *torch.ConvLayer
-	relu  *torch.ReLULayer
-	pool  *torch.MaxPool2DLayer
 	//编码器层
 	fc1   *torch.LinearLayer
 	relu1 *torch.ReLULayer
