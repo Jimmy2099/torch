@@ -41,15 +41,107 @@ type AutoEncoder struct {
 	Sigmoid1 *torch.SigmoidLayer
 }
 
-// Forward performs the forward pass of the CNN.
-func (c *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
-	return nil
+func NewAutoEncoder() *AutoEncoder {
+	return &AutoEncoder{
+		fc1:   torch.NewLinearLayer(784, 128),
+		relu1: torch.NewReLULayer(),
+		fc2:   torch.NewLinearLayer(128, 64),
+		relu2: torch.NewReLULayer(),
+		fc3:   torch.NewLinearLayer(64, 32),
+
+		//--
+
+		fc4:      torch.NewLinearLayer(32, 64),
+		relu3:    torch.NewReLULayer(),
+		fc5:      torch.NewLinearLayer(64, 128),
+		relu4:    torch.NewReLULayer(),
+		fc6:      torch.NewLinearLayer(128, 784),
+		Sigmoid1: torch.NewSigmoidLayer(),
+	}
 }
 
-// TODO
-func main() {
-	model := &AutoEncoder{}
-	output := model.Forward(nil)
-	fmt.Println(output)
+func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
+	fmt.Println("\n=== Starting AutoEncoder Forward Pass ===")
+	fmt.Printf("Input shape: %v\n", x.Shape)
 
+	// 编码器部分
+	fmt.Println("\nEncoder FC1:")
+	x = ae.fc1.Forward(x)
+	fmt.Printf("After fc1: %v\n", x.Shape)
+
+	fmt.Println("\nReLU1:")
+	x = ae.relu1.Forward(x)
+	fmt.Printf("After relu1: %v\n", x.Shape)
+
+	fmt.Println("\nEncoder FC2:")
+	x = ae.fc2.Forward(x)
+	fmt.Printf("After fc2: %v\n", x.Shape)
+
+	fmt.Println("\nReLU2:")
+	x = ae.relu2.Forward(x)
+	fmt.Printf("After relu2: %v\n", x.Shape)
+
+	fmt.Println("\nEncoder FC3:")
+	x = ae.fc3.Forward(x)
+	fmt.Printf("After fc3: %v\n", x.Shape)
+
+	// 解码器部分
+	fmt.Println("\nDecoder FC4:")
+	x = ae.fc4.Forward(x)
+	fmt.Printf("After fc4: %v\n", x.Shape)
+
+	fmt.Println("\nReLU3:")
+	x = ae.relu3.Forward(x)
+	fmt.Printf("After relu3: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder FC5:")
+	x = ae.fc5.Forward(x)
+	fmt.Printf("After fc5: %v\n", x.Shape)
+
+	fmt.Println("\nReLU4:")
+	x = ae.relu4.Forward(x)
+	fmt.Printf("After relu4: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder FC6:")
+	x = ae.fc6.Forward(x)
+	fmt.Printf("After fc6: %v\n", x.Shape)
+
+	fmt.Println("\nSigmoid:")
+	x = ae.Sigmoid1.Forward(x)
+	fmt.Printf("After sigmoid: %v\n", x.Shape)
+
+	fmt.Println("\n=== AutoEncoder Forward Pass Complete ===")
+	return x
+}
+
+func (ae *AutoEncoder) Parameters() []*tensor.Tensor {
+	params := make([]*tensor.Tensor, 0)
+	params = append(params, ae.fc1.Weights, ae.fc1.Bias)
+	params = append(params, ae.fc2.Weights, ae.fc2.Bias)
+	params = append(params, ae.fc3.Weights, ae.fc3.Bias)
+	params = append(params, ae.fc4.Weights, ae.fc4.Bias)
+	params = append(params, ae.fc5.Weights, ae.fc5.Bias)
+	params = append(params, ae.fc6.Weights, ae.fc6.Bias)
+	return params
+}
+
+func (ae *AutoEncoder) ZeroGrad() {
+	ae.fc1.ZeroGrad()
+	ae.fc2.ZeroGrad()
+	ae.fc3.ZeroGrad()
+	ae.fc4.ZeroGrad()
+	ae.fc5.ZeroGrad()
+	ae.fc6.ZeroGrad()
+}
+
+func main() {
+	// 创建AutoEncoder模型
+	model := NewAutoEncoder()
+
+	// 示例输入 (784维向量，模拟MNIST图像)
+	input := tensor.NewTensor(make([]float64, 784), []int{1, 784})
+
+	// 前向传播
+	output := model.Forward(input)
+	fmt.Println("Output shape:", output.Shape)
 }

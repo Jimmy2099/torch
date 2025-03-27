@@ -10,6 +10,10 @@ type SigmoidLayer struct {
 	// Sigmoid 层不需要存储额外的参数，因此这里没有额外的字段
 }
 
+func NewSigmoidLayer() *SigmoidLayer {
+	return &SigmoidLayer{}
+}
+
 // Sigmoid 激活函数
 func Sigmoid(x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
