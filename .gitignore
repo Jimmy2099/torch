@@ -5,3 +5,4 @@ etc/
 *.csv
 *.pth
 *.png
+cmd/03_auto_encoder/py/data/
