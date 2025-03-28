@@ -11,7 +11,7 @@ import numpy as np # Make sure numpy is imported
 NOISE_FACTOR = 0.25 # Intensity of Gaussian noise to add (adjust as needed)
 NUM_IMAGES = 10     # Number of images to sample and save
 SAVE_DIR = './mnist_noisy_images' # Directory to save noisy images and CSVs
-DATA_ROOT = './data' # Directory to download/load MNIST dataset
+DATA_ROOT = './dataset' # Directory to download/load MNIST dataset
 # --- End Configuration ---
 
 print("Starting script to generate noisy MNIST samples...")

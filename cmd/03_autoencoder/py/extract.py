@@ -1,13 +1,6 @@
 import torch
 import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import torch.nn.functional as F
-import numpy as np
-from sklearn.decomposition import PCA
-import matplotlib.gridspec as gridspec
+
 
 # 定义 Autoencoder 模型
 class Autoencoder(nn.Module):
@@ -34,6 +27,7 @@ class Autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return encoded, decoded
 
+
 # 设备选择
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -44,6 +38,9 @@ model.eval()
 
 print(model)
 import numpy as np
+import os
+
+os.mkdir("data")
 for name, param in model.named_parameters():
     # if name == "embedder.weight":
     #     continue
