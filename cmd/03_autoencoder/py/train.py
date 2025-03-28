@@ -40,7 +40,7 @@ transform = transforms.Compose([
 ])
 
 # 加载 MNIST 数据集
-train_dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transform, download=True)
+train_dataset = torchvision.datasets.MNIST(root='./dataset', train=True, transform=transform, download=True)
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
 # 设备选择

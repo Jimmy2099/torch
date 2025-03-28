@@ -46,7 +46,7 @@ model.eval()
 transform = transforms.Compose([transforms.ToTensor(), transforms.Lambda(lambda x: x.view(-1))])
 
 # 加载测试数据
-test_dataset = torchvision.datasets.MNIST(root='./data', train=False, transform=transform, download=True)
+test_dataset = torchvision.datasets.MNIST(root='./dataset', train=False, transform=transform, download=True)
 test_loader = DataLoader(test_dataset, batch_size=10, shuffle=True)
 
 # 获取一个批次的数据
