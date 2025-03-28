@@ -2,11 +2,19 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"io"
+	"log"
+	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // AutoEncoder defines the structure of the autoencoder model.
@@ -47,10 +55,20 @@ type AutoEncoder struct {
 	Sigmoid1 *torch.SigmoidLayer // Output activation
 }
 
+// Helper structure to group layer loading information
+type layerLoadInfo struct {
+	pyTorchName string             // Name used in PyTorch state_dict keys (e.g., "encoder.0")
+	goLayer     *torch.LinearLayer // Pointer to the corresponding layer in the Go struct
+	weightShape []int              // Expected shape of the weight tensor
+	biasShape   []int              // Expected shape of the bias tensor
+}
+
 // NewAutoEncoder creates and initializes a new AutoEncoder model.
-// It also loads the pre-trained weights and biases from CSV files.
+// It loads the pre-trained weights and biases from CSV files using a pattern
+// similar to the provided CNN example.
 func NewAutoEncoder() *AutoEncoder {
 	// 1. Initialize the AutoEncoder struct with new layers
+	fmt.Println("Initializing AutoEncoder layers...")
 	ae := &AutoEncoder{
 		// Encoder
 		fc1:   torch.NewLinearLayer(784, 128),
@@ -67,293 +85,80 @@ func NewAutoEncoder() *AutoEncoder {
 		fc6:      torch.NewLinearLayer(128, 784),
 		Sigmoid1: torch.NewSigmoidLayer(),
 	}
+	fmt.Println("Layers initialized.")
 
-	// 2. Define layer file name components and shapes
-	layerFileNames := []string{
-		"encoder.0", // Corresponds to ae.fc1
-		"encoder.2", // Corresponds to ae.fc2
-		"encoder.4", // Corresponds to ae.fc3
-		"decoder.0", // Corresponds to ae.fc4
-		"decoder.2", // Corresponds to ae.fc5
-		"decoder.4", // Corresponds to ae.fc6
-	}
-
-	weightShapes := [][]int{
-		{128, 784}, // fc1
-		{64, 128},  // fc2
-		{32, 64},   // fc3
-		{64, 32},   // fc4
-		{128, 64},  // fc5
-		{784, 128}, // fc6
-	}
-	biasShapes := [][]int{
-		{128}, // fc1
-		{64},  // fc2
-		{32},  // fc3
-		{64},  // fc4
-		{128}, // fc5
-		{784}, // fc6
+	// 2. Define the mapping between PyTorch names, Go layers, and shapes
+	loadInfos := []layerLoadInfo{
+		{"encoder.0", ae.fc1, []int{128, 784}, []int{128}}, // fc1
+		{"encoder.2", ae.fc2, []int{64, 128}, []int{64}},   // fc2
+		{"encoder.4", ae.fc3, []int{32, 64}, []int{32}},    // fc3 (latent)
+		{"decoder.0", ae.fc4, []int{64, 32}, []int{64}},    // fc4
+		{"decoder.2", ae.fc5, []int{128, 64}, []int{128}},  // fc5
+		{"decoder.4", ae.fc6, []int{784, 128}, []int{784}}, // fc6
 	}
 
 	// 3. Get base data path
-	basePath := "py/data" // Relative path to data directory
+	basePath := "py/data" // Relative path to data directory from where Go runs
 	d, err := os.Getwd()
 	if err != nil {
 		panic(fmt.Sprintf("Error getting working directory: %v", err))
 	}
 	dataPath := filepath.Join(d, basePath)
+	fmt.Printf("Base data path set to: %s\n", dataPath)
 
-	fmt.Println("Loading AutoEncoder model parameters...")
+	fmt.Println("\nLoading AutoEncoder model parameters...")
 
-	// 4. Load parameters for each layer in separate blocks
+	// 4. Loop through the layer info and load parameters
+	for _, info := range loadInfos {
+		fmt.Printf("\n--- Loading parameters for: %s ---\n", info.pyTorchName)
 
-	// --- Layer fc1 (encoder.0) ---
-	{
-		layerIdx := 0
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
+		// --- Load Weights ---
+		weightFileName := info.pyTorchName + ".weight.csv"
+		weightFilePath := filepath.Join(dataPath, weightFileName)
+		fmt.Printf("Attempting to load weights from: %s\n", weightFilePath)
 
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
+		// Assuming LoadMatrixFromCSV returns a struct with a Data field (like [][]float64)
+		weightMatrix, err := torch.LoadMatrixFromCSV(weightFilePath)
 		if err != nil {
 			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
 		}
-		ae.fc1.SetWeights(weightData.Data) // Set weights for fc1
-		ae.fc1.Weights.Reshape(wShape)     // Reshape weights for fc1
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc1.Weights.Shape)
 
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
+		// Set weights using the method from the LinearLayer
+		// Adapt this if the method signature is different (e.g., expects *tensor.Tensor)
+		info.goLayer.SetWeights(weightMatrix.Data) // Assuming SetWeights takes [][]float64
+
+		// Reshape the internal weight tensor *after* setting the data
+		if info.goLayer.Weights == nil {
+			panic(fmt.Sprintf("Weight tensor is nil after SetWeights for %s", info.pyTorchName))
+		}
+		info.goLayer.Weights.Reshape(info.weightShape) // Reshape internal tensor
+		fmt.Printf("Loaded weights for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Weights.Shape)
+
+		// --- Load Biases ---
+		biasFileName := info.pyTorchName + ".bias.csv"
+		biasFilePath := filepath.Join(dataPath, biasFileName)
+		fmt.Printf("Attempting to load biases from: %s\n", biasFilePath)
+
+		biasMatrix, err := torch.LoadMatrixFromCSV(biasFilePath)
 		if err != nil {
 			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
 		}
-		ae.fc1.SetBias(biasData.Data) // Set bias for fc1
-		ae.fc1.Bias.Reshape(bShape)   // Reshape bias for fc1
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc1.Bias.Shape)
+
+		// Set bias using the method from the LinearLayer
+		info.goLayer.SetBias(biasMatrix.Data) // Assuming SetBias takes [][]float64
+
+		// Reshape the internal bias tensor *after* setting the data
+		if info.goLayer.Bias == nil {
+			panic(fmt.Sprintf("Bias tensor is nil after SetBias for %s", info.pyTorchName))
+		}
+		info.goLayer.Bias.Reshape(info.biasShape) // Reshape internal tensor
+		fmt.Printf("Loaded biases for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Bias.Shape)
 	}
 
-	// --- Layer fc2 (encoder.2) ---
-	{
-		layerIdx := 1
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
+	fmt.Println("\n--- AutoEncoder model parameters loaded successfully. ---")
 
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		ae.fc2.SetWeights(weightData.Data) // Set weights for fc2
-		ae.fc2.Weights.Reshape(wShape)     // Reshape weights for fc2
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc2.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		ae.fc2.SetBias(biasData.Data) // Set bias for fc2
-		ae.fc2.Bias.Reshape(bShape)   // Reshape bias for fc2
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc2.Bias.Shape)
-	}
-
-	// --- Layer fc3 (encoder.4) ---
-	{
-		layerIdx := 2
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
-
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		ae.fc3.SetWeights(weightData.Data) // Set weights for fc3
-		ae.fc3.Weights.Reshape(wShape)     // Reshape weights for fc3
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc3.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		ae.fc3.SetBias(biasData.Data) // Set bias for fc3
-		ae.fc3.Bias.Reshape(bShape)   // Reshape bias for fc3
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc3.Bias.Shape)
-	}
-
-	// --- Layer fc4 (decoder.0) ---
-	{
-		layerIdx := 3
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
-
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		ae.fc4.SetWeights(weightData.Data) // Set weights for fc4
-		ae.fc4.Weights.Reshape(wShape)     // Reshape weights for fc4
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc4.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		ae.fc4.SetBias(biasData.Data) // Set bias for fc4
-		ae.fc4.Bias.Reshape(bShape)   // Reshape bias for fc4
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc4.Bias.Shape)
-	}
-
-	// --- Layer fc5 (decoder.2) ---
-	{
-		layerIdx := 4
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
-
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		ae.fc5.SetWeights(weightData.Data) // Set weights for fc5
-		ae.fc5.Weights.Reshape(wShape)     // Reshape weights for fc5
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc5.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		ae.fc5.SetBias(biasData.Data) // Set bias for fc5
-		ae.fc5.Bias.Reshape(bShape)   // Reshape bias for fc5
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc5.Bias.Shape)
-	}
-
-	// --- Layer fc6 (decoder.4) ---
-	{
-		layerIdx := 5
-		layerName := layerFileNames[layerIdx]
-		wShape := weightShapes[layerIdx]
-		bShape := biasShapes[layerIdx]
-		fmt.Printf("--- Loading %s ---\n", layerName)
-
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		ae.fc6.SetWeights(weightData.Data) // Set weights for fc6
-		ae.fc6.Weights.Reshape(wShape)     // Reshape weights for fc6
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, ae.fc6.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		ae.fc6.SetBias(biasData.Data) // Set bias for fc6
-		ae.fc6.Bias.Reshape(bShape)   // Reshape bias for fc6
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, ae.fc6.Bias.Shape)
-	}
-
-	fmt.Println("--- AutoEncoder model parameters loaded successfully. ---")
-
-	// 5. Return the initialized model
+	// 5. Return the initialized and populated model
 	return ae
-}
-
-// loadWeightsAndBiasesAE loads the weights and biases for the AutoEncoder from CSV files.
-func loadWeightsAndBiasesAE(ae *AutoEncoder) {
-	// Define the layer names as expected in the file system (e.g., fc1, fc2, ...)
-	// These should correspond to how the weights were saved (e.g., from Python).
-	layerNames := []string{"fc1", "fc2", "fc3", "fc4", "fc5", "fc6"}
-	layers := []*torch.LinearLayer{ae.fc1, ae.fc2, ae.fc3, ae.fc4, ae.fc5, ae.fc6}
-	// Expected shapes for weights [out_features, in_features] and biases [out_features]
-	// Note: LinearLayer weights are often stored/used as [out_features, in_features]
-	weightShapes := [][]int{
-		{128, 784}, // fc1
-		{64, 128},  // fc2
-		{32, 64},   // fc3
-		{64, 32},   // fc4
-		{128, 64},  // fc5
-		{784, 128}, // fc6
-	}
-	biasShapes := [][]int{
-		{128}, // fc1
-		{64},  // fc2
-		{32},  // fc3
-		{64},  // fc4
-		{128}, // fc5
-		{784}, // fc6
-	}
-
-	basePath := "py/data" // Assuming data files are in 'py/data' relative to execution directory
-	d, err := os.Getwd()
-	if err != nil {
-		panic(fmt.Sprintf("Error getting working directory: %v", err))
-	}
-	dataPath := filepath.Join(d, basePath)
-
-	fmt.Println("Loading AutoEncoder model parameters...")
-
-	for i, layerName := range layerNames {
-		layer := layers[i]
-		wShape := weightShapes[i]
-		bShape := biasShapes[i]
-
-		// Load Weights
-		weightFilePath := filepath.Join(dataPath, layerName+".weight.csv")
-		fmt.Printf("Loading weights for %s from %s\n", layerName, weightFilePath)
-		weightData, err := torch.LoadMatrixFromCSV(weightFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
-		}
-		layer.SetWeights(weightData.Data) // SetWeights likely expects [][]float64
-		// Reshape the internal tensor representation
-		layer.Weights = layer.Weights.Reshape(wShape)
-
-		fmt.Printf("Loaded weights for %s, shape: %v\n", layerName, layer.Weights.Shape)
-
-		// Load Biases
-		biasFilePath := filepath.Join(dataPath, layerName+".bias.csv")
-		fmt.Printf("Loading biases for %s from %s\n", layerName, biasFilePath)
-		biasData, err := torch.LoadMatrixFromCSV(biasFilePath)
-		if err != nil {
-			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
-		}
-		layer.SetBias(biasData.Data) // SetBias likely expects [][]float64
-		// Reshape the internal tensor representation
-		layer.Bias = layer.Bias.Reshape(bShape)
-
-		fmt.Printf("Loaded biases for %s, shape: %v\n", layerName, layer.Bias.Shape)
-		fmt.Println("---")
-	}
-	fmt.Println("AutoEncoder model parameters loaded successfully.")
 }
 
 // Forward performs the forward pass of the AutoEncoder.
@@ -450,37 +255,297 @@ func (ae *AutoEncoder) ZeroGrad() {
 }
 
 func main() {
-	// Create AutoEncoder model (this will also load weights/biases)
-	fmt.Println("Creating AutoEncoder model...")
-	model := NewAutoEncoder()
-	fmt.Println("AutoEncoder model created.")
+	{
+		{
+			//gen test data
+			d, _ := os.Getwd()
+			runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
+		}
+		directory := "./py/mnist_noisy_images" // Adjust the path to where your image CSVs and labels.csv are stored
 
-	// Example input (batch size 1, flattened 28x28 image = 784 features)
-	// Create a dummy tensor with shape [1, 784]
-	// In a real scenario, you would load an actual image and flatten it.
-	inputData := make([]float64, 784)
-	// Fill with some dummy values (e.g., 0.5)
-	for i := range inputData {
-		inputData[i] = 0.5
+		// Load data (images and labels)
+		images, labels, err := LoadDataFromCSVDir(directory)
+		if err != nil {
+			log.Fatalf("Error loading data: %v", err)
+		}
+
+		// Example: Print the first image matrix and its corresponding label
+		if len(images) > 0 && len(labels) > 0 {
+			fmt.Printf("First Image Data:\n%v\n", images[0])
+			fmt.Printf("First Image Label: %s\n", labels[0])
+		}
+
+		//num := 4
+		for num := 0; num < len(images); num++ {
+			model := NewAutoEncoder()
+			prediction := Predict(model, images[num])
+			prediction.SaveToCSV(filepath.Join(directory, strings.Replace(labels[num], ".png.csv", ".png.denoise.csv", -1)))
+			//fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
+		}
+		fmt.Println("label:", labels)
+		fileName := []string{}
+		{
+
+			for i := 0; i < len(labels); i++ {
+				d, _ := os.Getwd()
+				name := filepath.Join(d, "py", "mnist_noisy_images", labels[i])
+				name = strings.Replace(name, ".csv", "", -1)
+				fileName = append(fileName, name)
+				fmt.Println()
+			}
+			predictPlot(fileName)
+		}
+
 	}
-	input := tensor.NewTensor(inputData, []int{1, 784})
+}
 
-	fmt.Printf("\nCreated dummy input tensor with shape: %v\n", input.Shape)
+// ReadCSV reads an image from a CSV file and converts it to a matrix
+func ReadCSV(filepath string) (*tensor.Tensor, error) {
+	// Open the CSV file
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-	// Perform the forward pass
-	fmt.Println("\nStarting forward pass with dummy input...")
-	output := model.Forward(input)
-	fmt.Println("\nForward pass finished.")
+	// Read the CSV file
+	reader := csv.NewReader(file)
+	lines, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
 
-	// Print the output shape (should be the same as input shape: [1, 784])
-	fmt.Printf("Output tensor shape: %v\n", output.Shape)
+	// Flattened data of the image (784 pixels for MNIST)
+	// We assume each line is a single pixel in the image, and the total number of values should be 28*28 = 784
+	rows := len(lines)
+	cols := len(lines[0])
+	if rows*cols != 784 { // Ensure it matches the MNIST image size
+		return nil, fmt.Errorf("expected 784 values in CSV, got %d", rows*cols)
+	}
 
-	// Optionally, print some output values (e.g., first 10)
-	fmt.Println("First 10 output values:", output.Data[:10])
+	// Convert the CSV data to a flat matrix (784,)
+	data := make([]float64, rows*cols)
 
-	// You could also test the Parameters() and ZeroGrad() methods
-	// params := model.Parameters()
-	// fmt.Printf("\nNumber of parameter tensors: %d\n", len(params))
-	// model.ZeroGrad()
-	// fmt.Println("Gradients zeroed (notional test).")
+	for i, line := range lines {
+		for j, value := range line {
+			// Convert string to float64
+			val, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return nil, err
+			}
+			data[i*cols+j] = val
+		}
+	}
+
+	// Create a Tensor from the flattened image data
+	tensorImage := tensor.NewTensor(data, []int{28, 28})
+
+	return tensorImage, nil
+}
+
+func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
+	var tensors []*tensor.Tensor
+	var labels []string
+
+	// 读取标签文件
+	labelFilePath := filepath.Join(directory, "labels.csv")
+	labelFile, err := os.Open(labelFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("无法打开标签文件: %v", err)
+	}
+	defer labelFile.Close()
+
+	reader := csv.NewReader(labelFile)
+	labelRecords, err := reader.ReadAll()
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取标签CSV失败: %v", err)
+	}
+
+	// 创建文件名到标签的映射
+	labelMap := make(map[string]string)
+	for _, record := range labelRecords {
+		if len(record) >= 2 {
+			filename := strings.TrimSpace(record[0])
+			label := strings.TrimSpace(record[1])
+			labelMap[filename] = label
+		}
+	}
+
+	// 读取图像文件
+	files, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取目录失败: %v", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || file.Name() == "labels.csv" {
+			continue
+		}
+		if !strings.HasSuffix(file.Name(), "png.csv") {
+			continue
+		}
+
+		imagePath := filepath.Join(directory, file.Name())
+		image, err := ReadCSV(imagePath)
+		if err != nil {
+			log.Printf("读取图像文件 %s 失败: %v", file.Name(), err)
+			continue
+		}
+
+		// 获取对应的标签
+		label := file.Name()
+
+		tensors = append(tensors, image)
+		labels = append(labels, label)
+	}
+
+	return tensors, labels, nil
+}
+
+func Predict(model *AutoEncoder, image *tensor.Tensor) *tensor.Tensor {
+	// Pass the image through the model's forward pass
+	image = image.Reshape([]int{1, 1, 28, 28})
+	output := model.Forward(image)
+
+	output.Reshape([]int{28, 28})
+	return output
+}
+
+func predictPlot(imagePaths []string) error {
+
+	// 随机数后缀（保证每次文件名不同，不带 * 号）
+	rand.Seed(time.Now().UnixNano())
+	suffix := fmt.Sprintf("%d", rand.Intn(1000000))
+
+	// 构造临时 Python 脚本文件名，例如：predict_plot_123456.py
+	tmpScriptFileName := filepath.Join(os.TempDir(), "predict_plot_"+suffix+".py")
+	// 构造临时数据文件名，例如：image_predictions_123456.txt
+	tmpDataFileName := filepath.Join(os.TempDir(), "image_predictions_"+suffix+".txt")
+
+	// Python 脚本内容，不包含任何数据，数据从数据文件传入
+	pythonScript := `
+import sys
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import os
+import numpy as np
+
+def load_data(file_path):
+    image_paths = []
+    predictions = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            parts = line.strip().split(',')
+            image_paths.append(parts[0])
+            predictions.append(parts[1])
+    return image_paths, predictions
+
+def predict_plot(data_file):
+    image_paths, predictions = load_data(data_file)
+    num = len(image_paths)
+    fig, axes = plt.subplots(2, num, figsize=(15, 5)) 
+
+    for i, (img_path, denoise_csv_path) in enumerate(zip(image_paths, predictions)):
+        img = mpimg.imread(img_path)
+        axes[0,i].imshow(img, cmap='gray')
+        print(denoise_csv_path)
+        print(f"Attempting to load: {denoise_csv_path}")
+        image_data = np.loadtxt(denoise_csv_path, delimiter=',', dtype=np.float64)
+        axes[1,i].imshow(image_data, cmap='gray')
+        #plt.imshow(image_data, cmap='gray', vmin=0, vmax=1)
+        os.remove(denoise_csv_path)
+        axes[0,i].axis('off')
+        axes[1,i].axis('off')
+
+    plt.tight_layout()
+    plt.savefig("predictions.png")
+    plt.show()
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python predict_plot.py <data_file_path>")
+        sys.exit(1)
+    data_file = sys.argv[1]
+    predict_plot(data_file)
+`
+	// 创建 Python 脚本文件
+	scriptFile, err := os.Create(tmpScriptFileName)
+	if err != nil {
+		return fmt.Errorf("unable to create temp Python script: %v", err)
+	}
+	_, err = scriptFile.WriteString(pythonScript)
+	if err != nil {
+		scriptFile.Close()
+		return fmt.Errorf("unable to write Python script: %v", err)
+	}
+	scriptFile.Close()
+	defer os.Remove(tmpScriptFileName) // 执行完后删除文件
+
+	// 创建临时数据文件，写入图片路径和预测结果，每行格式：图片路径,预测结果
+	dataFile, err := os.Create(tmpDataFileName)
+	if err != nil {
+		return fmt.Errorf("unable to create temp data file: %v", err)
+	}
+	for i := 0; i < len(imagePaths); i++ {
+		_, err := dataFile.WriteString(fmt.Sprintf("%s,%s\n", imagePaths[i], imagePaths[i]+".denoise.csv"))
+		if err != nil {
+			dataFile.Close()
+			return fmt.Errorf("unable to write to temp data file: %v", err)
+		}
+	}
+	dataFile.Close()
+	defer os.Remove(tmpDataFileName)
+
+	// 调用 Python 脚本，将数据文件路径作为参数传入
+	cmd := exec.Command("python", tmpScriptFileName, tmpDataFileName)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error executing Python script: %v", err)
+	}
+
+	return nil
+}
+
+func runCommand(workSpace string, fileName string) {
+
+	// 执行 Python 脚本
+	cmd := exec.Command("python", fileName)
+	cmd.Dir = workSpace
+	// 实时打印输出
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(fmt.Sprintln("Error creating Stdout pipe:", err))
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		panic(fmt.Sprintln("Error creating Stderr pipe:", err))
+	}
+
+	// 启动命令
+	if err := cmd.Start(); err != nil {
+		panic(fmt.Sprintln("Error starting Python script:", err))
+	}
+
+	// 使用 Goroutines 来实时打印标准输出和错误输出
+	go func() {
+		_, err := io.Copy(os.Stdout, stdout)
+		if err != nil {
+			panic(fmt.Sprintln("Error copying stdout:", err))
+		}
+	}()
+
+	go func() {
+		_, err := io.Copy(os.Stderr, stderr)
+		if err != nil {
+			panic(fmt.Sprintln("Error copying stderr:", err))
+		}
+	}()
+
+	// 等待命令执行完成
+	if err := cmd.Wait(); err != nil {
+		panic(fmt.Sprintln("Error waiting for Python script to finish:", err))
+	}
 }
