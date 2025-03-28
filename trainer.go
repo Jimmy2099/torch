@@ -19,7 +19,7 @@ func NewBasicTrainer(lossFunc func(predictions, targets *tensor.Tensor) float64)
 	}
 }
 
-func (t *BasicTrainer) Train(model Model, inputs, targets *tensor.Tensor, epochs int, learningRate float64) {
+func (t *BasicTrainer) Train(model ModelInterface, inputs, targets *tensor.Tensor, epochs int, learningRate float64) {
 	start := time.Now()
 
 	// 记录损失历史
@@ -60,7 +60,7 @@ func printLoss(lossHistory []float64) {
 	}
 }
 
-func (t *BasicTrainer) Validate(model Model, inputs, targets *tensor.Tensor) float64 {
+func (t *BasicTrainer) Validate(model ModelInterface, inputs, targets *tensor.Tensor) float64 {
 	outputs := model.Forward(inputs)
 	return t.LossFunc(outputs, targets)
 }
