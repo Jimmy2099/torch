@@ -72,33 +72,21 @@ def test(epoch, model, fixed_real_batch, fixed_noise, device, reconstruction_dir
         save_image(random_generated * 0.5 + 0.5,
                    os.path.join(generated_dir, f'random_generated_epoch_{epoch}.png'), nrow=8)
 
+from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
+# --- Hardcoded Training Parameters ---
+DATA_DIR = 'dataset/images'
+RESULTS_DIR = 'output/vae_anime'
+BATCH_SIZE = 64
+EPOCHS = 100
+LEARNING_RATE = 1e-4
+USE_CUDA_IF_AVAILABLE = True
+SEED = 42
+LOG_INTERVAL = 50
+SAVE_INTERVAL = 2
+NUM_WORKERS = 2 # Set number of workers for DataLoader
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
-
-    # --- Import VAE model and parameters ---
-    # It's generally okay to import here or at the top,
-    # but ensure vae_model.py only contains definitions.
-    try:
-        from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
-        # Note: loss function is imported inside train() or could be here too
-    except ImportError:
-        print("Error: Could not import from vae_model.py.")
-        print("Make sure vae_model.py contains the new PyTorch VAE class and is accessible.")
-        exit()
-
-    # --- Hardcoded Training Parameters ---
-    DATA_DIR = 'dataset/images'
-    RESULTS_DIR = 'results_vae_anime_pytorch_v2'
-    BATCH_SIZE = 64
-    EPOCHS = 100
-    LEARNING_RATE = 1e-4
-    USE_CUDA_IF_AVAILABLE = True
-    SEED = 42
-    LOG_INTERVAL = 50
-    SAVE_INTERVAL = 10
-    NUM_WORKERS = 2 # Set number of workers for DataLoader
-
     # --- 设置设备和种子 --- (Moved inside main block)
     use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
     DEVICE = torch.device("cuda" if use_cuda else "cpu")
