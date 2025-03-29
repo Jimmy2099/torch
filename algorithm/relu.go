@@ -1,4 +1,4 @@
-package torch
+package algorithm
 
 func Relu(x float64) float64 {
 	if x > 0 {
