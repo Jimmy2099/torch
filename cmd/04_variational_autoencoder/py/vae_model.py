@@ -1,129 +1,127 @@
+# vae_model.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# --- 共享的模型/数据参数 ---
-# 这些参数需要在训练和生成时保持一致
-IMAGE_SIZE = 64       # 图像尺寸
-CHANNELS_IMG = 3      # 图像通道数 (RGB)
-LATENT_DIM = 128      # 潜在空间维度 (需要与训练时一致)
+# --- Shared Parameters ---
+# Define these here so the main script can import them if needed,
+# or just ensure consistency between this file and the main script.
+IMAGE_SIZE = 64
+CHANNELS_IMG = 3
+LATENT_DIM = 64 # Match the TF example
 
 class VAE(nn.Module):
     def __init__(self, channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE):
         super(VAE, self).__init__()
         self.latent_dim = latent_dim
         self.image_size = image_size
+        ef_dim = 64  # Encoder filter dimension base (matches gf_dim in TF decoder)
 
-        # --- 编码器 ---
-        modules_enc = []
-        hidden_dims = [32, 64, 128, 256] # 可以调整卷积层的通道数
+        # --- Encoder --- similar to conv_anime_encoder
+        encoder_layers = []
+        # Input: (batch_size, channels_img, image_size, image_size) -> (N, 3, 64, 64)
+        encoder_layers.append(nn.Conv2d(channels_img, ef_dim, kernel_size=5, stride=2, padding=2)) # -> (N, 64, 32, 32)
+        encoder_layers.append(nn.BatchNorm2d(ef_dim))
+        encoder_layers.append(nn.ReLU(True))
 
-        in_channels = channels_img
-        current_size = image_size
-        for h_dim in hidden_dims:
-            modules_enc.append(
-                nn.Sequential(
-                    nn.Conv2d(in_channels, out_channels=h_dim,
-                              kernel_size=3, stride=2, padding=1), # Stride=2 halves spatial dimensions
-                    nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU())
-            )
-            in_channels = h_dim
-            current_size //= 2 # Calculate final spatial size
+        encoder_layers.append(nn.Conv2d(ef_dim, ef_dim * 2, kernel_size=5, stride=2, padding=2)) # -> (N, 128, 16, 16)
+        encoder_layers.append(nn.BatchNorm2d(ef_dim * 2))
+        encoder_layers.append(nn.ReLU(True))
 
-        self.encoder = nn.Sequential(*modules_enc)
+        encoder_layers.append(nn.Conv2d(ef_dim * 2, ef_dim * 4, kernel_size=5, stride=2, padding=2)) # -> (N, 256, 8, 8)
+        encoder_layers.append(nn.BatchNorm2d(ef_dim * 4))
+        encoder_layers.append(nn.ReLU(True))
 
-        # 计算展平后的维度
-        self.flattened_size = hidden_dims[-1] * (current_size ** 2)
+        encoder_layers.append(nn.Conv2d(ef_dim * 4, ef_dim * 8, kernel_size=5, stride=2, padding=2)) # -> (N, 512, 4, 4)
+        encoder_layers.append(nn.BatchNorm2d(ef_dim * 8))
+        encoder_layers.append(nn.ReLU(True))
 
-        self.fc_mu = nn.Linear(self.flattened_size, latent_dim)
-        self.fc_log_var = nn.Linear(self.flattened_size, latent_dim)
+        self.encoder_conv = nn.Sequential(*encoder_layers)
 
-        # --- 解码器 ---
-        modules_dec = []
-        self.decoder_input = nn.Linear(latent_dim, self.flattened_size)
-
-        hidden_dims.reverse() # [256, 128, 64, 32]
-
-        in_channels = hidden_dims[0] # Start with 256
-        for i in range(len(hidden_dims) - 1):
-            modules_dec.append(
-                nn.Sequential(
-                    nn.ConvTranspose2d(in_channels,
-                                       hidden_dims[i + 1],
-                                       kernel_size=3,
-                                       stride=2,
-                                       padding=1,
-                                       output_padding=1),
-                    nn.BatchNorm2d(hidden_dims[i + 1]),
-                    nn.LeakyReLU())
-            )
-            in_channels = hidden_dims[i+1]
-            current_size *= 2 # Track spatial size increase
-
-        # 最后一个转置卷积层，输出通道为 channels_img
-        modules_dec.append(
-            nn.Sequential(
-                nn.ConvTranspose2d(hidden_dims[-1], # Input channels = 32
-                                   channels_img,
-                                   kernel_size=3,
-                                   stride=2,
-                                   padding=1,
-                                   output_padding=1), # Should bring size back to image_size
-                nn.Sigmoid()) # 输出范围 [0, 1]
-        )
-        current_size *= 2 # Final size check
-
-        # 断言确保解码器最终输出尺寸与输入图像尺寸一致
-        assert current_size == self.image_size, f"Decoder output size {current_size} does not match IMAGE_SIZE {self.image_size}"
+        # Flatten and final layers for mean and logvar
+        self.flatten = nn.Flatten()
+        # Calculate the flattened size after conv layers: ef_dim*8 * (image_size//16) * (image_size//16)
+        encoder_output_size = ef_dim * 8 * (image_size // 16) * (image_size // 16) # 512 * 4 * 4 = 8192
+        self.fc_mu = nn.Linear(encoder_output_size, latent_dim)
+        self.fc_logvar = nn.Linear(encoder_output_size, latent_dim)
 
 
-        self.decoder_conv = nn.Sequential(*modules_dec)
-        # 保存解码器输入卷积前的期望形状
-        self.decoder_reshape_dims = (hidden_dims[0], image_size // (2**len(hidden_dims)), image_size // (2**len(hidden_dims)))
+        # --- Decoder --- similar to conv_anime_decoder
+        gf_dim = ef_dim # Decoder filter dimension base
+        decoder_input_size = gf_dim * 8 * (image_size // 16) * (image_size // 16) # Start size matches encoder output before FC
+
+        self.decoder_fc = nn.Linear(latent_dim, decoder_input_size)
+
+        # Reshape layer will be handled in forward pass
+        self.decoder_reshape_channels = gf_dim * 8 # 512
+        self.decoder_reshape_size = image_size // 16 # 4
+
+        decoder_layers = []
+        # Input: (N, 512, 4, 4)
+        decoder_layers.append(nn.ConvTranspose2d(gf_dim * 8, gf_dim * 4, kernel_size=5, stride=2, padding=2, output_padding=1)) # -> (N, 256, 8, 8)
+        decoder_layers.append(nn.BatchNorm2d(gf_dim * 4))
+        decoder_layers.append(nn.ReLU(True))
+
+        decoder_layers.append(nn.ConvTranspose2d(gf_dim * 4, gf_dim * 2, kernel_size=5, stride=2, padding=2, output_padding=1)) # -> (N, 128, 16, 16)
+        decoder_layers.append(nn.BatchNorm2d(gf_dim * 2))
+        decoder_layers.append(nn.ReLU(True))
+
+        decoder_layers.append(nn.ConvTranspose2d(gf_dim * 2, gf_dim, kernel_size=5, stride=2, padding=2, output_padding=1)) # -> (N, 64, 32, 32)
+        decoder_layers.append(nn.BatchNorm2d(gf_dim))
+        decoder_layers.append(nn.ReLU(True))
+
+        # Final layer to get back to image channels, using stride=2 like the TF DeConv layer for the last upsampling step
+        decoder_layers.append(nn.ConvTranspose2d(gf_dim, channels_img, kernel_size=5, stride=2, padding=2, output_padding=1)) # -> (N, 3, 64, 64)
+        # Activation matches TF example and [-1, 1] normalization
+        decoder_layers.append(nn.Tanh())
+
+        self.decoder_conv = nn.Sequential(*decoder_layers)
 
 
     def encode(self, x):
-        result = self.encoder(x)
-        result = torch.flatten(result, start_dim=1) # 展平
-        mu = self.fc_mu(result)
-        log_var = self.fc_log_var(result)
-        return mu, log_var
+        x = self.encoder_conv(x)
+        x = self.flatten(x)
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
+        return mu, logvar
 
-    def reparameterize(self, mu, log_var):
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std) # 从 N(0, I) 采样 epsilon
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
         return mu + eps * std
 
     def decode(self, z):
-        result = self.decoder_input(z)
-        # Reshape 回卷积层需要的形状
-        result = result.view(-1, *self.decoder_reshape_dims)
-        result = self.decoder_conv(result)
-        return result
+        x = self.decoder_fc(z)
+        # Reshape: (N, decoder_input_size) -> (N, channels, size, size)
+        x = x.view(-1, self.decoder_reshape_channels, self.decoder_reshape_size, self.decoder_reshape_size)
+        x = self.decoder_conv(x)
+        return x
 
     def forward(self, x):
-        mu, log_var = self.encode(x)
-        z = self.reparameterize(mu, log_var)
-        reconstruction = self.decode(z)
-        return reconstruction, mu, log_var
+        mu, logvar = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        recon_x = self.decode(z)
+        return recon_x, mu, logvar
 
-# --- VAE 损失函数 (也放在这里方便共享，虽然主要在训练用) ---
-def vae_loss_function(recon_x, x, mu, log_var, kld_weight=1.0, image_size=IMAGE_SIZE, channels_img=CHANNELS_IMG):
-    # 重建损失 (BCE)
-    recon_loss = F.binary_cross_entropy(recon_x.view(-1, image_size*image_size*channels_img),
-                                        x.view(-1, image_size*image_size*channels_img),
-                                        reduction='sum')
+# Define Loss Function Here (or keep it inline in the main script)
+# This version matches the TF logic more closely (summing, then averaging batch)
+def vae_loss_function_pytorch(recon_x, x, mu, logvar):
+    """
+    Computes the VAE loss function.
+    loss = Reconstruction loss + KL divergence
+    Assumes recon_x and x are in range [-1, 1] due to Tanh activation. Uses MSE.
+    """
+    # Reconstruction Loss (MSE Loss, summed over pixels and channels, averaged over batch)
+    # MSE = F.mse_loss(recon_x, x, reduction='sum') / x.size(0) # Average over batch
+    # Simpler: use reduction='mean' which averages over all elements, then multiply by num_elements
+    recon_loss = F.mse_loss(recon_x, x, reduction='mean') * x.nelement() / x.size(0) # Average over batch
 
-    # KL 散度损失 D_KL( N(mu, var) || N(0, 1) )
-    kld_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+    # KL Divergence (summed over latent dimensions, averaged over batch)
+    # see Appendix B from VAE paper: Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+    # https://arxiv.org/abs/1312.6114
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    kld = kld / x.size(0) # Average over batch
 
-    # 加权总损失
-    loss = recon_loss + kld_weight * kld_loss
-
-    # 平均到每个样本
-    loss = loss / x.size(0)
-    recon_loss = recon_loss / x.size(0)
-    kld_loss = kld_loss / x.size(0)
-
-    return loss, recon_loss, kld_loss
+    total_loss = recon_loss + kld
+    return total_loss, recon_loss, kld

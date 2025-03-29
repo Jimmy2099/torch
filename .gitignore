@@ -1,5 +1,6 @@
 .idea/
 dataset
+output
 *.gguf
 etc/
 *.csv

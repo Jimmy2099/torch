@@ -1,194 +1,199 @@
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 import os
 import time
 
-# 从模型文件中导入 VAE 类和共享参数/函数
-# 确保 vae_model.py 在同一个目录下或 Python 的搜索路径中
-try:
-    from vae_model import VAE, vae_loss_function, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
-except ImportError:
-    print("Error: Could not import from vae_model.py.")
-    print("Make sure vae_model.py is in the same directory or accessible in the Python path.")
-    exit()
-
-# --- Hardcoded Training Parameters ---
-#https://www.kaggle.com/datasets/splcher/animefacedataset/data
-DATA_DIR = 'dataset/images'
-RESULTS_DIR = 'results_vae_anime_hardcoded' # 保存结果和模型的目录名
-BATCH_SIZE = 128      # 批处理大小
-EPOCHS = 50           # 训练轮数
-LEARNING_RATE = 1e-3  # 学习率
-KLD_WEIGHT = 0.00025  # KL散度损失的权重
-# LATENT_DIM 在 vae_model.py 中定义并导入，这里直接使用导入的值
-USE_CUDA_IF_AVAILABLE = True # 设置为 False 可强制使用 CPU
-SEED = 42             # 随机种子
-LOG_INTERVAL = 100    # 每隔多少个 batch 打印一次日志
-SAVE_INTERVAL = 10    # 每隔多少个 epoch 保存一次模型
-
-# --- 设置设备和种子 ---
-use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
-DEVICE = torch.device("cuda" if use_cuda else "cpu")
-torch.manual_seed(SEED)
-if use_cuda:
-    torch.cuda.manual_seed(SEED)
-
-print(f"Using device: {DEVICE}")
-print(f"Using Latent Dim: {LATENT_DIM}") # 确认使用的潜在维度 (从 vae_model 导入)
-
-# --- 创建结果目录 ---
-results_base_dir = RESULTS_DIR
-reconstruction_dir = os.path.join(results_base_dir, 'reconstructed_train')
-generated_dir = os.path.join(results_base_dir, 'generated_train')
-models_dir = os.path.join(results_base_dir, 'models')
-os.makedirs(reconstruction_dir, exist_ok=True)
-os.makedirs(generated_dir, exist_ok=True)
-os.makedirs(models_dir, exist_ok=True)
-
-# --- 数据预处理 ---
-# IMAGE_SIZE 从 vae_model 导入
-transform = transforms.Compose([
-    transforms.Resize(IMAGE_SIZE),
-    transforms.CenterCrop(IMAGE_SIZE),
-    transforms.ToTensor(),  # [0, 1]
-])
-
-# --- 数据加载 ---
-if not os.path.isdir(DATA_DIR):
-    print(f"Error: Dataset directory not found at '{DATA_DIR}'")
-    print("Please modify the DATA_DIR variable in the script to your actual dataset path.")
-    exit()
-
-try:
-    dataset = datasets.ImageFolder(root=DATA_DIR, transform=transform)
-    # 检查数据集是否为空
-    if len(dataset) == 0:
-        print(f"Error: No images found in the dataset directory '{DATA_DIR}' or its subdirectories.")
-        print("Please ensure your dataset is structured correctly for ImageFolder (e.g., data_dir/subdir/image.png).")
-        exit()
-
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True,
-                            num_workers=0, pin_memory=use_cuda)
-    print(f"Dataset loaded from {DATA_DIR}. Number of images: {len(dataset)}")
-except Exception as e:
-    print(f"An error occurred loading the dataset: {e}")
-    exit()
-
-# --- 初始化模型和优化器 ---
-# 使用从 vae_model 导入的 CHANNELS_IMG, LATENT_DIM, IMAGE_SIZE
-model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-
-# --- 训练函数 ---
-def train(epoch):
+# Keep imports and potentially function/class definitions outside
+# --- Function Definitions --- (Keep these outside the main block)
+def train(epoch, model, dataloader, optimizer, device, log_interval, batch_size):
     model.train()
     train_loss = 0
-    train_recon_loss = 0
-    train_kld_loss = 0
-    start_epoch_batches = time.time() # Timer for batches within an epoch
+    train_recon_loss_accum = 0
+    train_kld_loss_accum = 0
+    start_epoch_time = time.time()
+
+    num_batches = len(dataloader)
+    # Use the imported loss function directly if preferred, or calculate inline
+    from vae_model import vae_loss_function_pytorch # Assuming it's defined there
 
     for batch_idx, (data, _) in enumerate(dataloader):
-        start_batch_time = time.time() # Timer for a single batch
-        data = data.to(DEVICE)
+        start_batch_time = time.time()
+        data = data.to(device)
         optimizer.zero_grad()
 
         recon_batch, mu, log_var = model(data)
-        # 使用从 vae_model 导入的 IMAGE_SIZE, CHANNELS_IMG 和上面定义的 KLD_WEIGHT
-        loss, recon_loss, kld_loss = vae_loss_function(recon_batch, data, mu, log_var, KLD_WEIGHT, IMAGE_SIZE, CHANNELS_IMG)
+
+        loss, recon_loss, kld_loss = vae_loss_function_pytorch(recon_batch, data, mu, log_var)
 
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item()
-        train_recon_loss += recon_loss.item()
-        train_kld_loss += kld_loss.item()
+        train_recon_loss_accum += recon_loss.item()
+        train_kld_loss_accum += kld_loss.item()
 
         batch_process_time = time.time() - start_batch_time
 
-        if batch_idx % LOG_INTERVAL == 0:
-            batches_processed = batch_idx + 1
-            avg_batch_time_so_far = (time.time() - start_epoch_batches) / batches_processed if batches_processed > 0 else 0
-            print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(dataloader.dataset)} ({100. * batch_idx / len(dataloader):.0f}%)]\t'
-                  f'Loss: {loss.item():.4f} (Recon: {recon_loss.item():.4f}, KLD: {kld_loss.item():.4f})\t'
-                  # f'Batch Time: {batch_process_time:.3f}s\t'
-                  f'Avg Batch Time: {avg_batch_time_so_far:.3f}s')
+        if batch_idx % log_interval == 0:
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(dataloader.dataset)} ({100. * batch_idx / num_batches:.0f}%)]\t'
+                  f'Loss: {loss.item() / len(data):.4f} \t'
+                  f'Avg Batch Time: {batch_process_time:.3f}s \t'
+                  f'LR: {current_lr:.1e}')
 
+    avg_loss = train_loss / len(dataloader.dataset)
+    avg_recon_loss = train_recon_loss_accum / len(dataloader.dataset)
+    avg_kld_loss = train_kld_loss_accum / len(dataloader.dataset)
+    epoch_time = time.time() - start_epoch_time
 
-    avg_loss = train_loss / len(dataloader)
-    avg_recon_loss = train_recon_loss / len(dataloader)
-    avg_kld_loss = train_kld_loss / len(dataloader)
-
-    print(f'====> Epoch: {epoch} Average loss: {avg_loss:.4f} (Recon: {avg_recon_loss:.4f}, KLD: {avg_kld_loss:.4f})')
+    print(f'====> Epoch: {epoch} Average loss: {avg_loss:.4f} (Recon: {avg_recon_loss:.4f}, KLD: {avg_kld_loss:.4f}) \t'
+          f'Time: {epoch_time:.2f}s')
     return avg_loss, avg_recon_loss, avg_kld_loss
 
-# --- 测试/评估函数 (用于生成样本) ---
-def test(epoch, fixed_real_batch, fixed_noise):
+def test(epoch, model, fixed_real_batch, fixed_noise, device, reconstruction_dir, generated_dir, latent_dim, batch_size):
     model.eval()
     with torch.no_grad():
-        # 1. 重建图像
         recon_fixed, _, _ = model(fixed_real_batch)
-        comparison = torch.cat([fixed_real_batch.cpu(), recon_fixed.cpu()])
-        save_image(comparison,
+        comparison = torch.cat([fixed_real_batch.cpu() * 0.5 + 0.5,
+                                recon_fixed.cpu() * 0.5 + 0.5])
+        save_image(comparison.clamp(0, 1),
                    os.path.join(reconstruction_dir, f'reconstruction_epoch_{epoch}.png'), nrow=8)
 
-        # 2. 从固定噪声生成图像 (fixed_noise 在主循环开始时已根据 LATENT_DIM 创建)
         fixed_generated = model.decode(fixed_noise).cpu()
-        save_image(fixed_generated,
+        save_image(fixed_generated * 0.5 + 0.5,
                    os.path.join(generated_dir, f'fixed_generated_epoch_{epoch}.png'), nrow=8)
 
-        # 3. 从随机噪声生成图像 (使用导入的 LATENT_DIM)
-        sample = torch.randn(64, LATENT_DIM).to(DEVICE)
+        sample = torch.randn(batch_size, latent_dim).to(device) # Use latent_dim directly
         random_generated = model.decode(sample).cpu()
-        save_image(random_generated,
+        save_image(random_generated * 0.5 + 0.5,
                    os.path.join(generated_dir, f'random_generated_epoch_{epoch}.png'), nrow=8)
 
 
+# --- Main Execution Block ---
 if __name__ == "__main__":
 
-    # --- 主训练循环 ---
+    # --- Import VAE model and parameters ---
+    # It's generally okay to import here or at the top,
+    # but ensure vae_model.py only contains definitions.
+    try:
+        from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
+        # Note: loss function is imported inside train() or could be here too
+    except ImportError:
+        print("Error: Could not import from vae_model.py.")
+        print("Make sure vae_model.py contains the new PyTorch VAE class and is accessible.")
+        exit()
+
+    # --- Hardcoded Training Parameters ---
+    DATA_DIR = 'dataset/images'
+    RESULTS_DIR = 'results_vae_anime_pytorch_v2'
+    BATCH_SIZE = 64
+    EPOCHS = 100
+    LEARNING_RATE = 1e-4
+    USE_CUDA_IF_AVAILABLE = True
+    SEED = 42
+    LOG_INTERVAL = 50
+    SAVE_INTERVAL = 10
+    NUM_WORKERS = 2 # Set number of workers for DataLoader
+
+    # --- 设置设备和种子 --- (Moved inside main block)
+    use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
+    DEVICE = torch.device("cuda" if use_cuda else "cpu")
+    torch.manual_seed(SEED)
+    if use_cuda:
+        torch.cuda.manual_seed(SEED)
+
+    print(f"Using device: {DEVICE}")
+    print(f"Imported Latent Dim: {LATENT_DIM}")
+    print(f"Imported Image Size: {IMAGE_SIZE}")
+
+    # --- 创建结果目录 --- (Moved inside main block)
+    results_base_dir = RESULTS_DIR
+    reconstruction_dir = os.path.join(results_base_dir, 'reconstructed_train')
+    generated_dir = os.path.join(results_base_dir, 'generated_train')
+    models_dir = os.path.join(results_base_dir, 'models')
+    os.makedirs(reconstruction_dir, exist_ok=True)
+    os.makedirs(generated_dir, exist_ok=True)
+    os.makedirs(models_dir, exist_ok=True)
+
+    # --- 数据预处理 --- (Moved inside main block)
+    transform = transforms.Compose([
+        transforms.Resize(IMAGE_SIZE),
+        transforms.CenterCrop(IMAGE_SIZE),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    ])
+
+    # --- 数据加载 --- (Moved inside main block)
+    if not os.path.isdir(DATA_DIR):
+        print(f"Error: Dataset directory not found at '{DATA_DIR}'")
+        exit()
+
+    try:
+        dataset = datasets.ImageFolder(root=DATA_DIR, transform=transform)
+        if len(dataset) == 0:
+            print(f"Error: No images found in the dataset directory '{DATA_DIR}' or its subdirectories.")
+            exit()
+
+        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                num_workers=NUM_WORKERS, pin_memory=use_cuda)
+        print(f"Dataset loaded from {DATA_DIR}. Number of images: {len(dataset)}")
+    except Exception as e:
+        print(f"An error occurred loading the dataset: {e}")
+        exit()
+
+    # --- 初始化模型和优化器 --- (Moved inside main block)
+    model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # --- 主训练循环 --- (Already inside, but now follows setup)
     print("Starting training...")
-    # 固定噪声和真实样本用于可视化
-    # 使用导入的 LATENT_DIM
     fixed_noise = torch.randn(64, LATENT_DIM).to(DEVICE)
 
-    # 尝试获取一个 batch 作为 fixed_real_batch
     try:
-        fixed_real_batch, _ = next(iter(dataloader))
-        fixed_real_batch = fixed_real_batch[:64].to(DEVICE) # Take first 64 samples
-        save_image(fixed_real_batch.cpu(), os.path.join(reconstruction_dir, 'real_samples.png'), nrow=8)
+        fixed_real_batch_iter = iter(dataloader)
+        fixed_real_batch, _ = next(fixed_real_batch_iter)
+        fixed_real_batch = fixed_real_batch[:64].to(DEVICE)
+        save_image(fixed_real_batch.cpu() * 0.5 + 0.5,
+                   os.path.join(reconstruction_dir, 'real_samples.png'), nrow=8)
     except StopIteration:
         print("Error: DataLoader is empty. Cannot get fixed real batch. Check dataset.")
         exit()
-
+    except Exception as e:
+        print(f"Error getting fixed real batch: {e}")
+        # It might be okay to continue without the fixed batch for testing if needed
+        fixed_real_batch = None
+        print("Warning: Proceeding without fixed real batch for testing.")
+        # exit() # Decide if this is critical
 
     total_start_time = time.time()
 
     for epoch in range(1, EPOCHS + 1):
-        epoch_start_time = time.time()
-        train(epoch)
-        test(epoch, fixed_real_batch, fixed_noise) # Generate samples after each epoch
-        epoch_time = time.time() - epoch_start_time
-        print(f"====> Epoch {epoch} completed in {epoch_time:.2f}s")
+        # Pass necessary variables to train/test functions
+        train(epoch, model, dataloader, optimizer, DEVICE, LOG_INTERVAL, BATCH_SIZE)
 
-        # 保存模型
-        # 使用上面定义的 SAVE_INTERVAL 和 EPOCHS
+        if (epoch % 5 == 0 or epoch == 1 or epoch == EPOCHS) and fixed_real_batch is not None:
+            test(epoch, model, fixed_real_batch, fixed_noise, DEVICE, reconstruction_dir, generated_dir, LATENT_DIM, BATCH_SIZE)
+
         if epoch % SAVE_INTERVAL == 0 or epoch == EPOCHS:
             model_path = os.path.join(models_dir, f'vae_anime_epoch_{epoch}.pth')
             try:
-                torch.save(model.state_dict(), model_path)
-                print(f"Model saved to {model_path}")
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                }, model_path)
+                print(f"Model checkpoint saved to {model_path}")
             except Exception as e:
                 print(f"Error saving model at epoch {epoch}: {e}")
-
 
     print("Training finished.")
     total_time = time.time() - total_start_time
     print(f"Total Training Time: {total_time:.2f} seconds ({total_time/3600:.2f} hours)")
 
-    # 保存最终模型 (以防万一)
     final_model_path = os.path.join(models_dir, 'vae_anime_final.pth')
     try:
         torch.save(model.state_dict(), final_model_path)
