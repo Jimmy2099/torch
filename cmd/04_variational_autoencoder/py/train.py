@@ -1,11 +1,12 @@
-import torch
-import torch.optim as optim
-import torch.nn.functional as F
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-from torchvision.utils import save_image
 import os
 import time
+
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+from torchvision.utils import save_image
+
 
 # Keep imports and potentially function/class definitions outside
 # --- Function Definitions --- (Keep these outside the main block)
@@ -18,7 +19,7 @@ def train(epoch, model, dataloader, optimizer, device, log_interval, batch_size)
 
     num_batches = len(dataloader)
     # Use the imported loss function directly if preferred, or calculate inline
-    from vae_model import vae_loss_function_pytorch # Assuming it's defined there
+    from vae_model import vae_loss_function_pytorch  # Assuming it's defined there
 
     for batch_idx, (data, _) in enumerate(dataloader):
         start_batch_time = time.time()
@@ -40,10 +41,11 @@ def train(epoch, model, dataloader, optimizer, device, log_interval, batch_size)
 
         if batch_idx % log_interval == 0:
             current_lr = optimizer.param_groups[0]['lr']
-            print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(dataloader.dataset)} ({100. * batch_idx / num_batches:.0f}%)]\t'
-                  f'Loss: {loss.item() / len(data):.4f} \t'
-                  f'Avg Batch Time: {batch_process_time:.3f}s \t'
-                  f'LR: {current_lr:.1e}')
+            print(
+                f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(dataloader.dataset)} ({100. * batch_idx / num_batches:.0f}%)]\t'
+                f'Loss: {loss.item() / len(data):.4f} \t'
+                f'Avg Batch Time: {batch_process_time:.3f}s \t'
+                f'LR: {current_lr:.1e}')
 
     avg_loss = train_loss / len(dataloader.dataset)
     avg_recon_loss = train_recon_loss_accum / len(dataloader.dataset)
@@ -54,7 +56,9 @@ def train(epoch, model, dataloader, optimizer, device, log_interval, batch_size)
           f'Time: {epoch_time:.2f}s')
     return avg_loss, avg_recon_loss, avg_kld_loss
 
-def test(epoch, model, fixed_real_batch, fixed_noise, device, reconstruction_dir, generated_dir, latent_dim, batch_size):
+
+def test(epoch, model, fixed_real_batch, fixed_noise, device, reconstruction_dir, generated_dir, latent_dim,
+         batch_size):
     model.eval()
     with torch.no_grad():
         recon_fixed, _, _ = model(fixed_real_batch)
@@ -67,12 +71,14 @@ def test(epoch, model, fixed_real_batch, fixed_noise, device, reconstruction_dir
         save_image(fixed_generated * 0.5 + 0.5,
                    os.path.join(generated_dir, f'fixed_generated_epoch_{epoch}.png'), nrow=8)
 
-        sample = torch.randn(batch_size, latent_dim).to(device) # Use latent_dim directly
+        sample = torch.randn(batch_size, latent_dim).to(device)  # Use latent_dim directly
         random_generated = model.decode(sample).cpu()
         save_image(random_generated * 0.5 + 0.5,
                    os.path.join(generated_dir, f'random_generated_epoch_{epoch}.png'), nrow=8)
 
+
 from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
+
 # --- Hardcoded Training Parameters ---
 DATA_DIR = 'dataset/images'
 RESULTS_DIR = 'output/vae_anime'
@@ -83,7 +89,7 @@ USE_CUDA_IF_AVAILABLE = True
 SEED = 42
 LOG_INTERVAL = 50
 SAVE_INTERVAL = 2
-NUM_WORKERS = 2 # Set number of workers for DataLoader
+NUM_WORKERS = 2  # Set number of workers for DataLoader
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
@@ -164,7 +170,8 @@ if __name__ == "__main__":
         train(epoch, model, dataloader, optimizer, DEVICE, LOG_INTERVAL, BATCH_SIZE)
 
         if (epoch % 5 == 0 or epoch == 1 or epoch == EPOCHS) and fixed_real_batch is not None:
-            test(epoch, model, fixed_real_batch, fixed_noise, DEVICE, reconstruction_dir, generated_dir, LATENT_DIM, BATCH_SIZE)
+            test(epoch, model, fixed_real_batch, fixed_noise, DEVICE, reconstruction_dir, generated_dir, LATENT_DIM,
+                 BATCH_SIZE)
 
         if epoch % SAVE_INTERVAL == 0 or epoch == EPOCHS:
             model_path = os.path.join(models_dir, f'vae_anime_epoch_{epoch}.pth')
@@ -180,7 +187,7 @@ if __name__ == "__main__":
 
     print("Training finished.")
     total_time = time.time() - total_start_time
-    print(f"Total Training Time: {total_time:.2f} seconds ({total_time/3600:.2f} hours)")
+    print(f"Total Training Time: {total_time:.2f} seconds ({total_time / 3600:.2f} hours)")
 
     final_model_path = os.path.join(models_dir, 'vae_anime_final.pth')
     try:
