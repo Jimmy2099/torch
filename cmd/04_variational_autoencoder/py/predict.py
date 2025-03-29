@@ -21,10 +21,10 @@ if __name__ == "__main__":
     use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
     DEVICE = torch.device("cuda" if use_cuda else "cpu")
 
-    # --- 不再设置固定的随机种子 ---
-    # torch.manual_seed(SEED) # 注释掉这一行
+    # torch.manual_seed(SEED)
+    torch.manual_seed(int(time.time()))
     # if use_cuda:
-    #     torch.cuda.manual_seed(SEED) # 注释掉这一行
+    #     torch.cuda.manual_seed(SEED)
     # --------------------------
 
     print(f"Using device: {DEVICE}")
