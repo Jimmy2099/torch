@@ -8,7 +8,7 @@ from torchvision.utils import save_image
 from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
 
 if __name__ == "__main__":
-    MODEL_PATH = 'output/vae_anime/models/vae_anime.pth'
+    MODEL_PATH = 'output/vae_anime/models/vae_anime_final.pth'
 
     OUTPUT_DIR = 'output/vae_generated'  # 保存生成图片的目录
     OUTPUT_NAME = 'random_generated.png'  # 生成的图片网格文件名
