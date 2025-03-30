@@ -88,8 +88,7 @@ LEARNING_RATE = 1e-4
 USE_CUDA_IF_AVAILABLE = True
 SEED = 42
 LOG_INTERVAL = 50
-SAVE_INTERVAL = 2
-NUM_WORKERS = 2  # Set number of workers for DataLoader
+SAVE_INTERVAL = 10
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
@@ -133,7 +132,7 @@ if __name__ == "__main__":
             exit()
 
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                num_workers=NUM_WORKERS, pin_memory=use_cuda)
+                                num_workers=0, pin_memory=use_cuda)
         print(f"Dataset loaded from {DATA_DIR}. Number of images: {len(dataset)}")
     except Exception as e:
         print(f"An error occurred loading the dataset: {e}")

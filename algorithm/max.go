@@ -1,7 +1,7 @@
-package max
+package algorithm
 
 // Helper function to find maximum of two integers
-func min(a, b int) int {
+func Max(a, b int) int {
 	if a > b {
 		return a
 	}

@@ -1,40 +1,17 @@
+import os
+import time
+
 import torch
-import torch.nn as nn
 
+USE_CUDA_IF_AVAILABLE = True
+use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
 
-# 定义 Autoencoder 模型
-class Autoencoder(nn.Module):
-    def __init__(self):
-        super(Autoencoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(28 * 28, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32)  # 特征层
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(32, 64),
-            nn.ReLU(),
-            nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.Linear(128, 28 * 28),
-            nn.Sigmoid()
-        )
+from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
+DEVICE = torch.device("cuda" if use_cuda else "cpu")
+model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
 
-    def forward(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return encoded, decoded
+#TODO load_state_dict
 
-
-# 设备选择
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# 加载模型
-model = Autoencoder().to(device)
-model.load_state_dict(torch.load("autoencoder.pth", map_location=device))
-model.eval()
 
 print(model)
 import numpy as np
