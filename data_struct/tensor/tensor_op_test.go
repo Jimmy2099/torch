@@ -231,7 +231,7 @@ func TestNewTensorFromSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantErr {
-				checkPanic(t, func() { NewTensorFromSlice(tt.input) })
+				checkPanic(t, func() { NewTensorFromSlice(tt.input) }, "")
 			} else {
 				tensor := NewTensorFromSlice(tt.input)
 				wantTensor := &Tensor{Data: tt.wantData, Shape: tt.wantShape}
@@ -295,7 +295,7 @@ func TestTensor_Reshape(t *testing.T) {
 			originalTensorPtr := tensor // Keep track of the original pointer
 
 			if tt.wantErr {
-				checkPanic(t, func() { tensor.Reshape(tt.reshapeTo) })
+				checkPanic(t, func() { tensor.Reshape(tt.reshapeTo) }, "")
 				// Also check that the tensor shape didn't change after panic
 				if !reflect.DeepEqual(tensor.Shape, tt.startShape) {
 					t.Errorf("Tensor shape changed after Reshape panic: got %v, expected original %v", tensor.Shape, tt.startShape)
@@ -339,7 +339,7 @@ func TestTensor_Reshape(t *testing.T) {
 
 		if sizeEmpty != sizeTensor1 {
 			// If sizes don't match, expect panic
-			checkPanic(t, func() { tensor1.Reshape([]int{}) })
+			checkPanic(t, func() { tensor1.Reshape([]int{}) }, "")
 		} else {
 			// If sizes match, expect success
 			tensor1.Reshape([]int{})
@@ -491,7 +491,7 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 			}
 
 			if tt.wantErr {
-				checkPanic(t, func() { tensor.SqueezeSpecific(tt.squeezeDims) })
+				checkPanic(t, func() { tensor.SqueezeSpecific(tt.squeezeDims) }, "")
 				if !reflect.DeepEqual(tensor.Shape, tt.startShape) {
 					t.Errorf("Tensor shape changed after panic: got %v, expected %v", tensor.Shape, tt.startShape)
 				}

@@ -134,7 +134,7 @@ func Test_getBroadcastedShape(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantErr {
-				checkPanic(t, func() { getBroadcastedShape(tt.a, tt.b) })
+				checkPanic(t, func() { getBroadcastedShape(tt.a, tt.b) }, "无法广播形状")
 			} else {
 				gotShape := getBroadcastedShape(tt.a, tt.b)
 				if !reflect.DeepEqual(gotShape, tt.wantShape) {
@@ -212,11 +212,11 @@ func TestTensor_broadcastedIndex(t *testing.T) {
 		strides := []int{3, 1}
 		badIndices := []int{1, 1, 1} // Length 3 != Length 2
 		// Expect panic due to index out of range on t.Shape[i] or strides[i]
-		checkPanic(t, func() { tensor.broadcastedIndex(badIndices, strides) })
+		checkPanic(t, func() { tensor.broadcastedIndex(badIndices, strides) }, "")
 
 		badStrides := []int{1} // Length 1 != Length 2
 		goodIndices := []int{1, 1}
-		checkPanic(t, func() { tensor.broadcastedIndex(goodIndices, badStrides) })
+		checkPanic(t, func() { tensor.broadcastedIndex(goodIndices, badStrides) }, "")
 	})
 
 }

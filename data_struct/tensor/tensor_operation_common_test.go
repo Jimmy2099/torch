@@ -10,19 +10,6 @@ import (
 
 const epsilon = 1e-9 // Tolerance for float comparisons
 
-// floatsEqual compares two float64 slices element-wise within a tolerance.
-func floatsEqual(a, b []float64, tol float64) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if math.Abs(a[i]-b[i]) > tol {
-			return false
-		}
-	}
-	return true
-}
-
 // tensorsEqual compares two Tensors for equality (shape and data within tolerance).
 func tensorsEqual(t1, t2 *Tensor, tol float64) bool {
 	if t1 == nil || t2 == nil {
@@ -35,7 +22,7 @@ func tensorsEqual(t1, t2 *Tensor, tol float64) bool {
 }
 
 // checkPanic checks if a function call panics.
-func checkPanic(t *testing.T, f func()) {
+func checkPanic1(t *testing.T, f func()) {
 	t.Helper()
 	defer func() {
 		if r := recover(); r == nil {
@@ -43,34 +30,6 @@ func checkPanic(t *testing.T, f func()) {
 		}
 	}()
 	f()
-}
-
-// --- Test Functions ---
-
-func TestCopy(t *testing.T) {
-	original := NewTensor([]float64{1, 2, 3, 4}, []int{2, 2})
-	copied := Copy(original)
-
-	if copied == original {
-		t.Errorf("Copy should return a new tensor instance, but got the same pointer")
-	}
-	if !tensorsEqual(original, copied, epsilon) {
-		t.Errorf("Copied tensor is not equal to original. Got %v, want %v", copied, original)
-	}
-
-	// Modify original and check if copy is affected (deep copy check)
-	original.Data[0] = 99.0
-	if copied.Data[0] == 99.0 {
-		t.Errorf("Modifying original tensor affected the copied tensor's data")
-	}
-	if copied.Shape[0] == 99 { // Check shape slice independence
-		t.Errorf("Modifying original tensor shape somehow affected the copied tensor's shape (should not happen)")
-	}
-
-	// Test copying nil (should maybe panic or return nil depending on desired behavior - current code doesn't check)
-	// var nilTensor *Tensor = nil
-	// copiedNil := Copy(nilTensor) // This would panic in the current Copy impl due to len(t.Data)
-	// Add nil check in Copy if needed
 }
 
 func TestTensor_Size(t *testing.T) {
@@ -160,7 +119,7 @@ func TestTensor_At(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantErr {
-				checkPanic(t, func() { tensor.At(tt.indices...) })
+				checkPanic(t, func() { tensor.At(tt.indices...) }, "")
 			} else {
 				got := tensor.At(tt.indices...)
 				if math.Abs(got-tt.want) > epsilon {
@@ -175,8 +134,8 @@ func TestTensor_At(t *testing.T) {
 	if got := tensor1D.At(1); got != 20.0 {
 		t.Errorf("At(1) on 1D tensor = %v, want %v", got, 20.0)
 	}
-	checkPanic(t, func() { tensor1D.At(3) })    // Out of bounds
-	checkPanic(t, func() { tensor1D.At(0, 0) }) // Wrong number of indices
+	checkPanic(t, func() { tensor1D.At(3) }, "")    // Out of bounds
+	checkPanic(t, func() { tensor1D.At(0, 0) }, "") // Wrong number of indices
 }
 
 func TestOnes(t *testing.T) {
@@ -213,13 +172,13 @@ func TestZerosLike(t *testing.T) {
 
 	// Test panic on nil tensor
 	t.Run("PanicOnNilInput", func(t *testing.T) {
-		checkPanic(t, func() { ZerosLike(nil) })
+		checkPanic(t, func() { ZerosLike(nil) }, "")
 	})
 
 	// Test panic on tensor with nil shape
 	t.Run("PanicOnNilShape", func(t *testing.T) {
 		badTensor := &Tensor{Data: []float64{1}} // Shape is nil
-		checkPanic(t, func() { ZerosLike(badTensor) })
+		checkPanic(t, func() { ZerosLike(badTensor) }, "")
 	})
 }
 
@@ -459,8 +418,8 @@ func TestTensor_SumByDim1(t *testing.T) {
 
 	// Test panic on invalid dimension
 	t.Run("PanicInvalidDim", func(t *testing.T) {
-		checkPanic(t, func() { tensor.SumByDim1([]int{0, 3}, false) }) // 3 is invalid for shape [2,2,4]
-		checkPanic(t, func() { tensor.SumByDim1([]int{-1}, false) })   // -1 is invalid
+		checkPanic(t, func() { tensor.SumByDim1([]int{0, 3}, false) }, "") // 3 is invalid for shape [2,2,4]
+		checkPanic(t, func() { tensor.SumByDim1([]int{-1}, false) }, "")   // -1 is invalid
 	})
 }
 
@@ -607,8 +566,8 @@ func TestTensor_Get(t *testing.T) {
 	// Test potential panics (based on index calculation)
 	t.Run("PanicOutOfBounds", func(t *testing.T) {
 		// These will likely panic due to slice bounds error after idx calculation
-		checkPanic(t, func() { tensor.Get([]int{2, 0}) })
-		checkPanic(t, func() { tensor.Get([]int{0, 3}) })
+		checkPanic(t, func() { tensor.Get([]int{2, 0}) }, "")
+		checkPanic(t, func() { tensor.Get([]int{0, 3}) }, "")
 		// checkPanic(t, func() { tensor.Get([]int{0}) }) // Incorrect number of indices, might panic depending on loop logic/stride calc
 	})
 
@@ -640,8 +599,8 @@ func TestTensor_Set1(t *testing.T) {
 
 	// Test potential panics (similar to Get)
 	t.Run("PanicOutOfBounds", func(t *testing.T) {
-		checkPanic(t, func() { tensor.Set1([]int{2, 0}, 100.0) })
-		checkPanic(t, func() { tensor.Set1([]int{0, 2}, 100.0) })
+		checkPanic(t, func() { tensor.Set1([]int{2, 0}, 100.0) }, "")
+		checkPanic(t, func() { tensor.Set1([]int{0, 2}, 100.0) }, "")
 	})
 }
 
@@ -711,9 +670,9 @@ func TestTensor_Sub1(t *testing.T) {
 		t4_diff_rank := NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{2, 3})    // Different rank but same size (still mismatch)
 		t5_same_rank_diff_dim := NewTensor([]float64{1, 2, 3, 4}, []int{4, 1}) // Different dimensions
 
-		checkPanic(t, func() { t1.Sub1(t3_diff_shape) })
-		checkPanic(t, func() { t1.Sub1(t4_diff_rank) })
-		checkPanic(t, func() { t1.Sub1(t5_same_rank_diff_dim) })
+		checkPanic(t, func() { t1.Sub1(t3_diff_shape) }, "")
+		checkPanic(t, func() { t1.Sub1(t4_diff_rank) }, "")
+		checkPanic(t, func() { t1.Sub1(t5_same_rank_diff_dim) }, "")
 	})
 
 	// Test with zeros and negatives
@@ -799,7 +758,7 @@ func TestTensor_Div1(t *testing.T) {
 	// Test panic on shape mismatch
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
 		t3_diff_shape := NewTensor([]float64{1, 2, 3}, []int{3})
-		checkPanic(t, func() { t1.Div1(t3_diff_shape) })
+		checkPanic(t, func() { t1.Div1(t3_diff_shape) }, "")
 	})
 }
 
@@ -827,7 +786,7 @@ func TestTensor_Multiply1(t *testing.T) {
 	// Test panic on shape mismatch
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
 		t3_diff_shape := NewTensor([]float64{1, 2, 3}, []int{3})
-		checkPanic(t, func() { t1.Multiply1(t3_diff_shape) })
+		checkPanic(t, func() { t1.Multiply1(t3_diff_shape) }, "")
 	})
 }
 
