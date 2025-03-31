@@ -69,13 +69,15 @@ if __name__ == "__main__":
         exit()
 
     model.eval()
-
+    import numpy as np
     # --- 生成随机图像 ---
     print(f"Generating {NUM_IMAGES} random images...")
     with torch.no_grad():
         # 因为没有设置种子，每次运行时这里的噪声都会不同
         random_noise = torch.randn(NUM_IMAGES, LATENT_DIM).to(DEVICE)
-
+        np.savetxt(f"noise.csv", random_noise, delimiter=",", fmt="%.16f")
+        print(len(random_noise.numpy().shape))
+        print(f"Shape: {random_noise.numpy().shape}, dim: {random_noise.numpy().ndim}")
         generated_images = model.decode(random_noise).cpu()
         generated_images = generated_images * 0.5 + 0.5
         generated_images = generated_images.clamp(0, 1)

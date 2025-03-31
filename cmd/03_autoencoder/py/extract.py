@@ -40,7 +40,9 @@ print(model)
 import numpy as np
 import os
 
-os.mkdir("data")
+if not os.path.exists("data"):
+    os.mkdir("data")
+
 for name, param in model.named_parameters():
     # if name == "embedder.weight":
     #     continue

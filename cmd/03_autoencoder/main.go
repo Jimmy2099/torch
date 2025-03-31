@@ -38,6 +38,18 @@ import (
 //	)
 //
 // )
+// Layer: encoder.0.weight, Shape: torch.Size([128, 784]), dim: 2
+// Layer: encoder.0.bias, Shape: torch.Size([128]), dim: 1
+// Layer: encoder.2.weight, Shape: torch.Size([64, 128]), dim: 2
+// Layer: encoder.2.bias, Shape: torch.Size([64]), dim: 1
+// Layer: encoder.4.weight, Shape: torch.Size([32, 64]), dim: 2
+// Layer: encoder.4.bias, Shape: torch.Size([32]), dim: 1
+// Layer: decoder.0.weight, Shape: torch.Size([64, 32]), dim: 2
+// Layer: decoder.0.bias, Shape: torch.Size([64]), dim: 1
+// Layer: decoder.2.weight, Shape: torch.Size([128, 64]), dim: 2
+// Layer: decoder.2.bias, Shape: torch.Size([128]), dim: 1
+// Layer: decoder.4.weight, Shape: torch.Size([784, 128]), dim: 2
+// Layer: decoder.4.bias, Shape: torch.Size([784]), dim: 1
 type AutoEncoder struct {
 	// Encoder layers
 	fc1   *torch.LinearLayer
@@ -89,11 +101,23 @@ func NewAutoEncoder() *AutoEncoder {
 
 	// 2. Define the mapping between PyTorch names, Go layers, and shapes
 	loadInfos := []layerLoadInfo{
+		//Layer: encoder.0.weight, Shape: torch.Size([128, 784]), dim: 2
+		//Layer: encoder.0.bias, Shape: torch.Size([128]), dim: 1
 		{"encoder.0", ae.fc1, []int{128, 784}, []int{128}}, // fc1
-		{"encoder.2", ae.fc2, []int{64, 128}, []int{64}},   // fc2
-		{"encoder.4", ae.fc3, []int{32, 64}, []int{32}},    // fc3 (latent)
-		{"decoder.0", ae.fc4, []int{64, 32}, []int{64}},    // fc4
-		{"decoder.2", ae.fc5, []int{128, 64}, []int{128}},  // fc5
+		//Layer: encoder.2.weight, Shape: torch.Size([64, 128]), dim: 2
+		//Layer: encoder.2.bias, Shape: torch.Size([64]), dim: 1
+		{"encoder.2", ae.fc2, []int{64, 128}, []int{64}}, // fc2
+		//Layer: encoder.4.weight, Shape: torch.Size([32, 64]), dim: 2
+		//Layer: encoder.4.bias, Shape: torch.Size([32]), dim: 1
+		{"encoder.4", ae.fc3, []int{32, 64}, []int{32}}, // fc3 (latent)
+		//Layer: decoder.0.weight, Shape: torch.Size([64, 32]), dim: 2
+		//Layer: decoder.0.bias, Shape: torch.Size([64]), dim: 1
+		{"decoder.0", ae.fc4, []int{64, 32}, []int{64}}, // fc4
+		//Layer: decoder.2.weight, Shape: torch.Size([128, 64]), dim: 2
+		//Layer: decoder.2.bias, Shape: torch.Size([128]), dim: 1
+		{"decoder.2", ae.fc5, []int{128, 64}, []int{128}}, // fc5
+		//Layer: decoder.4.weight, Shape: torch.Size([784, 128]), dim: 2
+		//Layer: decoder.4.bias, Shape: torch.Size([784]), dim: 1
 		{"decoder.4", ae.fc6, []int{784, 128}, []int{784}}, // fc6
 	}
 

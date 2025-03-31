@@ -20,6 +20,7 @@ type ConvTranspose2dLayer struct {
 	OutputPaddingRow int
 	OutputPaddingCol int
 	InChannels       int
+	OutChannels      int
 	inputCache       *tensor.Tensor // Cache for input tensor needed in backward pass
 }
 
@@ -38,10 +39,14 @@ func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSize
 		weightsData[i] = randn() * math.Sqrt(variance)
 	}
 
-	weights := tensor.NewTensor(weightsData, []int{outChannels, inChannels, kernelSizeRows, kernelSizeCols}) // Weight shape adjusted
+	weights := tensor.NewTensor(weightsData, []int{inChannels, outChannels, kernelSizeRows, kernelSizeCols})
 	// Initialize bias to zero
 	bias := tensor.NewTensor(make([]float64, outChannels), []int{outChannels})
 
+	// Check weight dimensions
+	if len(weights.Shape) != 4 {
+		panic(fmt.Sprintf("Weight tensor must be 4D (outChannels, inChannels, kernelSizeRows, kernelSizeCols), but got %v", weights.Shape))
+	}
 	return &ConvTranspose2dLayer{
 		Weights:          weights,
 		Bias:             bias,
@@ -54,7 +59,8 @@ func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSize
 		OutputPaddingRow: outputPaddingRows,
 		OutputPaddingCol: outputPaddingCols,
 		InChannels:       inChannels, // Store inChannels
-		inputCache:       nil,        // Initialize cache to nil
+		OutChannels:      outChannels,
+		inputCache:       nil, // Initialize cache to nil
 	}
 }
 
@@ -95,21 +101,12 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 	inputHeight := inputTensor.Shape[2]
 	inputWidth := inputTensor.Shape[3]
 
-	// Check weight dimensions
-	if len(ct.Weights.Shape) != 4 {
-		panic(fmt.Sprintf("Weight tensor must be 4D (outChannels, inChannels, kernelSizeRows, kernelSizeCols), but got %v", ct.Weights.Shape))
-	}
-
-	outChannels := ct.Weights.Shape[0]
 	kernelSizeRows := ct.KernelSizeRow
 	kernelSizeCols := ct.KernelSizeCol
 
 	// Check consistency (use stored InChannels from constructor)
 	if inChannels != ct.InChannels {
 		panic(fmt.Sprintf("Input channels (%d) must match layer's expected inChannels (%d)", inChannels, ct.InChannels))
-	}
-	if ct.Weights.Shape[1] != ct.InChannels {
-		panic(fmt.Sprintf("Weight's inChannels dimension (%d) must match layer's expected inChannels (%d)", ct.Weights.Shape[1], ct.InChannels))
 	}
 
 	// Calculate output dimensions (This formula seems correct)
@@ -123,12 +120,12 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 	// --- End Defensive check ---
 
 	// Create output tensor
-	outputData := make([]float64, batchSize*outChannels*outputHeight*outputWidth)
-	output := tensor.NewTensor(outputData, []int{batchSize, outChannels, outputHeight, outputWidth})
+	outputData := make([]float64, batchSize*ct.OutChannels*outputHeight*outputWidth)
+	output := tensor.NewTensor(outputData, []int{batchSize, ct.OutChannels, outputHeight, outputWidth})
 
 	// Perform transposed convolution
 	for b := 0; b < batchSize; b++ {
-		for outC := 0; outC < outChannels; outC++ {
+		for outC := 0; outC < ct.OutChannels; outC++ {
 			for i := 0; i < outputHeight; i++ { // Loop over output height
 				for j := 0; j < outputWidth; j++ { // Loop over output width
 					sum := 0.0
@@ -184,7 +181,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 					} // end loop kRow
 
 					// Add bias for the current output channel
-					outputIndex := b*outChannels*outputHeight*outputWidth + // Offset for batch
+					outputIndex := b*ct.OutChannels*outputHeight*outputWidth + // Offset for batch
 						outC*outputHeight*outputWidth + // Offset for output channel
 						i*outputWidth + // Offset for output row
 						j // Offset for output col
@@ -335,7 +332,6 @@ func (ct *ConvTranspose2dLayer) SetWeights(data [][]float64) {
 
 	// Create a new tensor with the flattened data and the original shape
 	ct.Weights = tensor.NewTensor(flattenedData, ct.Weights.Shape)
-
 }
 
 // SetBias sets the bias of the layer.

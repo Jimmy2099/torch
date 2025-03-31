@@ -59,6 +59,9 @@ class VAE(nn.Module):
         self.decoder_reshape_channels = gf_dim * 8  # 512
         self.decoder_reshape_size = image_size // 16  # 4
 
+        # v.decoderReshapeChannels,
+        # v.decoderReshapeSize,
+        print("self.decoder_reshape_channels,self.decoder_reshape_size",self.decoder_reshape_channels,self.decoder_reshape_size)
         decoder_layers = []
         # Input: (N, 512, 4, 4)
         decoder_layers.append(nn.ConvTranspose2d(gf_dim * 8, gf_dim * 4, kernel_size=5, stride=2, padding=2,
