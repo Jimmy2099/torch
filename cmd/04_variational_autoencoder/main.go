@@ -316,9 +316,10 @@ func main() {
 	log.Println("VAE model created and loaded.")
 	log.Println(vae)
 	x := GenerateRandomNoise(64, 64)
-	vae.Decode(x)
+	x = vae.Decode(x)
 	x = x.Mul(tensor.NewTensor([]float64{0.5}, []int{1})).Add(tensor.NewTensor([]float64{0.5}, []int{1}))
 	//x = x.Clamp(0, 1)
+	x.Reshape([]int{len(x.Data)})
 	log.Println(x)
 	x.SaveToCSV("./py/test.csv")
 }
@@ -469,12 +470,12 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 
 		fmt.Println("\n=== VAE Forward Pass Complete ===")
 	}
+	//[64,3,64,64]
 	return x
 }
 
 func (v *VAE) Forward(x *tensor.Tensor) *tensor.Tensor {
-	//x = v.ForwardEncoder(x)
-	//only for generate task
+	x = v.Encode(x)
 	x = v.Decode(x)
 	return x
 }
