@@ -1,23 +1,24 @@
-import os
-import time
-
 import torch
 
 USE_CUDA_IF_AVAILABLE = True
 use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
 
 from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
+
 DEVICE = torch.device("cuda" if use_cuda else "cpu")
 model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
 
-#TODO load_state_dict
+# TODO load_state_dict
 
 
 print(model)
 import numpy as np
 import os
 
-os.mkdir("data")
+try:
+    os.mkdir("data")
+except Exception as e:
+    pass
 for name, param in model.named_parameters():
     # if name == "embedder.weight":
     #     continue

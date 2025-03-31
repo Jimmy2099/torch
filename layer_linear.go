@@ -38,6 +38,16 @@ func (l *LinearLayer) SetBias(data []float64) {
 	l.Bias = tensor.NewTensor(data, []int{l.OutputDim, 1})
 }
 
+func (l *LinearLayer) SetWeightsAndShape(data []float64, shape []int) {
+	l.SetWeights(data)
+	l.Weights.Reshape(shape)
+}
+
+func (l *LinearLayer) SetBiasAndShape(data []float64, shape []int) {
+	l.SetBias(data)
+	l.Bias.Reshape(shape)
+}
+
 // Parameters 返回所有可训练参数
 func (l *LinearLayer) Parameters() []*tensor.Tensor {
 	return []*tensor.Tensor{l.Weights, l.Bias}

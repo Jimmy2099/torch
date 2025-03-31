@@ -35,6 +35,16 @@ func (l *ConvLayer) SetBias(data []float64) {
 	l.Bias = tensor.NewTensor(data, []int{l.OutChannels, 1})
 }
 
+func (l *ConvLayer) SetWeightsAndShape(data []float64, shape []int) {
+	l.SetWeights(data)
+	l.Weights.Reshape(shape)
+}
+
+func (l *ConvLayer) SetBiasAndShape(data []float64, shape []int) {
+	l.SetBias(data)
+	l.Bias.Reshape(shape)
+}
+
 func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	// 初始化权重和偏置
 	weightsData := make([]float64, outCh*inCh*kSize*kSize)
@@ -59,7 +69,6 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	}
 }
 
-
 func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	// 保存输入用于反向传播
 	c.InputCache = x.Clone()
@@ -83,10 +92,10 @@ func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 		biasBroadcast = c.Bias.Reshape([]int{1, c.OutChannels, 1, 1})
 		// 使用Expand代替Repeat
 		biasBroadcast = biasBroadcast.Expand([]int{
-			convOut.Shape[0],  // batch
-			c.OutChannels,     // channels
-			convOut.Shape[2],  // height
-			convOut.Shape[3],  // width
+			convOut.Shape[0], // batch
+			c.OutChannels,    // channels
+			convOut.Shape[2], // height
+			convOut.Shape[3], // width
 		})
 	default:
 		panic("unsupported output shape from convolution")

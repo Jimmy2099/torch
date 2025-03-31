@@ -12,6 +12,11 @@ type Layer interface {
 	Parameters() []*tensor.Tensor
 }
 
+type LayerLoader interface {
+	SetWeightsAndShape(data []float64, shape []int)
+	SetBiasAndShape(data []float64, shape []int)
+}
+
 //Sequential forward container TODO
 
 //// DenseLayer 全连接层接口

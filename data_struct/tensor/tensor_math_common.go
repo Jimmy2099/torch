@@ -458,9 +458,24 @@ func incrementIndices(indices, shape []int) bool {
 	return false
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
+// ShapesMatch checks if the shape of this tensor matches the shape of another tensor.
+func (t *Tensor) ShapesMatch(other *Tensor) bool {
+	// Check if either tensor is nil
+	if t == nil || other == nil {
+		return false // Or handle as appropriate, maybe panic?
 	}
-	return b
+	// Check if the number of dimensions is the same
+	if len(t.Shape) != len(other.Shape) {
+		return false
+	}
+
+	// Check if each dimension size matches
+	for i := range t.Shape {
+		if t.Shape[i] != other.Shape[i] {
+			return false
+		}
+	}
+
+	// If all checks pass, the shapes match
+	return true
 }
