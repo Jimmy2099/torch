@@ -194,26 +194,26 @@ func NewVAE() *VAE {
 		{"encoder_conv.0.bias", vae.encoderConv0, nil, []int{64}},
 		{"encoder_conv.1.weight", vae.encoderConv1, []int{64}, nil},
 		{"encoder_conv.1.bias", vae.encoderConv1, nil, []int{64}},
-		{"encoder_conv.1.running_mean", vae.encoderConv1, []int{64}, nil},
-		{"encoder_conv.1.running_var", vae.encoderConv1, []int{64}, nil},
+		{"encoder_conv.1.weight", vae.encoderConv1, []int{64}, nil},
+		{"encoder_conv.1.bias", vae.encoderConv1, []int{64}, nil},
 		{"encoder_conv.3.weight", vae.encoderConv3, []int{128, 64, 5, 5}, nil},
 		{"encoder_conv.3.bias", vae.encoderConv3, nil, []int{128}},
 		{"encoder_conv.4.weight", vae.encoderConv4, []int{128}, nil},
 		{"encoder_conv.4.bias", vae.encoderConv4, nil, []int{128}},
-		{"encoder_conv.4.running_mean", vae.encoderConv4, []int{128}, nil}, // Optional
-		{"encoder_conv.4.running_var", vae.encoderConv4, []int{128}, nil},  // Optional
+		{"encoder_conv.4.weight", vae.encoderConv4, []int{128}, nil}, // Optional
+		{"encoder_conv.4.bias", vae.encoderConv4, []int{128}, nil},   // Optional
 		{"encoder_conv.6.weight", vae.encoderConv6, []int{256, 128, 5, 5}, nil},
 		{"encoder_conv.6.bias", vae.encoderConv6, nil, []int{256}},
 		{"encoder_conv.7.weight", vae.encoderConv7, []int{256}, nil},
 		{"encoder_conv.7.bias", vae.encoderConv7, nil, []int{256}},
-		{"encoder_conv.7.running_mean", vae.encoderConv7, []int{256}, nil}, // Optional
-		{"encoder_conv.7.running_var", vae.encoderConv7, []int{256}, nil},  // Optional
+		{"encoder_conv.7.weight", vae.encoderConv7, []int{256}, nil}, // Optional
+		{"encoder_conv.7.bias", vae.encoderConv7, []int{256}, nil},   // Optional
 		{"encoder_conv.9.weight", vae.encoderConv9, []int{512, 256, 5, 5}, nil},
 		{"encoder_conv.9.bias", vae.encoderConv9, nil, []int{512}},
 		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil},
 		{"encoder_conv.10.bias", vae.encoderConv10, nil, []int{512}},
-		{"encoder_conv.10.running_mean", vae.encoderConv10, []int{512}, nil}, // Optional
-		{"encoder_conv.10.running_var", vae.encoderConv10, []int{512}, nil},  // Optional
+		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil}, // Optional
+		{"encoder_conv.10.bias", vae.encoderConv10, []int{512}, nil},   // Optional
 
 		// FC Layers
 		{"fc_mu.weight", vae.fcMu, []int{64, 8192}, nil},
@@ -228,20 +228,20 @@ func NewVAE() *VAE {
 		{"decoder_conv.0.bias", vae.decoderConv0, nil, []int{256}},
 		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil},
 		{"decoder_conv.1.bias", vae.decoderConv1, nil, []int{256}},
-		{"decoder_conv.1.running_mean", vae.decoderConv1, []int{256}, nil}, // Optional
-		{"decoder_conv.1.running_var", vae.decoderConv1, []int{256}, nil},  // Optional
+		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil}, // Optional
+		{"decoder_conv.1.bias", vae.decoderConv1, []int{256}, nil},   // Optional
 		{"decoder_conv.3.weight", vae.decoderConv3, []int{256, 128, 5, 5}, nil},
 		{"decoder_conv.3.bias", vae.decoderConv3, nil, []int{128}},
 		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil},
 		{"decoder_conv.4.bias", vae.decoderConv4, nil, []int{128}},
-		{"decoder_conv.4.running_mean", vae.decoderConv4, []int{128}, nil}, // Optional
-		{"decoder_conv.4.running_var", vae.decoderConv4, []int{128}, nil},  // Optional
+		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil}, // Optional
+		{"decoder_conv.4.bias", vae.decoderConv4, []int{128}, nil},   // Optional
 		{"decoder_conv.6.weight", vae.decoderConv6, []int{128, 64, 5, 5}, nil},
 		{"decoder_conv.6.bias", vae.decoderConv6, nil, []int{64}},
 		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil},
 		{"decoder_conv.7.bias", vae.decoderConv7, nil, []int{64}},
-		{"decoder_conv.7.running_mean", vae.decoderConv7, []int{64}, nil}, // Optional
-		{"decoder_conv.7.running_var", vae.decoderConv7, []int{64}, nil},  // Optional
+		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil}, // Optional
+		{"decoder_conv.7.bias", vae.decoderConv7, []int{64}, nil},   // Optional
 		{"decoder_conv.9.weight", vae.decoderConv9, []int{64, 3, 5, 5}, nil},
 		{"decoder_conv.9.bias", vae.decoderConv9, nil, []int{3}},
 	}
@@ -271,7 +271,7 @@ func NewVAE() *VAE {
 			if err != nil {
 				panic(err)
 			}
-			loadInfos[i].goLayer.SetBiasAndShape(data, loadInfos[i].weightShape)
+			loadInfos[i].goLayer.SetBiasAndShape(data, loadInfos[i].biasShape)
 		}
 	}
 
