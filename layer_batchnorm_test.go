@@ -1,6 +1,7 @@
 package torch
 
 import (
+	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor" // 假设这个库存在
 	"math"
 	"reflect"
@@ -42,6 +43,64 @@ func TestMeanCalculation(t *testing.T) {
 		expected := float64(i)
 		if math.Abs(mean.Data[i]-expected) > tolerance {
 			t.Errorf("通道 %d 均值错误: 期望 %.2f，实际 %.2f", i, expected, mean.Data[i])
+		}
+	}
+}
+
+func TestBatchNormShapeMismatch(t *testing.T) {
+	// 配置参数
+	numFeatures := 256
+	batchSize := 64
+	inputShape := []int{batchSize, numFeatures, 8, 8} // 模拟dec_convT0的输出形状
+
+	// 创建BN层
+	bn := NewBatchNormLayer(numFeatures, 1e-5, 0.1)
+
+	// 创建模拟输入（注意：实际应该使用随机/正态分布数据）
+	inputData := make([]float64, batchSize*numFeatures*8*8)
+	x := tensor.NewTensor(inputData, inputShape)
+
+	// 运行前向传播
+	fmt.Println("=== 触发形状不匹配测试 ===")
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Expected panic captured: %v\n", r)
+		}
+	}()
+
+	output := bn.Forward(x) // 这里应该触发panic
+
+	// 如果未panic则测试失败
+	t.Error("Expected panic did not occur")
+	_ = output
+}
+
+// 辅助测试：验证维度压缩是否正确
+func TestComputeMeanShape(t *testing.T) {
+	numFeatures := 256
+	bn := NewBatchNormLayer(numFeatures, 1e-5, 0.1)
+
+	// 创建模拟输入 [64, 256, 8, 8]
+	x := tensor.Ones([]int{64, 256, 8, 8})
+
+	// 计算均值
+	batchMean := bn.computeMean(x) // 假设有导出这个方法用于测试
+
+	// 验证形状
+	expectedShape := []int{numFeatures}
+
+	// Check if the number of dimensions is the same
+	if len(batchMean.Shape) != len(expectedShape) {
+		t.Errorf("Batch mean shape length mismatch! Expected %v, Got %v",
+			expectedShape, batchMean.Shape)
+
+	}
+
+	// Check if each dimension size matches
+	for i := range batchMean.Shape {
+		if batchMean.Shape[i] != expectedShape[i] {
+			t.Errorf("Batch mean shape length mismatch! Expected %v, Got %v",
+				expectedShape, batchMean.Shape)
 		}
 	}
 }

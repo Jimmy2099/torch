@@ -62,39 +62,52 @@ func (l *BatchNormLayer) SetBias(data []float64) {
 }
 
 func (bn *BatchNormLayer) computeMean(x *tensor.Tensor) *tensor.Tensor {
+	// 确保输入形状正确
 	if len(x.Shape) != 4 || x.Shape[1] != bn.numFeatures {
-		panic(fmt.Sprintf("input shape %v mismatch with num_features %d", x.Shape, bn.numFeatures))
+		panic(fmt.Sprintf("invalid input shape %v for num_features %d", x.Shape, bn.numFeatures))
 	}
 
-	sumResult := x.SumByDim1([]int{0, 2, 3}, true)
+	// 计算并压缩维度
+	sumResult := x.SumByDim1([]int{0, 2, 3}, true) // [1, C, 1, 1]
 	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
-	mean := sumResult.DivScalar(elementCount)
-	return mean.Reshape([]int{bn.numFeatures}) // 直接重塑为一维
+
+	// 关键修复：确保压缩所有单例维度
+	return sumResult.DivScalar(elementCount).
+		SqueezeSpecific([]int{0, 2, 3}) // 输出形状 [C]
 }
 
 func (bn *BatchNormLayer) computeVariance(x *tensor.Tensor, mean *tensor.Tensor) *tensor.Tensor {
 	x_mu := x.Sub(mean.Reshape([]int{1, bn.numFeatures, 1, 1}))
 	sq_diff := x_mu.Pow(2)
-	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true)
+
+	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true) // [1, C, 1, 1]
 	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
-	variance := sumResult.DivScalar(elementCount)
-	return variance.Reshape([]int{bn.numFeatures}) // 直接重塑为一维
+
+	// 关键修复：确保压缩所有单例维度
+	return sumResult.DivScalar(elementCount).
+		SqueezeSpecific([]int{0, 2, 3}) // 输出形状 [C]
 }
 
 func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	if bn.training {
-		batchMean := bn.computeMean(x)
-		batchVar := bn.computeVariance(x, batchMean)
+		batchMean := bn.computeMean(x)               // 现在形状 [C]
+		batchVar := bn.computeVariance(x, batchMean) // 现在形状 [C]
+
+		// 添加调试输出
+		fmt.Printf("Training mode - batchMean shape: %v, batchVar shape: %v\n",
+			batchMean.Shape, batchVar.Shape)
+		fmt.Printf("Running stats - mean shape: %v, var shape: %v\n",
+			bn.runningMean.Shape, bn.runningVar.Shape)
+
 		bn.updateRunningStats(batchMean, batchVar)
 
 		// 广播参数进行归一化
-		mean4d := batchMean.Reshape([]int{1, bn.numFeatures, 1, 1})
-		std4d := batchVar.AddScalar(bn.eps).Sqrt().Reshape([]int{1, bn.numFeatures, 1, 1})
-		x_normalized := x.Sub(mean4d).Div(std4d)
-
-		weights4d := bn.weights.Reshape([]int{1, bn.numFeatures, 1, 1})
-		bias4d := bn.bias.Reshape([]int{1, bn.numFeatures, 1, 1})
-		return x_normalized.Mul(weights4d).Add(bias4d)
+		broadcastDims := []int{1, bn.numFeatures, 1, 1}
+		std := batchVar.AddScalar(bn.eps).Sqrt().Reshape(broadcastDims)
+		return x.Sub(batchMean.Reshape(broadcastDims)).
+			Div(std).
+			Mul(bn.weights.Reshape(broadcastDims)).
+			Add(bn.bias.Reshape(broadcastDims))
 	} else {
 		// 推理模式使用运行统计量
 		mean4d := bn.runningMean.Reshape([]int{1, bn.numFeatures, 1, 1})
@@ -105,12 +118,15 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor) {
-	// 形状一致性检查
-	if !bn.runningMean.ShapesMatch(batchMean) || !bn.runningVar.ShapesMatch(batchVar) {
-		panic(fmt.Sprintf("shape mismatch: running_mean%v vs batch_mean%v, running_var%v vs batch_var%v",
-			bn.runningMean.Shape, batchMean.Shape, bn.runningVar.Shape, batchVar.Shape))
+	// 增强的形状检查
+	if !bn.runningMean.ShapesMatch(batchMean) {
+		panic(fmt.Sprintf("running mean shape mismatch: expect %v, got %v",
+			bn.runningMean.Shape, batchMean.Shape))
 	}
-
+	if !bn.runningVar.ShapesMatch(batchVar) {
+		panic(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
+			bn.runningVar.Shape, batchVar.Shape))
+	}
 	// 更新运行统计量
 	newRunningMean := bn.runningMean.MulScalar(bn.momentum).Add(
 		batchMean.MulScalar(1.0 - bn.momentum),
