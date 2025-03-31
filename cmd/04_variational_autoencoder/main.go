@@ -6,6 +6,7 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -268,11 +269,12 @@ func GenerateRandomNoise(numSamples, latentDim int) *tensor.Tensor {
 
 func main() {
 	vae := NewVAE()
-	fmt.Println(vae)
+	log.Println("VAE model created and loaded.")
+	log.Println(vae)
 	x := GenerateRandomNoise(64, 64)
 	vae.Forward(x)
-	fmt.Println(x)
-	fmt.Println("VAE model created and loaded.")
+	log.Println(x)
+	x.SaveToCSV("./py/test.csv")
 }
 
 func (v *VAE) ForwardEncoder(x *tensor.Tensor) *tensor.Tensor {
