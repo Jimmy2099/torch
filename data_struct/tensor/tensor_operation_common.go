@@ -94,16 +94,6 @@ func (t *Tensor) MulScalar(scalar float64) *Tensor {
 	return &Tensor{Data: result, Shape: t.Shape}
 }
 
-// Div 张量除法
-func (t *Tensor) Div(other *Tensor) *Tensor {
-	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
-	for i := range t.Data {
-		result[i] = t.Data[i] / other.Data[i]
-	}
-	return &Tensor{Data: result, Shape: t.Shape}
-}
-
 // Sqrt 张量每个元素开平方
 func (t *Tensor) Sqrt() *Tensor {
 	result := make([]float64, len(t.Data))
@@ -207,28 +197,6 @@ func product(dims []int) int {
 	}
 	return p
 }
-
-// Mul 张量乘法
-func (t *Tensor) Mul(other *Tensor) *Tensor {
-	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
-	for i := range t.Data {
-		result[i] = t.Data[i] * other.Data[i]
-	}
-	return &Tensor{Data: result, Shape: t.Shape}
-}
-
-// Add 张量加法
-func (t *Tensor) Add(other *Tensor) *Tensor {
-	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
-	for i := range t.Data {
-		result[i] = t.Data[i] + other.Data[i]
-	}
-	return &Tensor{Data: result, Shape: t.Shape}
-}
-
-// ... existing code ...
 
 // DivScalar 张量每个元素除标量
 func (t *Tensor) DivScalar(scalar float64) *Tensor {

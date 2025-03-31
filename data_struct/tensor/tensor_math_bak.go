@@ -17,3 +17,33 @@ func (t *Tensor) Sub_bak(other *Tensor) *Tensor {
 	}
 	return &Tensor{Data: result, Shape: t.Shape}
 }
+
+// Div 张量除法
+func (t *Tensor) Div_bak(other *Tensor) *Tensor {
+	// 需要实现张量形状检查
+	result := make([]float64, len(t.Data))
+	for i := range t.Data {
+		result[i] = t.Data[i] / other.Data[i]
+	}
+	return &Tensor{Data: result, Shape: t.Shape}
+}
+
+// Mul 张量乘法
+func (t *Tensor) Mul_bak(other *Tensor) *Tensor {
+	// 需要实现张量形状检查
+	result := make([]float64, len(t.Data))
+	for i := range t.Data {
+		result[i] = t.Data[i] * other.Data[i]
+	}
+	return &Tensor{Data: result, Shape: t.Shape}
+}
+
+// Add 张量加法
+func (t *Tensor) Add_bak(other *Tensor) *Tensor {
+	// 需要实现张量形状检查
+	result := make([]float64, len(t.Data))
+	for i := range t.Data {
+		result[i] = t.Data[i] + other.Data[i]
+	}
+	return &Tensor{Data: result, Shape: t.Shape}
+}

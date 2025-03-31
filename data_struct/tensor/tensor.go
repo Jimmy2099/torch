@@ -8,3 +8,7 @@ type Tensor struct {
 func NewTensor(data []float64, shape []int) *Tensor {
 	return &Tensor{Data: data, Shape: shape}
 }
+
+func (m *Tensor) TensorData() []float64 {
+	return m.Data
+}

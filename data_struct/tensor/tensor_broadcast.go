@@ -4,11 +4,15 @@ package tensor
 func (t *Tensor) broadcastedIndex(indices []int, strides []int) int {
 	index := 0
 	for i := 0; i < len(indices); i++ {
-		dimSize := t.Shape[i]
-		if dimSize > 1 {
-			index += indices[i] * strides[i]
+		// 计算当前维度在原始张量中的位置
+		pos := len(t.Shape) - len(indices) + i
+		if pos >= 0 && pos < len(t.Shape) {
+			dimSize := t.Shape[pos]
+			if dimSize > 1 {
+				index += indices[i] * strides[pos]
+			}
+			// 如果dimSize == 1，则忽略，因为使用0
 		}
-		// 如果dimSize == 1，则忽略，因为使用0
 	}
 	return index
 }
@@ -44,6 +48,14 @@ func canBroadcast(a, b []int) bool {
 
 // getBroadcastedShape 获取广播后的形状
 func getBroadcastedShape(a, b []int) []int {
+	// 处理空张量情况
+	if len(a) == 0 {
+		return b
+	}
+	if len(b) == 0 {
+		return a
+	}
+
 	maxLen := max(len(a), len(b))
 	shape := make([]int, maxLen)
 	for i := range shape {

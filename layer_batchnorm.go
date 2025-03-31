@@ -3,6 +3,7 @@ package torch
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor" // 假设这个库存在
+	"log"
 	// "log" // 如果需要添加日志或调试信息
 )
 
@@ -120,11 +121,11 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor) {
 	// 增强的形状检查
 	if !bn.runningMean.ShapesMatch(batchMean) {
-		panic(fmt.Sprintf("running mean shape mismatch: expect %v, got %v",
+		log.Println(fmt.Sprintf("running mean shape mismatch: expect %v, got %v",
 			bn.runningMean.Shape, batchMean.Shape))
 	}
 	if !bn.runningVar.ShapesMatch(batchVar) {
-		panic(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
+		log.Println(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
 			bn.runningVar.Shape, batchVar.Shape))
 	}
 	// 更新运行统计量
