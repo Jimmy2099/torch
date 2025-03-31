@@ -78,6 +78,7 @@ func randn() float64 {
 }
 
 // Forward performs the forward pass through the transposed convolutional layer.
+// Forward performs the forward pass through the transposed convolutional layer.
 // input: Input tensor of shape [batchSize, inChannels, inputHeight, inputWidth]
 // Returns: Output tensor of shape [batchSize, outChannels, outputHeight, outputWidth]
 func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
@@ -96,21 +97,30 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 
 	// Check weight dimensions
 	if len(ct.Weights.Shape) != 4 {
-		panic(fmt.Sprintf("Weight tensor must be 4D (outChannels, inChannels, kernelSize, kernelSize), but got %v", ct.Weights.Shape))
+		panic(fmt.Sprintf("Weight tensor must be 4D (outChannels, inChannels, kernelSizeRows, kernelSizeCols), but got %v", ct.Weights.Shape))
 	}
 
 	outChannels := ct.Weights.Shape[0]
-	//weightInChannels := ct.Weights.Shape[1] // This is correct now
 	kernelSizeRows := ct.KernelSizeRow
 	kernelSizeCols := ct.KernelSizeCol
 
-	if inChannels != ct.InChannels { // Use stored inChannels
-		panic(fmt.Sprintf("Input channels (%d) must match weight input channels (%d)", inChannels, ct.InChannels))
+	// Check consistency (use stored InChannels from constructor)
+	if inChannels != ct.InChannels {
+		panic(fmt.Sprintf("Input channels (%d) must match layer's expected inChannels (%d)", inChannels, ct.InChannels))
+	}
+	if ct.Weights.Shape[1] != ct.InChannels {
+		panic(fmt.Sprintf("Weight's inChannels dimension (%d) must match layer's expected inChannels (%d)", ct.Weights.Shape[1], ct.InChannels))
 	}
 
-	// Calculate output dimensions
+	// Calculate output dimensions (This formula seems correct)
 	outputHeight := (inputHeight-1)*ct.StrideRow - 2*ct.PaddingRow + ct.KernelSizeRow + ct.OutputPaddingRow
 	outputWidth := (inputWidth-1)*ct.StrideCol - 2*ct.PaddingCol + ct.KernelSizeCol + ct.OutputPaddingCol
+
+	// --- Defensive check for non-positive output dimensions ---
+	if outputHeight <= 0 || outputWidth <= 0 {
+		panic(fmt.Sprintf("Calculated output dimensions are not positive: H=%d, W=%d. Check parameters (stride, padding, kernel size, input size).", outputHeight, outputWidth))
+	}
+	// --- End Defensive check ---
 
 	// Create output tensor
 	outputData := make([]float64, batchSize*outChannels*outputHeight*outputWidth)
@@ -119,43 +129,83 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 	// Perform transposed convolution
 	for b := 0; b < batchSize; b++ {
 		for outC := 0; outC < outChannels; outC++ {
-			for i := 0; i < outputHeight; i++ {
-				for j := 0; j < outputWidth; j++ {
-					//Accumulate the results from the convolution
+			for i := 0; i < outputHeight; i++ { // Loop over output height
+				for j := 0; j < outputWidth; j++ { // Loop over output width
 					sum := 0.0
-					//Cycle through the locations in the kernel
+					// Iterate through the kernel
 					for kRow := 0; kRow < kernelSizeRows; kRow++ {
 						for kCol := 0; kCol < kernelSizeCols; kCol++ {
-							//Get the current location in the original image based on location in the output and kernel
-							inputRow := (i + 2*ct.PaddingRow - kRow - ct.OutputPaddingRow) / ct.StrideRow
-							inputCol := (j + 2*ct.PaddingCol - kCol - ct.OutputPaddingCol) / ct.StrideCol
 
-							// If row and column are within the range of the input then use that location
-							if inputRow >= 0 && inputRow < inputHeight && inputCol >= 0 && inputCol < inputWidth {
-								for inC := 0; inC < inChannels; inC++ {
+							// --- CORRECTED MAPPING LOGIC ---
+							numeratorRow := i + ct.PaddingRow - kRow
+							numeratorCol := j + ct.PaddingCol - kCol
 
-									//Determine the weight index
-									weightIndex := outC*ct.InChannels*kernelSizeRows*kernelSizeCols + inC*kernelSizeRows*kernelSizeCols + kRow*kernelSizeCols + kCol
+							// Check if this kernel position maps to a valid potential input location via stride
+							if numeratorRow >= 0 && numeratorRow%ct.StrideRow == 0 &&
+								numeratorCol >= 0 && numeratorCol%ct.StrideCol == 0 {
 
-									//Input index
-									inputIndex := b*inChannels*inputHeight*inputWidth + inC*inputHeight*inputWidth + inputRow*inputWidth + inputCol
+								inputRow := numeratorRow / ct.StrideRow
+								inputCol := numeratorCol / ct.StrideCol
 
-									sum += inputTensor.Data[inputIndex] * ct.Weights.Data[weightIndex]
+								// Check if the mapped input location is within the actual input bounds
+								if inputRow >= 0 && inputRow < inputHeight && inputCol >= 0 && inputCol < inputWidth {
+									// If valid, accumulate contributions from all input channels
+									for inC := 0; inC < inChannels; inC++ {
+										// Weight index: Corresponds to W[outC, inC, kRow, kCol]
+										weightIndex := outC*inChannels*kernelSizeRows*kernelSizeCols + // Offset for output channel
+											inC*kernelSizeRows*kernelSizeCols + // Offset for input channel
+											kRow*kernelSizeCols + // Offset for kernel row
+											kCol // Offset for kernel col
 
-								}
+										// Input index: Corresponds to Input[b, inC, inputRow, inputCol]
+										inputIndex := b*inChannels*inputHeight*inputWidth + // Offset for batch
+											inC*inputHeight*inputWidth + // Offset for input channel
+											inputRow*inputWidth + // Offset for input row
+											inputCol // Offset for input col
 
-							}
+										// --- Bounds check before access (Defensive) ---
+										if inputIndex < 0 || inputIndex >= len(inputTensor.Data) {
+											panic(fmt.Sprintf("Internal error: Calculated inputIndex %d is out of bounds [0, %d). Params: b=%d, inC=%d, iR=%d, iC=%d, i=%d, j=%d, kR=%d, kC=%d",
+												inputIndex, len(inputTensor.Data), b, inC, inputRow, inputCol, i, j, kRow, kCol))
+										}
+										if weightIndex < 0 || weightIndex >= len(ct.Weights.Data) {
+											panic(fmt.Sprintf("Internal error: Calculated weightIndex %d is out of bounds [0, %d). Params: outC=%d, inC=%d, kR=%d, kC=%d",
+												weightIndex, len(ct.Weights.Data), outC, inC, kRow, kCol))
+										}
+										// --- End Bounds check ---
 
-						}
+										sum += inputTensor.Data[inputIndex] * ct.Weights.Data[weightIndex]
+									} // end loop over inC
+								} // end check: inputRow/Col in bounds
+							} // end check: divisibility by stride
+							// --- END CORRECTED MAPPING LOGIC ---
+
+						} // end loop kCol
+					} // end loop kRow
+
+					// Add bias for the current output channel
+					outputIndex := b*outChannels*outputHeight*outputWidth + // Offset for batch
+						outC*outputHeight*outputWidth + // Offset for output channel
+						i*outputWidth + // Offset for output row
+						j // Offset for output col
+
+					// --- Bounds check before access (Defensive) ---
+					if outputIndex < 0 || outputIndex >= len(output.Data) {
+						panic(fmt.Sprintf("Internal error: Calculated outputIndex %d is out of bounds [0, %d). Params: b=%d, outC=%d, i=%d, j=%d",
+							outputIndex, len(output.Data), b, outC, i, j))
 					}
-					//Add the calculated bias and sum for the output location
-					outputIndex := b*outChannels*outputHeight*outputWidth + outC*outputHeight*outputWidth + i*outputWidth + j
+					if outC < 0 || outC >= len(ct.Bias.Data) {
+						panic(fmt.Sprintf("Internal error: Calculated bias index %d is out of bounds [0, %d).", outC, len(ct.Bias.Data)))
+					}
+					// --- End Bounds check ---
+
 					output.Data[outputIndex] = sum + ct.Bias.Data[outC]
-				}
-			}
-		}
-	}
-	fmt.Println("ConvTranspose2dLayer Forward Pass")
+				} // end loop j (output width)
+			} // end loop i (output height)
+		} // end loop outC
+	} // end loop b (batch)
+
+	// fmt.Println("ConvTranspose2dLayer Forward Pass Completed") // Keep if useful
 	return output
 }
 

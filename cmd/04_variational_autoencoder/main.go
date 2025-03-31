@@ -4,10 +4,11 @@ package main
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
+	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
+	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 //	(encoder_conv): Sequential(
@@ -125,26 +126,6 @@ type Matrix struct {
 	Data [][]float64
 }
 
-func LoadMatrixFromCSV(filePath string) (*Matrix, error) {
-	// Implement your CSV loading logic here
-	// This is just a placeholder
-	fmt.Printf("Placeholder: LoadMatrixFromCSV called for %s\n", filePath)
-	// In a real scenario, you'd open the file, parse CSV, convert to float64
-	// and handle potential errors.
-	// Returning dummy data for structure:
-	dummyData := [][]float64{{0.0}}            // Adjust size based on expected file content
-	if strings.Contains(filePath, "running") { // Handle potentially missing optional files
-		// _, err := os.Stat(filePath)
-		// if os.IsNotExist(err) {
-		// 	 return nil, fmt.Errorf("optional file not found") // Or return nil, nil
-		// }
-		// For placeholder, assume it might be missing
-		// return nil, fmt.Errorf("optional file placeholder")
-	}
-	return &Matrix{Data: dummyData}, nil
-	// return nil, fmt.Errorf("not implemented")
-}
-
 func NewVAE() *VAE {
 	fmt.Println("Initializing VAE layers...")
 
@@ -187,7 +168,6 @@ func NewVAE() *VAE {
 	fmt.Println("Layers initialized.")
 
 	// --- Define the mapping --- Use correct PyTorch names ---
-	// (Make sure these match your Python model structure exactly)
 	loadInfos := []layerLoadInfo{
 		// Encoder
 		{"encoder_conv.0.weight", vae.encoderConv0, []int{64, 3, 5, 5}, nil},
@@ -221,28 +201,29 @@ func NewVAE() *VAE {
 		{"fc_logvar.weight", vae.fcLogvar, []int{64, 8192}, nil},
 		{"fc_logvar.bias", vae.fcLogvar, nil, []int{64}},
 
-		// Decoder
+		// Decoder FC
 		{"decoder_fc.weight", vae.decoderFc, []int{8192, 64}, nil},
 		{"decoder_fc.bias", vae.decoderFc, nil, []int{8192}},
-		{"decoder_conv.0.weight", vae.decoderConv0, []int{512, 256, 5, 5}, nil}, // Note: ConvT weights are [in, out, k, k] in PyTorch - Check Go impl!
+
+		{"decoder_conv.0.weight", vae.decoderConv0, []int{256, 512, 5, 5}, nil},
 		{"decoder_conv.0.bias", vae.decoderConv0, nil, []int{256}},
 		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil},
 		{"decoder_conv.1.bias", vae.decoderConv1, nil, []int{256}},
-		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil}, // Optional
-		{"decoder_conv.1.bias", vae.decoderConv1, []int{256}, nil},   // Optional
-		{"decoder_conv.3.weight", vae.decoderConv3, []int{256, 128, 5, 5}, nil},
+		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil},
+		{"decoder_conv.1.bias", vae.decoderConv1, []int{256}, nil},
+		{"decoder_conv.3.weight", vae.decoderConv3, []int{128, 256, 5, 5}, nil},
 		{"decoder_conv.3.bias", vae.decoderConv3, nil, []int{128}},
 		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil},
 		{"decoder_conv.4.bias", vae.decoderConv4, nil, []int{128}},
-		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil}, // Optional
-		{"decoder_conv.4.bias", vae.decoderConv4, []int{128}, nil},   // Optional
-		{"decoder_conv.6.weight", vae.decoderConv6, []int{128, 64, 5, 5}, nil},
+		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil},
+		{"decoder_conv.4.bias", vae.decoderConv4, []int{128}, nil},
+		{"decoder_conv.6.weight", vae.decoderConv6, []int{64, 128, 5, 5}, nil},
 		{"decoder_conv.6.bias", vae.decoderConv6, nil, []int{64}},
 		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil},
 		{"decoder_conv.7.bias", vae.decoderConv7, nil, []int{64}},
-		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil}, // Optional
-		{"decoder_conv.7.bias", vae.decoderConv7, []int{64}, nil},   // Optional
-		{"decoder_conv.9.weight", vae.decoderConv9, []int{64, 3, 5, 5}, nil},
+		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil},
+		{"decoder_conv.7.bias", vae.decoderConv7, []int{64}, nil},
+		{"decoder_conv.9.weight", vae.decoderConv9, []int{3, 64, 5, 5}, nil},
 		{"decoder_conv.9.bias", vae.decoderConv9, nil, []int{3}},
 	}
 	var weightsDir string
@@ -251,7 +232,6 @@ func NewVAE() *VAE {
 		if err != nil {
 			panic(fmt.Sprint("Error getting working directory: %v\n", err))
 		}
-		// Assuming weights are in a subdirectory structure like project_root/py/data/
 		weightsDir = filepath.Join(d, "py", "data")
 		fmt.Printf("Looking for weights in: %s\n", weightsDir)
 
@@ -278,10 +258,155 @@ func NewVAE() *VAE {
 	fmt.Println("\n--- VAE model parameters loaded successfully. ---")
 	return vae
 }
+func GenerateRandomNoise(numSamples, latentDim int) *tensor.Tensor {
+	data := make([]float64, numSamples*latentDim)
+	for i := range data {
+		data[i] = rand.NormFloat64()
+	}
+	return tensor.NewTensor(data, []int{numSamples, latentDim})
+}
 
 func main() {
-
 	vae := NewVAE()
 	fmt.Println(vae)
+	x := GenerateRandomNoise(64, 64)
+	vae.Forward(x)
+	fmt.Println(x)
 	fmt.Println("VAE model created and loaded.")
+}
+
+func (v *VAE) ForwardEncoder(x *tensor.Tensor) *tensor.Tensor {
+	fmt.Println("\n=== Starting VAE Forward Pass ===")
+	fmt.Printf("Input shape: %v\n", x.Shape)
+
+	// --- Encoder ---
+	fmt.Println("\nEncoder Conv 0:")
+	x = v.encoderConv0.Forward(x)
+	fmt.Printf("After enc_conv0: %v\n", x.Shape)
+
+	fmt.Println("Encoder BN 1:")
+	x = v.encoderConv1.Forward(x)
+	fmt.Printf("After enc_bn1: %v\n", x.Shape)
+
+	fmt.Println("Encoder ReLU 2:")
+	x = v.encoderReLU2.Forward(x)
+	fmt.Printf("After enc_relu2: %v\n", x.Shape)
+
+	fmt.Println("\nEncoder Conv 3:")
+	x = v.encoderConv3.Forward(x)
+	fmt.Printf("After enc_conv3: %v\n", x.Shape)
+
+	fmt.Println("Encoder BN 4:")
+	x = v.encoderConv4.Forward(x)
+	fmt.Printf("After enc_bn4: %v\n", x.Shape)
+
+	fmt.Println("Encoder ReLU 5:")
+	x = v.encoderReLU5.Forward(x)
+	fmt.Printf("After enc_relu5: %v\n", x.Shape)
+
+	fmt.Println("\nEncoder Conv 6:")
+	x = v.encoderConv6.Forward(x)
+	fmt.Printf("After enc_conv6: %v\n", x.Shape)
+
+	fmt.Println("Encoder BN 7:")
+	x = v.encoderConv7.Forward(x)
+	fmt.Printf("After enc_bn7: %v\n", x.Shape)
+
+	fmt.Println("Encoder ReLU 8:")
+	x = v.encoderReLU8.Forward(x)
+	fmt.Printf("After enc_relu8: %v\n", x.Shape)
+
+	fmt.Println("\nEncoder Conv 9:")
+	x = v.encoderConv9.Forward(x)
+	fmt.Printf("After enc_conv9: %v\n", x.Shape)
+
+	fmt.Println("Encoder BN 10:")
+	x = v.encoderConv10.Forward(x)
+	fmt.Printf("After enc_bn10: %v\n", x.Shape)
+
+	fmt.Println("Encoder ReLU 11:")
+	x = v.encoderReLU11.Forward(x)
+	fmt.Printf("After enc_relu11: %v\n", x.Shape)
+
+	// --- Flatten ---
+	fmt.Println("\nFlatten:")
+	flatFeatures := v.flatten.Forward(x)
+	fmt.Printf("After flatten: %v\n", flatFeatures.Shape)
+
+	// --- Latent Variables ---
+	fmt.Println("\nFC Mu:")
+	mu := v.fcMu.Forward(flatFeatures)
+	fmt.Printf("After fc_mu: %v\n", mu.Shape)
+
+	fmt.Println("\nFC LogVar:")
+	logvar := v.fcLogvar.Forward(flatFeatures)
+	fmt.Printf("After fc_logvar: %v\n", logvar.Shape)
+	return x
+}
+
+func (v *VAE) ForwardDecoder(x *tensor.Tensor) *tensor.Tensor {
+
+	// --- Decoder ---
+	fmt.Println("\nDecoder FC:")
+	decInput := v.decoderFc.Forward(x)
+	fmt.Printf("After decoder_fc: %v\n", decInput.Shape)
+	// --- Reshape ---
+	fmt.Println("\nReshape for Decoder Conv:")
+	batchSize := decInput.Shape[0]
+	x = decInput.Reshape([]int{batchSize, 512, 4, 4})
+	fmt.Printf("After reshape: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder ConvT 0:")
+	x = v.decoderConv0.Forward(x)
+	fmt.Printf("After dec_convT0: %v\n", x.Shape)
+
+	fmt.Println("Decoder BN 1:")
+	x = v.decoderConv1.Forward(x)
+	fmt.Printf("After dec_bn1: %v\n", x.Shape)
+
+	fmt.Println("Decoder ReLU 2:")
+	x = v.decoderReLU2.Forward(x)
+	fmt.Printf("After dec_relu2: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder ConvT 3:")
+	x = v.decoderConv3.Forward(x)
+	fmt.Printf("After dec_convT3: %v\n", x.Shape)
+
+	fmt.Println("Decoder BN 4:")
+	x = v.decoderConv4.Forward(x)
+	fmt.Printf("After dec_bn4: %v\n", x.Shape)
+
+	fmt.Println("Decoder ReLU 5:")
+	x = v.decoderReLU5.Forward(x)
+	fmt.Printf("After dec_relu5: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder ConvT 6:")
+	x = v.decoderConv6.Forward(x)
+	fmt.Printf("After dec_convT6: %v\n", x.Shape)
+
+	fmt.Println("Decoder BN 7:")
+	x = v.decoderConv7.Forward(x)
+	fmt.Printf("After dec_bn7: %v\n", x.Shape)
+
+	fmt.Println("Decoder ReLU 8:")
+	x = v.decoderReLU8.Forward(x)
+	fmt.Printf("After dec_relu8: %v\n", x.Shape)
+
+	fmt.Println("\nDecoder ConvT 9:")
+	x = v.decoderConv9.Forward(x)
+	fmt.Printf("After dec_convT9: %v\n", x.Shape)
+
+	fmt.Println("Decoder Tanh 10 (Output):")
+	x = v.decoderTanh10.Forward(x)
+	fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
+
+	fmt.Println("\n=== VAE Forward Pass Complete ===")
+	return x
+}
+
+func (v *VAE) Forward(x *tensor.Tensor) *tensor.Tensor {
+	//x = v.ForwardEncoder(x)
+	//only for generate task
+	x = v.ForwardDecoder(x)
+	return x
 }
