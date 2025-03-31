@@ -41,6 +41,13 @@ model = CNN().to(device)
 model.load_state_dict(torch.load('mnist_cnn.pth'))
 model.eval()
 
+
+import os
+try:
+    os.mkdir("data")
+except Exception:
+    pass
+
 print(model)
 import numpy as np
 for name, param in model.named_parameters():
