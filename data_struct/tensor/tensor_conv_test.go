@@ -464,8 +464,14 @@ func TestPadAndCrop(t *testing.T) {
 }
 
 func TestFlattenByDim(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("FlattenByDim fail unexpectedly.")
+		}
+	}()
 	// Note: FlattenByDim modifies the tensor in-place!
 	input := NewTensor(make([]float64, 24), []int{2, 3, 4}) // B=2, C=3, W=4
+
 	// Create copy for comparison
 	originalData := make([]float64, len(input.Data))
 	copy(originalData, input.Data)
@@ -504,11 +510,11 @@ func TestFlattenByDim(t *testing.T) {
 		t.Errorf("FlattenByDim(0, -1) data was modified unexpectedly.")
 	}
 
-	// Test Panics
+	// Test Panics with checkPanic
 	tensorPanic := input.Clone()
 	checkPanic(t, func() { tensorPanic.FlattenByDim(-1, 1) }, "Invalid startDim")
 	checkPanic(t, func() { tensorPanic.FlattenByDim(0, 3) }, "Invalid endDim")
-	checkPanic(t, func() { tensorPanic.FlattenByDim(2, 1) }, "") // Should panic if start > end? Implementation doesn't explicitly check
+	checkPanic(t, func() { tensorPanic.FlattenByDim(2, 1) }, "startDim cannot be greater than endDim")
 }
 
 func TestGetCols(t *testing.T) {
