@@ -18,7 +18,7 @@ def model_save(model):
         # if name == "embedder.weight":
         #     continue
         param_np = param.detach().cpu().numpy()
-        print(f"Layer: {name}, Shape: {param.shape}, dim: {param_np.ndim}")
+        print(f"param: {name}, Shape: {param.shape}, dim: {param_np.ndim}")
 
         # 处理四维张量（卷积层）
         if param_np.ndim == 4:
@@ -27,6 +27,20 @@ def model_save(model):
 
         # 保存参数
         np.savetxt(f"./data/{name}.csv", param_np, delimiter=",", fmt="%.16f")
+
+
+    # 保存所有缓冲区（包括num_batches_tracked）
+    for name, buf in model.named_buffers():
+        buf_np = buf.detach().cpu().numpy()
+        print(f"buf: {name}, Shape: {buf.shape}, dim: {buf.ndim}")
+
+        # 自动处理不同维度的buffer
+        if buf_np.ndim == 0:  # 标量特殊处理
+            buf_np = np.array([buf_np])
+
+        np.savetxt(f"./data/{name}.csv", buf_np, delimiter=",", fmt="%.16f")
+
+
 
     print("所有参数已保存。")
 

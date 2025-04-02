@@ -500,6 +500,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 
 	{
 		x = testing.GetPytorchInitData(`
+import time
+torch.manual_seed(int(time.time()))
 out = torch.randn(64, 64)
 out = torch.nn.Linear(64 ,8192)(out)
 print(out.shape)
