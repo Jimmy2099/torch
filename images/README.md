@@ -1,9 +1,9 @@
 # Example
 
-## AutoEncoder
+## Variational AutoEncoder
 ![CNN](04_vae.png)
 
-## Variational AutoEncoder
+## AutoEncoder
 ![CNN](03_ae.png)
 
 ## CNN
