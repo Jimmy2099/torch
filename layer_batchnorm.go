@@ -30,6 +30,14 @@ type BatchNormLayer struct {
 	numFeatures int
 }
 
+func (l *BatchNormLayer) GetWeights() *tensor.Tensor {
+	return l.weights
+}
+
+func (l *BatchNormLayer) GetBias() *tensor.Tensor {
+	return l.bias
+}
+
 func NewBatchNormLayer(numFeatures int, eps, momentum float64) *BatchNormLayer {
 	weights := tensor.Ones([]int{numFeatures})
 	bias := tensor.Zeros([]int{numFeatures})

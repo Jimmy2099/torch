@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/layer"
 	"testing"
 )
 
@@ -288,4 +289,142 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
+	// 批量归一化层测试
+	t.Run("batchnorm2d layer", func(t *testing.T) {
+		numFeatures := 64
+		eps := 1e-5
+		momentum := 0.1
+
+		script := fmt.Sprintf(
+			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v)`,
+			numFeatures, eps, momentum,
+		)
+		// 输入形状 [batch, channels, height, width]
+		input := tensor.Random([]int{1, 64, 32, 32}, -1, 1)
+		weight := tensor.Random([]int{64}, -1, 1)
+		bias := tensor.Random([]int{64}, -1, 1)
+
+		l := torch.NewBatchNormLayer(numFeatures, eps, momentum)
+		l.SetWeightsAndShape(weight.Data, weight.Shape)
+		l.SetBiasAndShape(bias.Data, bias.Shape)
+
+		result := GetLayerTestResult(script, l, input)
+		expected := l.Forward(input)
+
+		if !result.EqualFloat32(expected) {
+			t.Errorf("BatchNorm2d failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+		}
+	})
+	// 转置卷积层测试
+	t.Run("convtranspose2d layer", func(t *testing.T) {
+		inChannels := 512
+		outChannels := 256
+		kernelSize := []int{5, 5}
+		stride := []int{2, 2}
+		padding := []int{2, 2}
+		outputPadding := []int{1, 1}
+
+		script := fmt.Sprintf(
+			`torch.nn.ConvTranspose2d(%d, %d, kernel_size=(%d,%d), stride=(%d,%d), padding=(%d,%d), output_padding=(%d,%d))`,
+			inChannels, outChannels, kernelSize[0], kernelSize[1],
+			stride[0], stride[1], padding[0], padding[1],
+			outputPadding[0], outputPadding[1],
+		)
+		input := tensor.Random([]int{1, 512, 4, 4}, -1, 1)
+		weights := tensor.Random([]int{512, 256, 5, 5}, -1, 1)
+		bias := tensor.Random([]int{256}, -1, 1)
+
+		l := layer.NewConvTranspose2dLayer(
+			inChannels, outChannels,
+			kernelSize[0], kernelSize[1],
+			stride[0], stride[1],
+			padding[0], padding[1],
+			outputPadding[0], outputPadding[1],
+		)
+		l.SetWeightsAndShape(weights.Data, weights.Shape)
+		l.SetBiasAndShape(bias.Data, bias.Shape)
+
+		result := GetLayerTestResult(script, l, input)
+		expected := l.Forward(input)
+
+		if !result.EqualFloat32(expected) {
+			t.Errorf("ConvTranspose2d failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+		}
+	})
+
+	// 全连接层测试
+	t.Run("linear layer fc", func(t *testing.T) {
+		inFeatures := 8192
+		outFeatures := 64
+
+		script := fmt.Sprintf(
+			`torch.nn.Linear(in_features=%d, out_features=%d, bias=True)`,
+			inFeatures, outFeatures,
+		)
+		input := tensor.Random([]int{1, 8192}, -1, 1)
+		weights := tensor.Random([]int{outFeatures, inFeatures}, -1, 1)
+		bias := tensor.Random([]int{outFeatures}, -1, 1)
+
+		l := torch.NewLinearLayer(inFeatures, outFeatures)
+		l.SetWeightsAndShape(weights.Data, weights.Shape)
+		l.SetBiasAndShape(bias.Data, bias.Shape)
+
+		result := GetLayerTestResult(script, l, input)
+		expected := l.Forward(input)
+
+		if !result.EqualFloat32(expected) {
+			t.Errorf("Linear layer failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+		}
+	})
+
+	// Flatten层测试
+	t.Run("flatten layer", func(t *testing.T) {
+		script := `torch.nn.Flatten(start_dim=1, end_dim=-1)`
+		input := tensor.Random([]int{1, 512, 4, 4}, -1, 1)
+		expectedShape := []int{1, 512 * 4 * 4}
+
+		l := torch.NewFlattenLayer()
+		result := GetLayerTestResult(script, l, input)
+
+		if !slicesEqual(result.Shape, expectedShape) {
+			t.Errorf("Flatten shape mismatch:\nExpected: %v\nGot: %v", expectedShape, result.Shape)
+		}
+		if !result.EqualFloat32(input.Reshape(expectedShape)) {
+			t.Errorf("Flatten data mismatch:\nInput:\n%v\nOutput:\n%v", input, result)
+		}
+	})
+
+	// Tanh激活层测试
+	t.Run("tanh layer", func(t *testing.T) {
+		script := `torch.nn.Tanh()`
+		input := tensor.Random([]int{1, 3, 64, 64}, -1, 1)
+
+		l := layer.NewTanhLayer()
+		result := GetLayerTestResult(script, l, input)
+		expected := l.Forward(input)
+
+		// 验证输出范围在[-1, 1]之间
+		for _, v := range result.Data {
+			if v < -1 || v > 1 {
+				t.Errorf("Tanh output out of range: %v", v)
+			}
+		}
+		if !result.EqualFloat32(expected) {
+			t.Errorf("Tanh failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+		}
+	})
+
+}
+
+// 辅助函数：比较切片是否相等
+func slicesEqual(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -13,6 +13,20 @@ type TanhLayer struct {
 	outputCache *tensor.Tensor
 }
 
+func (r *TanhLayer) GetWeights() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
+func (r *TanhLayer) GetBias() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
 // NewTanhLayer creates a new TanhLayer.
 func NewTanhLayer() *TanhLayer {
 	return &TanhLayer{}

@@ -7,6 +7,20 @@ type FlattenLayer struct {
 	inputShape []int // 保存输入形状以便反向传播时恢复
 }
 
+func (r *FlattenLayer) GetWeights() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
+func (r *FlattenLayer) GetBias() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
 // NewFlattenLayer 创建新的展平层
 func NewFlattenLayer() *FlattenLayer {
 	return &FlattenLayer{}

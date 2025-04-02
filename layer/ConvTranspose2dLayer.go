@@ -24,6 +24,14 @@ type ConvTranspose2dLayer struct {
 	inputCache       *tensor.Tensor // Cache for input tensor needed in backward pass
 }
 
+func (ct *ConvTranspose2dLayer) GetWeights() *tensor.Tensor {
+	return ct.Weights
+}
+
+func (ct *ConvTranspose2dLayer) GetBias() *tensor.Tensor {
+	return ct.Bias
+}
+
 // NewConvTranspose2dLayer creates a new ConvTranspose2dLayer.
 // inChannels: Number of input channels
 // outChannels: Number of output channels
