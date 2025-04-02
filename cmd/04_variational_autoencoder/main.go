@@ -525,8 +525,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 	//Decode
 	{
 		fmt.Println("\nDecoder ConvT 0:")
-		//x = v.decoderConv0.Forward(x)
-		x = PyConvT(x, v.decoderConv0, 512, 256)
+		x = v.decoderConv0.Forward(x)
+		//x = PyConvT(x, v.decoderConv0, 512, 256)
 		fmt.Printf("After dec_convT0: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 1:")
@@ -540,8 +540,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_relu2: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 3:")
-		//x = v.decoderConv3.Forward(x)
-		x = PyConvT(x, v.decoderConv3, 128, 64)
+		x = v.decoderConv3.Forward(x)
+		//x = PyConvT(x, v.decoderConv3, 128, 64)
 		fmt.Printf("After dec_convT3: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 4:")
@@ -555,8 +555,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_relu5: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 6:")
-		//x = v.decoderConv6.Forward(x)
-		x = PyConvT(x, v.decoderConv6, 128, 64)
+		x = v.decoderConv6.Forward(x)
+		//x = PyConvT(x, v.decoderConv6, 128, 64)
 		fmt.Printf("After dec_convT6: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 7:")
@@ -570,8 +570,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_relu8: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 9:")
-		//x = v.decoderConv9.Forward(x)
-		x = PyConvT(x, v.decoderConv9, 64, 3)
+		x = v.decoderConv9.Forward(x)
+		//x = PyConvT(x, v.decoderConv9, 64, 3)
 		fmt.Printf("After dec_convT9: %v\n", x.Shape)
 
 		fmt.Println("Decoder Tanh 10 (Output):")
