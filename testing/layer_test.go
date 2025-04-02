@@ -21,7 +21,8 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		result := GetLayerTestResult(script, l, t1)
 		t2 := l.Forward(t1)
-		if !result.Equal(t2) {
+
+		if !result.EqualFloat32(t2) {
 			t.Errorf("Element-wise multiplication failed:\nExpected:\n%v\nGot:\n%v", t2, result)
 		}
 	})
