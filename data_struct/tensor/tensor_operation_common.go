@@ -51,6 +51,39 @@ func Ones(shape []int) *Tensor {
 	return &Tensor{Data: data, Shape: shape}
 }
 
+// Clamp 方法将每个元素限制在 [min, max] 范围内
+func (t *Tensor) Clamp(min, max float64) *Tensor {
+	clampedData := make([]float64, len(t.Data))
+	for i, val := range t.Data {
+		if val < min {
+			clampedData[i] = min
+		} else if val > max {
+			clampedData[i] = max
+		} else {
+			clampedData[i] = val
+		}
+	}
+	return &Tensor{Data: clampedData, Shape: t.Shape}
+}
+
+// RandomNormal 标准正态分布
+func RandomNormal(shape []int) *Tensor {
+	// 注意：在实际应用中，建议在程序初始化时只调用一次 Seed，而不是每次调用函数时都 seed
+	rand.Seed(time.Now().UnixNano())
+
+	size := 1
+	for _, dim := range shape {
+		size *= dim
+	}
+
+	data := make([]float64, size)
+	for i := range data {
+		data[i] = rand.NormFloat64() // 标准正态分布：均值0，标准差1
+	}
+
+	return &Tensor{Data: data, Shape: shape}
+}
+
 // Random generates a tensor with random values in the range [min, max].
 func Random(shape []int, min, max float64) *Tensor {
 	if min > max {

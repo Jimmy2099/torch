@@ -1,13 +1,14 @@
 #!pip install -q -U immutabledict sentencepiece 
-#!git clone https://github.com/google/gemma_pytorch.git
+# !git clone https://github.com/google/gemma_pytorch.git
 
 import contextlib
-import torch
 import os
-import kagglehub
+import sys
 
-import sys 
-sys.path.append("./gemma_pytorch/") 
+import kagglehub
+import torch
+
+sys.path.append("./gemma_pytorch/")
 
 from gemma.config import get_model_config
 from gemma.model import GemmaForCausalLM
@@ -27,14 +28,15 @@ model_config = get_model_config(VARIANT)
 model_config.dtype = "float32" if MACHINE_TYPE == "cpu" else "float16"
 model_config.tokenizer = tokenizer_path
 
+
 @contextlib.contextmanager
 def _set_default_tensor_type(dtype: torch.dtype):
     """Sets the default torch dtype to the given dtype."""
     torch.set_default_dtype(dtype)
     yield
     torch.set_default_dtype(torch.float)
-    
-from torchsummary import summary
+
+
 import numpy as np
 
 # Instantiate the model and load the weights.
@@ -46,16 +48,16 @@ with _set_default_tensor_type(model_config.get_dtype()):
     # summary(model, input_size=(3, 224, 224))
     print(model)
     for name, param in model.named_parameters():
-        if name=="embedder.weight":
+        if name == "embedder.weight":
             continue
         print(f"Layer: {name}, Shape: {param.shape}")
-        np.savetxt("./data/"+name+".csv", param.detach().numpy(), delimiter=",", fmt="%.16f")
+        np.savetxt("./data/" + name + ".csv", param.detach().numpy(), delimiter=",", fmt="%.16f")
     exit(0)
     for name, param in model.named_parameters():
-        if name=="embedder.weight":
+        if name == "embedder.weight":
             continue
         print(f"Layer: {name}, Shape: {param.shape}")
-        np_data=model.model.layers[0].self_attn.qkv_proj.weight.numpy()
+        np_data = model.model.layers[0].self_attn.qkv_proj.weight.numpy()
         print(np_data.shape)
         # np_data = np_data[:100, :100]
         print(len(np_data))
