@@ -58,8 +58,24 @@ func GetTensorTestResult(inPyScript string, inTensor1 *tensor.Tensor, inTensor2 
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
+
+def save_tensor_to_csv(tensor, file_path):
+    with open(file_path, 'w') as f:
+        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        np.savetxt(f, tensor.numpy().reshape(-1, tensor.shape[-1]), delimiter=",")
+
 def load_tensor_from_csv(file_path):
-    return torch.tensor(np.loadtxt(file_path, delimiter=","))
+    with open(file_path, 'r') as f:
+        header = f.readline().strip()
+        if not header.startswith("Shape,"):
+            raise ValueError("Invalid CSV format: missing shape header")
+        
+        shape = list(map(int, header.split(",")[1:]))
+        data = np.loadtxt(f, delimiter=",")
+    
+    flattened = data.flatten()
+    return torch.tensor(flattened).reshape(*shape)
+
 in1 = load_tensor_from_csv("%s")
 in2 = load_tensor_from_csv("%s")
 
@@ -70,7 +86,7 @@ def process_data(in1,in2):
 
 out = process_data(in1,in2)
 
-np.savetxt("%s", out.numpy(), delimiter=",")
+save_tensor_to_csv(out,"%s")
 `, inputPath1, inputPath2, inPyScript, outPutPath)
 
 	runPyscript(pythonScript)

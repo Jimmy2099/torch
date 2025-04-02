@@ -14,7 +14,7 @@ const (
 	shapeHeaderPrefix = "Shape"
 )
 
-func (t *Tensor) SaveDataAndShapeToCSV(filename string) error {
+func (t *Tensor) SaveToCSV(filename string) error {
 	if t == nil || t.Data == nil {
 		return fmt.Errorf("cannot save nil tensor or tensor with nil data")
 	}
@@ -81,7 +81,7 @@ func (t *Tensor) SaveDataAndShapeToCSV(filename string) error {
 	return nil
 }
 
-func (t *Tensor) SaveToCSV(filename string) error {
+func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 	if t == nil || t.Data == nil {
 		return fmt.Errorf("cannot save nil tensor or tensor with nil data")
 	}
