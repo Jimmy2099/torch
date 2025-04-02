@@ -84,10 +84,9 @@ import (
 // Layer: decoder_conv.9.bias, Shape: torch.Size([3]), dim: 1
 
 type VAE struct {
-	// Encoder layers
 	encoderConv0  *torch.ConvLayer
 	encoderConv1  *torch.BatchNormLayer
-	encoderReLU2  *torch.ReLULayer // Assuming you have ReLU defined
+	encoderReLU2  *torch.ReLULayer
 	encoderConv3  *torch.ConvLayer
 	encoderConv4  *torch.BatchNormLayer
 	encoderReLU5  *torch.ReLULayer
@@ -100,7 +99,7 @@ type VAE struct {
 
 	flatten  *torch.FlattenLayer
 	fcMu     *torch.LinearLayer
-	fcLogvar *torch.LinearLayer
+	fcLogVar *torch.LinearLayer
 
 	decoderFc *torch.LinearLayer
 
@@ -151,7 +150,7 @@ func NewVAE() *VAE {
 
 		flatten:  torch.NewFlattenLayer(),
 		fcMu:     torch.NewLinearLayer(8192, 64),
-		fcLogvar: torch.NewLinearLayer(8192, 64),
+		fcLogVar: torch.NewLinearLayer(8192, 64),
 
 		decoderFc: torch.NewLinearLayer(64, 8192),
 
@@ -236,8 +235,8 @@ func NewVAE() *VAE {
 		// FC Layers
 		{"fc_mu.weight", vae.fcMu, []int{64, 8192}, nil},
 		{"fc_mu.bias", vae.fcMu, nil, []int{64}},
-		{"fc_logvar.weight", vae.fcLogvar, []int{64, 8192}, nil},
-		{"fc_logvar.bias", vae.fcLogvar, nil, []int{64}},
+		{"fc_logvar.weight", vae.fcLogVar, []int{64, 8192}, nil},
+		{"fc_logvar.bias", vae.fcLogVar, nil, []int{64}},
 
 		//	(decoder_conv): Sequential(
 		//	  (0): ConvTranspose2d(512, 256, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
@@ -406,7 +405,7 @@ func (v *VAE) Encode(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Printf("After fc_mu: %v\n", mu.Shape)
 
 	fmt.Println("\nFC LogVar:")
-	logvar := v.fcLogvar.Forward(flatFeatures)
+	logvar := v.fcLogVar.Forward(flatFeatures)
 	fmt.Printf("After fc_logvar: %v\n", logvar.Shape)
 	return x
 }
