@@ -314,19 +314,6 @@ func (t *Tensor) Clone1() *Tensor {
 }
 
 // shapeEqual 检查两个张量形状是否相同
-func shapeEqual(shape1, shape2 []int) bool {
-	if len(shape1) != len(shape2) {
-		return false
-	}
-	for i := range shape1 {
-		if shape1[i] != shape2[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// shapeEqual 检查两个张量形状是否相同
 func ShapeEqual(shape1, shape2 []int) bool {
 	if len(shape1) != len(shape2) {
 		return false
