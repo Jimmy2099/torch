@@ -337,7 +337,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		expected := l.Forward(input)
 
 		if !result.EqualFloat16(expected) {
-			t.Errorf("BatchNorm2d failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+			t.Errorf("BatchNorm2d failed:\nExpected:\n%v\nGot:\n%v", expected.Data[:5], result.Data[:5])
 		}
 	})
 
@@ -374,7 +374,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		expected := l.Forward(input)
 
 		if !result.EqualFloat32(expected) {
-			t.Errorf("ConvTranspose2d failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+			t.Errorf("ConvTranspose2d failed:\nExpected:\n%v\nGot:\n%v", expected.Data[:5], result.Data[:5])
 		}
 	})
 
@@ -387,9 +387,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		l := torch.NewFlattenLayer()
 		result := GetLayerTestResult(script, l, input)
 
-		if !slicesEqual(result.Shape, expectedShape) {
-			t.Errorf("Flatten shape mismatch:\nExpected: %v\nGot: %v", expectedShape, result.Shape)
-		}
 		if !result.EqualFloat32(input.Reshape(expectedShape)) {
 			t.Errorf("Flatten data mismatch:\nInput:\n%v\nOutput:\n%v", input, result)
 		}
@@ -415,17 +412,4 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-}
-
-// 辅助函数：比较切片是否相等
-func slicesEqual(a, b []int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

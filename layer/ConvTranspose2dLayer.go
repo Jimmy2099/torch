@@ -34,21 +34,19 @@ func (ct *ConvTranspose2dLayer) GetBias() *tensor.Tensor {
 
 // NewConvTranspose2dLayer creates a new ConvTranspose2dLayer.
 func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSizeCols, strideRows, strideCols, paddingRows, paddingCols, outputPaddingRows, outputPaddingCols int) *ConvTranspose2dLayer {
-	// Initialize weights with Kaiming He initialization
+	// 修正权重形状为 [in_channels, out_channels, kernel_rows, kernel_cols]
 	weightsData := make([]float64, inChannels*outChannels*kernelSizeRows*kernelSizeCols)
-	variance := 2.0 / float64(inChannels*kernelSizeRows*kernelSizeCols)
+
+	// 修复2: 使用PyTorch一致的Kaiming初始化
+	fanIn := inChannels * kernelSizeRows * kernelSizeCols
+	variance := 2.0 / float64(fanIn)
 	for i := range weightsData {
 		weightsData[i] = randn() * math.Sqrt(variance)
 	}
 
 	weights := tensor.NewTensor(weightsData, []int{inChannels, outChannels, kernelSizeRows, kernelSizeCols})
-	// Initialize bias to zero
 	bias := tensor.NewTensor(make([]float64, outChannels), []int{outChannels})
 
-	// Check weight dimensions
-	if len(weights.Shape) != 4 {
-		panic(fmt.Sprintf("Weight tensor must be 4D (outChannels, inChannels, kernelSizeRows, kernelSizeCols), but got %v", weights.Shape))
-	}
 	return &ConvTranspose2dLayer{
 		Weights:          weights,
 		Bias:             bias,
@@ -85,233 +83,209 @@ func randn() float64 {
 	return r
 }
 
-// Forward performs the forward pass through the transposed convolutional layer.
-// Forward performs the forward pass through the transposed convolutional layer.
-// input: Input tensor of shape [batchSize, inChannels, inputHeight, inputWidth]
-// Returns: Output tensor of shape [batchSize, outChannels, outputHeight, outputWidth]
 func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
-	// Check input dimensions
+	// 输入维度校验
 	if len(inputTensor.Shape) != 4 {
-		panic(fmt.Sprintf("Input tensor must be 4D (batchSize, inChannels, height, width), but got %v", inputTensor.Shape))
+		panic(fmt.Sprintf("输入必须是4D张量 [batch, in_channels, height, width], 实际维度: %v", inputTensor.Shape))
 	}
-
-	// Store input for backward pass
-	ct.inputCache = inputTensor
-
 	batchSize := inputTensor.Shape[0]
 	inChannels := inputTensor.Shape[1]
 	inputHeight := inputTensor.Shape[2]
 	inputWidth := inputTensor.Shape[3]
 
-	kernelSizeRows := ct.KernelSizeRow
-	kernelSizeCols := ct.KernelSizeCol
-
-	// Check consistency (use stored InChannels from constructor)
+	// 参数校验
 	if inChannels != ct.InChannels {
-		panic(fmt.Sprintf("Input channels (%d) must match layer's expected inChannels (%d)", inChannels, ct.InChannels))
+		panic(fmt.Sprintf("输入通道数不匹配: 预期 %d 实际 %d", ct.InChannels, inChannels))
 	}
 
-	// Calculate output dimensions (This formula seems correct)
+	// 计算输出尺寸（与PyTorch公式严格对齐）
 	outputHeight := (inputHeight-1)*ct.StrideRow - 2*ct.PaddingRow + ct.KernelSizeRow + ct.OutputPaddingRow
 	outputWidth := (inputWidth-1)*ct.StrideCol - 2*ct.PaddingCol + ct.KernelSizeCol + ct.OutputPaddingCol
-
-	// --- Defensive check for non-positive output dimensions ---
 	if outputHeight <= 0 || outputWidth <= 0 {
-		panic(fmt.Sprintf("Calculated output dimensions are not positive: H=%d, W=%d. Check parameters (stride, padding, kernel size, input size).", outputHeight, outputWidth))
+		panic(fmt.Sprintf("非法输出尺寸: %dx%d (参数: stride=%dx%d padding=%dx%d kernel=%dx%d output_padding=%dx%d)",
+			outputHeight, outputWidth, ct.StrideRow, ct.StrideCol, ct.PaddingRow, ct.PaddingCol,
+			ct.KernelSizeRow, ct.KernelSizeCol, ct.OutputPaddingRow, ct.OutputPaddingCol))
 	}
-	// --- End Defensive check ---
 
-	// Create output tensor
-	outputData := make([]float64, batchSize*ct.OutChannels*outputHeight*outputWidth)
-	output := tensor.NewTensor(outputData, []int{batchSize, ct.OutChannels, outputHeight, outputWidth})
+	// 初始化输出张量
+	outputShape := []int{batchSize, ct.OutChannels, outputHeight, outputWidth}
+	outputData := make([]float64, product(outputShape))
+	output := tensor.NewTensor(outputData, outputShape)
 
-	// Perform transposed convolution
+	// 核心计算逻辑
 	for b := 0; b < batchSize; b++ {
 		for outC := 0; outC < ct.OutChannels; outC++ {
-			for i := 0; i < outputHeight; i++ { // Loop over output height
-				for j := 0; j < outputWidth; j++ { // Loop over output width
+			for i := 0; i < outputHeight; i++ {
+				for j := 0; j < outputWidth; j++ {
 					sum := 0.0
-					// Iterate through the kernel
-					for kRow := 0; kRow < kernelSizeRows; kRow++ {
-						for kCol := 0; kCol < kernelSizeCols; kCol++ {
 
-							// --- CORRECTED MAPPING LOGIC ---
+					// 遍历卷积核
+					for kRow := 0; kRow < ct.KernelSizeRow; kRow++ {
+						for kCol := 0; kCol < ct.KernelSizeCol; kCol++ {
+							// 计算输入坐标（关键修复点）
 							numeratorRow := i + ct.PaddingRow - kRow
 							numeratorCol := j + ct.PaddingCol - kCol
 
-							// Check if this kernel position maps to a valid potential input location via stride
+							// 检查是否满足步长条件
 							if numeratorRow >= 0 && numeratorRow%ct.StrideRow == 0 &&
 								numeratorCol >= 0 && numeratorCol%ct.StrideCol == 0 {
 
 								inputRow := numeratorRow / ct.StrideRow
 								inputCol := numeratorCol / ct.StrideCol
 
-								// Check if the mapped input location is within the actual input bounds
-								if inputRow >= 0 && inputRow < inputHeight && inputCol >= 0 && inputCol < inputWidth {
-									// If valid, accumulate contributions from all input channels
+								// 边界检查
+								if inputRow < inputHeight && inputCol < inputWidth {
+									// 累加各输入通道的贡献
 									for inC := 0; inC < inChannels; inC++ {
-										// Weight index: Corresponds to W[outC, inC, kRow, kCol]
-										weightIndex := outC*inChannels*kernelSizeRows*kernelSizeCols + // Offset for output channel
-											inC*kernelSizeRows*kernelSizeCols + // Offset for input channel
-											kRow*kernelSizeCols + // Offset for kernel row
-											kCol // Offset for kernel col
+										// 权重索引修正（关键修复）
+										weightIndex := inC*ct.OutChannels*ct.KernelSizeRow*ct.KernelSizeCol +
+											outC*ct.KernelSizeRow*ct.KernelSizeCol +
+											kRow*ct.KernelSizeCol +
+											kCol
 
-										// Input index: Corresponds to Input[b, inC, inputRow, inputCol]
-										inputIndex := b*inChannels*inputHeight*inputWidth + // Offset for batch
-											inC*inputHeight*inputWidth + // Offset for input channel
-											inputRow*inputWidth + // Offset for input row
-											inputCol // Offset for input col
+										// 输入索引计算
+										inputIndex := b*inChannels*inputHeight*inputWidth +
+											inC*inputHeight*inputWidth +
+											inputRow*inputWidth +
+											inputCol
 
-										// --- Bounds check before access (Defensive) ---
+										// 防御性检查
 										if inputIndex < 0 || inputIndex >= len(inputTensor.Data) {
-											panic(fmt.Sprintf("Internal error: Calculated inputIndex %d is out of bounds [0, %d). Params: b=%d, inC=%d, iR=%d, iC=%d, i=%d, j=%d, kR=%d, kC=%d",
-												inputIndex, len(inputTensor.Data), b, inC, inputRow, inputCol, i, j, kRow, kCol))
+											panic(fmt.Sprintf("输入索引越界: %d (范围 0-%d)", inputIndex, len(inputTensor.Data)))
 										}
 										if weightIndex < 0 || weightIndex >= len(ct.Weights.Data) {
-											panic(fmt.Sprintf("Internal error: Calculated weightIndex %d is out of bounds [0, %d). Params: outC=%d, inC=%d, kR=%d, kC=%d",
-												weightIndex, len(ct.Weights.Data), outC, inC, kRow, kCol))
+											panic(fmt.Sprintf("权重索引越界: %d (范围 0-%d)", weightIndex, len(ct.Weights.Data)))
 										}
-										// --- End Bounds check ---
 
 										sum += inputTensor.Data[inputIndex] * ct.Weights.Data[weightIndex]
-									} // end loop over inC
-								} // end check: inputRow/Col in bounds
-							} // end check: divisibility by stride
-							// --- END CORRECTED MAPPING LOGIC ---
-
-						} // end loop kCol
-					} // end loop kRow
-
-					// Add bias for the current output channel
-					outputIndex := b*ct.OutChannels*outputHeight*outputWidth + // Offset for batch
-						outC*outputHeight*outputWidth + // Offset for output channel
-						i*outputWidth + // Offset for output row
-						j // Offset for output col
-
-					// --- Bounds check before access (Defensive) ---
-					if outputIndex < 0 || outputIndex >= len(output.Data) {
-						panic(fmt.Sprintf("Internal error: Calculated outputIndex %d is out of bounds [0, %d). Params: b=%d, outC=%d, i=%d, j=%d",
-							outputIndex, len(output.Data), b, outC, i, j))
-					}
-					if outC < 0 || outC >= len(ct.Bias.Data) {
-						panic(fmt.Sprintf("Internal error: Calculated bias index %d is out of bounds [0, %d).", outC, len(ct.Bias.Data)))
-					}
-					// --- End Bounds check ---
-
-					output.Data[outputIndex] = sum + ct.Bias.Data[outC]
-				} // end loop j (output width)
-			} // end loop i (output height)
-		} // end loop outC
-	} // end loop b (batch)
-
-	// fmt.Println("ConvTranspose2dLayer Forward Pass Completed") // Keep if useful
-	return output
-}
-
-// Backward performs the backward pass through the transposed convolutional layer (gradient calculation).
-// gradOutput: Gradient of the loss with respect to the output of this layer.
-// learningRate: Learning rate for updating weights and biases.
-// Returns: Gradient of the loss with respect to the input of this layer.
-func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
-	// Ensure input tensor was cached during forward pass
-	if ct.inputCache == nil {
-		panic("Backward called before Forward or input cache is nil")
-	}
-	inputTensor := ct.inputCache // Use the cached input tensor
-
-	// Check gradOutput dimensions
-	if len(gradOutput.Shape) != 4 {
-		panic(fmt.Sprintf("gradOutput tensor must be 4D, but got %v", gradOutput.Shape))
-	}
-	batchSize := gradOutput.Shape[0]
-	outChannels := gradOutput.Shape[1]
-	outputHeight := gradOutput.Shape[2]
-	outputWidth := gradOutput.Shape[3]
-
-	// Input tensor (for calculating gradInput)
-	inChannels := ct.Weights.Shape[1]
-	//Get the kernel information
-	kernelSizeRows := ct.KernelSizeRow
-	kernelSizeCols := ct.KernelSizeCol
-
-	//Calculate the height and width of the input
-	inputHeight := (outputHeight+2*ct.PaddingRow-ct.KernelSizeRow-ct.OutputPaddingRow)/ct.StrideRow + 1
-	inputWidth := (outputWidth+2*ct.PaddingCol-ct.KernelSizeCol-ct.OutputPaddingCol)/ct.StrideCol + 1
-
-	// Initialize gradInput
-	gradInputData := make([]float64, batchSize*inChannels*inputHeight*inputWidth)
-	gradInput := tensor.NewTensor(gradInputData, []int{batchSize, inChannels, inputHeight, inputWidth})
-
-	// Initialize gradients for weights and biases (you might want to store these in the ConvTranspose2dLayer struct if training)
-	gradWeightsData := make([]float64, len(ct.Weights.Data))
-	gradWeights := tensor.NewTensor(gradWeightsData, ct.Weights.Shape) // Assuming you have the same shape as the weights
-	gradBiasData := make([]float64, len(ct.Bias.Data))
-	gradBias := tensor.NewTensor(gradBiasData, ct.Bias.Shape) // Assuming the same shape as bias
-
-	// Iterate through output to calculate gradients
-	for b := 0; b < batchSize; b++ {
-		for outC := 0; outC < outChannels; outC++ {
-			for i := 0; i < outputHeight; i++ {
-				for j := 0; j < outputWidth; j++ {
-					outputIndex := b*outChannels*outputHeight*outputWidth + outC*outputHeight*outputWidth + i*outputWidth + j
-					gradOutputValue := gradOutput.Data[outputIndex]
-
-					//Cycle through the locations in the kernel
-					for kRow := 0; kRow < kernelSizeRows; kRow++ {
-						for kCol := 0; kCol < kernelSizeCols; kCol++ {
-							//Get the current location in the original image based on location in the output and kernel
-							inputRow := (i + 2*ct.PaddingRow - kRow - ct.OutputPaddingRow) / ct.StrideRow
-							inputCol := (j + 2*ct.PaddingCol - kCol - ct.OutputPaddingCol) / ct.StrideCol
-
-							// If row and column are within the range of the input then use that location
-							if inputRow >= 0 && inputRow < inputHeight && inputCol >= 0 && inputCol < inputWidth {
-								for inC := 0; inC < inChannels; inC++ {
-									//Input index
-									inputIndex := b*inChannels*inputHeight*inputWidth + inC*inputHeight*inputWidth + inputRow*inputWidth + inputCol
-
-									//Determine the weight index
-									weightIndex := outC*ct.InChannels*kernelSizeRows*kernelSizeCols + inC*kernelSizeRows*kernelSizeCols + kRow*kernelSizeCols + kCol
-									//Calculate gradient from output back to input location based on outputIndex,inputIndex, and kernels
-									gradInput.Data[inputIndex] += gradOutputValue * ct.Weights.Data[weightIndex]
-									// Update weight gradient using the cached input tensor
-									gradWeights.Data[weightIndex] += gradOutputValue * inputTensor.Data[inputIndex] // Corrected line
-
+									}
 								}
-
 							}
-
 						}
 					}
-					gradBias.Data[outC] += gradOutputValue
 
+					// 添加偏置项
+					outputIndex := b*ct.OutChannels*outputHeight*outputWidth +
+						outC*outputHeight*outputWidth +
+						i*outputWidth +
+						j
+
+					if outC >= len(ct.Bias.Data) {
+						panic(fmt.Sprintf("偏置索引越界: %d (总数 %d)", outC, len(ct.Bias.Data)))
+					}
+					output.Data[outputIndex] = sum + ct.Bias.Data[outC]
 				}
 			}
 		}
 	}
 
-	// Update weights and biases using the calculated gradients
-	for i := range ct.Weights.Data {
-		ct.Weights.Data[i] -= learningRate * gradWeights.Data[i]
+	ct.inputCache = inputTensor
+	return output
+}
+
+func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+	if ct.inputCache == nil {
+		panic("需要先执行前向传播")
 	}
-	for i := range ct.Bias.Data {
-		ct.Bias.Data[i] -= learningRate * gradBias.Data[i]
+	inputTensor := ct.inputCache
+
+	// 输入参数解析
+	batchSize := gradOutput.Shape[0]
+	outChannels := gradOutput.Shape[1]
+	outputHeight := gradOutput.Shape[2]
+	outputWidth := gradOutput.Shape[3]
+
+	inChannels := ct.InChannels
+	inputHeight := inputTensor.Shape[2]
+	inputWidth := inputTensor.Shape[3]
+
+	// 初始化梯度张量
+	gradInputShape := inputTensor.Shape
+	gradInputData := make([]float64, product(gradInputShape))
+	gradInput := tensor.NewTensor(gradInputData, gradInputShape)
+
+	// 梯度缓冲区
+	gradWeightsData := make([]float64, len(ct.Weights.Data))
+	gradBiasData := make([]float64, len(ct.Bias.Data))
+
+	// 核心反向计算
+	for b := 0; b < batchSize; b++ {
+		for outC := 0; outC < outChannels; outC++ {
+			for i := 0; i < outputHeight; i++ {
+				for j := 0; j < outputWidth; j++ {
+					gradOutputIndex := b*outChannels*outputHeight*outputWidth +
+						outC*outputHeight*outputWidth +
+						i*outputWidth +
+						j
+					gradValue := gradOutput.Data[gradOutputIndex]
+
+					// 更新偏置梯度
+					gradBiasData[outC] += gradValue
+
+					// 遍历卷积核
+					for kRow := 0; kRow < ct.KernelSizeRow; kRow++ {
+						for kCol := 0; kCol < ct.KernelSizeCol; kCol++ {
+							// 计算输入坐标（与前向传播对称）
+							numeratorRow := i + ct.PaddingRow - kRow
+							numeratorCol := j + ct.PaddingCol - kCol
+
+							if numeratorRow >= 0 && numeratorRow%ct.StrideRow == 0 &&
+								numeratorCol >= 0 && numeratorCol%ct.StrideCol == 0 {
+
+								inputRow := numeratorRow / ct.StrideRow
+								inputCol := numeratorCol / ct.StrideCol
+
+								if inputRow < inputHeight && inputCol < inputWidth {
+									// 计算各输入通道梯度
+									for inC := 0; inC < inChannels; inC++ {
+										// 权重索引（与前向传播一致）
+										weightIndex := inC*ct.OutChannels*ct.KernelSizeRow*ct.KernelSizeCol +
+											outC*ct.KernelSizeRow*ct.KernelSizeCol +
+											kRow*ct.KernelSizeCol +
+											kCol
+
+										// 输入索引
+										inputIndex := b*inChannels*inputHeight*inputWidth +
+											inC*inputHeight*inputWidth +
+											inputRow*inputWidth +
+											inputCol
+
+										// 更新输入梯度
+										gradInput.Data[inputIndex] += gradValue * ct.Weights.Data[weightIndex]
+
+										// 更新权重梯度（关键修复点）
+										gradWeightsData[weightIndex] += gradValue * inputTensor.Data[inputIndex]
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
-	//Zero the data to the gradients (Optional: gradients are usually zeroed by the optimizer)
-	//for i := range gradWeights.Data {
-	//	gradWeights.Data[i] = 0
-	//}
-	//for i := range gradBias.Data {
-	//	gradBias.Data[i] = 0
-	//}
+	// 参数更新（可选：建议在优化器中完成）
+	for i := range ct.Weights.Data {
+		ct.Weights.Data[i] -= learningRate * gradWeightsData[i]
+	}
+	for i := range ct.Bias.Data {
+		ct.Bias.Data[i] -= learningRate * gradBiasData[i]
+	}
 
 	return gradInput
 }
 
+// 辅助函数：计算切片元素乘积
+func product(shape []int) int {
+	p := 1
+	for _, v := range shape {
+		p *= v
+	}
+	return p
+}
+
 // ZeroGrad resets the gradients of weights and biases to zero.
-// Note: Typically, the optimizer handles zeroing gradients.
-// This method might be redundant if using a standard optimizer loop.
-// However, implementing it for completeness is fine.
 func (ct *ConvTranspose2dLayer) ZeroGrad() {
 	// We don't explicitly store gradients in the layer anymore for this example,
 	// as they are calculated and used within the Backward method.
