@@ -97,7 +97,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	//
 	// 卷积层测试
 	t.Run("conv2d layer", func(t *testing.T) {
 		inChannels := 3
@@ -107,8 +106,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		padding := []int{2, 2}
 
 		script := fmt.Sprintf(
-			`torch.nn.Conv2d(in_channels=%d, out_channels=%d, kernel_size=%v, stride=%v, padding=%v)`,
-			inChannels, outChannels, kernelSize, stride, padding,
+			`torch.nn.Conv2d(in_channels=%d, out_channels=%d, kernel_size=[%v,%v], stride=[%v,%v], padding=[%v,%v])`,
+			inChannels, outChannels, kernelSize[0], kernelSize[1], stride[0], stride[1], padding[0], padding[1],
 		)
 		// 输入形状 [batch, channels, height, width]
 		input := tensor.Random([]int{1, 3, 64, 64}, -1, 1)
@@ -116,8 +115,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		bias := tensor.Random([]int{64}, -1, 1)
 
 		l := torch.NewConvLayer(inChannels, outChannels, kernelSize[0], stride[0], padding[0])
-		l.SetBiasAndShape(weights.Data, weights.Shape)
-		l.SetBiasAndShape(bias.Data, bias.Shape)
+		l.SetWeightsAndShape(weights.Data, weights.Shape) // 修正为设置权重
+		l.SetBiasAndShape(bias.Data, bias.Shape)          // 设置偏置
 
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
@@ -141,49 +140,5 @@ func TestGetLayerTestResult(t *testing.T) {
 			t.Errorf("ReLU activation failed:\nExpected:\n%v\nGot:\n%v", expected, result)
 		}
 	})
-	//
-	//// 最大池化层测试
-	//t.Run("maxpool2d layer", func(t *testing.T) {
-	//	kernelSize := 2
-	//	stride := 2
-	//	script := fmt.Sprintf(`torch.nn.MaxPool2d(%d, %d)`, kernelSize, stride)
-	//
-	//	// 输入形状：[batch, channels, height, width]
-	//	input := tensor.Random([]int{1, 64, 32, 32}, -100, 100)
-	//
-	//	l := torch.NewMaxPool2dLayer(kernelSize, stride)
-	//	result := GetLayerTestResult(script, l, input)
-	//	expected := l.Forward(input)
-	//
-	//	if !result.EqualFloat32(expected) {
-	//		t.Errorf("MaxPool2d layer failed:\nExpected:\n%v\nGot:\n%v", expected, result)
-	//	}
-	//})
-	//
-	//// 批归一化层测试
-	//t.Run("batchnorm2d layer", func(t *testing.T) {
-	//	features := 64
-	//	script := fmt.Sprintf(`torch.nn.BatchNorm2d(%d)`, features)
-	//
-	//	// 输入形状：[batch, channels, height, width]
-	//	input := tensor.Random([]int{4, features, 32, 32}, -100, 100)
-	//	gamma := tensor.Random([]int{features}, -1, 1)
-	//	beta := tensor.Random([]int{features}, -1, 1)
-	//	runningMean := tensor.Zeros([]int{features})
-	//	runningVar := tensor.Ones([]int{features})
-	//
-	//	l := torch.NewBatchNorm2dLayer(features)
-	//	l.SetGamma(gamma.Data, gamma.Shape)
-	//	l.SetBeta(beta.Data, beta.Shape)
-	//	l.SetRunningMean(runningMean.Data)
-	//	l.SetRunningVar(runningVar.Data)
-	//
-	//	result := GetLayerTestResult(script, l, input)
-	//	expected := l.Forward(input)
-	//
-	//	if !result.EqualFloat32(expected) {
-	//		t.Errorf("BatchNorm2d layer failed:\nExpected:\n%v\nGot:\n%v", expected, result)
-	//	}
-	//})
 
 }
