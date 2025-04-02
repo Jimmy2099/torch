@@ -11,6 +11,20 @@ type ReLULayer struct {
 	inplace  bool           // 是否原地操作
 }
 
+func (r *ReLULayer) GetWeights() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
+func (r *ReLULayer) GetBias() *tensor.Tensor {
+	return &tensor.Tensor{
+		Data:  make([]float64, 0),
+		Shape: make([]int, 0),
+	}
+}
+
 // NewReLULayer 创建标准ReLU层（负半轴斜率为0）
 func NewReLULayer() *ReLULayer {
 	return &ReLULayer{

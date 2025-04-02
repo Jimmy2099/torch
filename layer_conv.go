@@ -19,6 +19,14 @@ type ConvLayer struct {
 	GradBias    *tensor.Tensor // 偏置梯度
 }
 
+func (l *ConvLayer) GetWeights() *tensor.Tensor {
+	return l.Weights
+}
+
+func (l *ConvLayer) GetBias() *tensor.Tensor {
+	return l.Bias
+}
+
 // SetWeights 设置权重
 func (l *ConvLayer) SetWeights(data []float64) {
 	if len(data) != l.OutChannels*l.InChannels*l.KernelSize*l.KernelSize {

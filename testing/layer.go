@@ -93,9 +93,16 @@ def load_tensor_from_csv(file_path):
     flattened = data.flatten()
     return torch.tensor(flattened).reshape(*shape)
 
-weight = load_tensor_from_csv("%s")
-bias = load_tensor_from_csv("%s")
-
+weight=None
+bias=None
+try:
+    weight = load_tensor_from_csv("%s")
+except Exception as e:
+    print(e)
+try:
+    bias = load_tensor_from_csv("%s")
+except Exception as e:
+    print(e)
 
 in1 = load_tensor_from_csv("%s")
 
@@ -104,8 +111,10 @@ def process_data(weight,bias,in1):
     #out = in1*2
     #return out
     layer = %s
-    layer.weight.data = weight
-    layer.bias.data = bias
+    if not weight==None:
+        layer.weight.data = weight
+    if not bias==None:
+        layer.bias.data = bias
     out = layer(in1)
     return out.detach()
 
