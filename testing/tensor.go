@@ -60,7 +60,8 @@ import torch
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        np.savetxt(f, tensor.numpy().reshape(-1, tensor.shape[-1]), delimiter=",")
+        tensor = tensor.reshape(-1, tensor.shape[0])
+        np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
 
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:

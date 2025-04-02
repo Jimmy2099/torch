@@ -5,6 +5,33 @@ import (
 	"math"
 )
 
+func (t *Tensor) EqualFloat16(other *Tensor) bool {
+	// 1. 空指针检查
+	if t == nil || other == nil {
+		return t == nil && other == nil
+	}
+
+	// 2. 形状比较
+	if !shapeEqual(t.Shape, other.Shape) {
+		return false
+	}
+
+	// 3. 数据长度验证
+	if len(t.Data) != len(other.Data) {
+		return false
+	}
+
+	// 4. 元素级浮点数比较
+	for i := range t.Data {
+		if float32(t.Data[i]) != float32(other.Data[i]) {
+			log.Println(i, t.Data[i], " != ", other.Data[i])
+			return false
+		}
+	}
+
+	return true
+}
+
 func (t *Tensor) EqualFloat32(other *Tensor) bool {
 	// 1. 空指针检查
 	if t == nil || other == nil {

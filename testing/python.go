@@ -16,7 +16,7 @@ func RunPyScript(pythonScript string) {
 	if err != nil {
 		panic(err)
 	}
-	defer os.Remove(file.Name()) // 程序结束时删除临时文件
+	//defer os.Remove(file.Name()) // 程序结束时删除临时文件
 
 	// 将嵌入的 Python 脚本内容写入临时文件
 	_, err = file.WriteString(pythonScript)

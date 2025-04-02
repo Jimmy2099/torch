@@ -10,6 +10,12 @@ import (
 )
 
 func GetLayerTestResult(inPyScript string, layer torch.LayerForTesting, inTensor *tensor.Tensor) *tensor.Tensor {
+	return GetLayerTestResult64(inPyScript, layer, inTensor, 64)
+}
+func GetLayerTestResult32(inPyScript string, layer torch.LayerForTesting, inTensor *tensor.Tensor) *tensor.Tensor {
+	return GetLayerTestResult64(inPyScript, layer, inTensor, 32)
+}
+func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTensor *tensor.Tensor, dataType int) *tensor.Tensor {
 	var layerWeights *os.File
 	var layerBias *os.File
 	var err error
@@ -19,13 +25,13 @@ func GetLayerTestResult(inPyScript string, layer torch.LayerForTesting, inTensor
 			panic(err)
 		}
 		layerWeights.Close()
-		defer os.Remove(layerWeights.Name())
+		//defer os.Remove(layerWeights.Name())
 		layerBias, err = os.CreateTemp("", "layer_bias.*.csv")
 		if err != nil {
 			panic(err)
 		}
 		layerBias.Close()
-		defer os.Remove(layerBias.Name())
+		//defer os.Remove(layerBias.Name())
 
 		WeightsTensor := layer.GetWeights()
 		BiasTensor := layer.GetBias()
@@ -47,7 +53,7 @@ func GetLayerTestResult(inPyScript string, layer torch.LayerForTesting, inTensor
 			panic(err)
 		}
 		inFile2.Close()
-		defer os.Remove(inFile2.Name())
+		//defer os.Remove(inFile2.Name())
 		err = inTensor.SaveToCSV(inFile2.Name())
 		if err != nil {
 			panic(err)
@@ -61,7 +67,7 @@ func GetLayerTestResult(inPyScript string, layer torch.LayerForTesting, inTensor
 			panic(err)
 		}
 		outFile.Close()
-		defer os.Remove(outFile.Name())
+		//defer os.Remove(outFile.Name())
 	}
 
 	layerWeightsPath := filepath.ToSlash(layerWeights.Name())
@@ -79,7 +85,8 @@ import torch
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        np.savetxt(f, tensor.numpy().reshape(-1, tensor.shape[-1]), delimiter=",")
+        tensor = tensor.reshape(-1, tensor.shape[0])
+        np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
 
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
@@ -91,7 +98,7 @@ def load_tensor_from_csv(file_path):
         data = np.loadtxt(f, delimiter=",")
     
     flattened = data.flatten()
-    return torch.tensor(flattened).reshape(*shape)
+    return torch.tensor(flattened, dtype=torch.float%d).reshape(*shape)
 
 weight=None
 bias=None
@@ -121,7 +128,7 @@ def process_data(weight,bias,in1):
 out = process_data(weight,bias,in1)
 
 save_tensor_to_csv(out,"%s")
-`, layerWeightsPath, layerBiasPath, inTensorPath, inPyScript, outPutPath)
+`, dataType, layerWeightsPath, layerBiasPath, inTensorPath, inPyScript, outPutPath)
 
 	RunPyScript(pythonScript)
 
