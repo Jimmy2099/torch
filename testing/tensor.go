@@ -56,6 +56,15 @@ func GetTensorTestResult(inPyScript string, inTensor1 *tensor.Tensor, inTensor2 
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
+from torchvision.utils import save_image
+
+def sv_image(image_data, NUM_IMAGES=64):
+    image_data = image_data.reshape(NUM_IMAGES, 3, 64, 64)
+    print(f"Shape: {image_data.shape}, dim: {image_data.ndim}")
+    nrow = int(NUM_IMAGES ** 0.5)
+    if nrow * nrow < NUM_IMAGES:
+        nrow += 1
+    save_image(image_data, "test.png", nrow=nrow)
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:

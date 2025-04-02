@@ -139,3 +139,55 @@ save_tensor_to_csv(out,"%s")
 	}
 	return outTensor
 }
+
+func GetPytorchInitData(pyScript string) *tensor.Tensor {
+
+	var outFile *os.File
+	{
+		var err error
+		outFile, err = os.CreateTemp("", "out_tensor.*.csv")
+		if err != nil {
+			panic(err)
+		}
+		outFile.Close()
+		//defer os.Remove(outFile.Name())
+	}
+
+	outPutPath := filepath.ToSlash(outFile.Name())
+	// Python 脚本
+	pythonScript := fmt.Sprintf(`
+import numpy as np
+import torch
+
+def save_tensor_to_csv(tensor, file_path):
+    with open(file_path, 'w') as f:
+        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        tensor = tensor.reshape(-1, tensor.shape[0])
+        np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
+
+def load_tensor_from_csv(file_path):
+    with open(file_path, 'r') as f:
+        header = f.readline().strip()
+        if not header.startswith("Shape,"):
+            raise ValueError("Invalid CSV format: missing shape header")
+        
+        shape = list(map(int, header.split(",")[1:]))
+        data = np.loadtxt(f, delimiter=",")
+    
+    flattened = data.flatten()
+    return torch.tensor(flattened, dtype=torch.float32).reshape(*shape)
+
+%s
+out=out.detach()
+save_tensor_to_csv(out,"%s")
+`, pyScript, outPutPath)
+
+	RunPyScript(pythonScript)
+
+	// 读取计算结果
+	outTensor, err := tensor.LoadFromCSV(outPutPath)
+	if err != nil {
+		panic(err)
+	}
+	return outTensor
+}

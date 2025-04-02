@@ -33,12 +33,6 @@ func (ct *ConvTranspose2dLayer) GetBias() *tensor.Tensor {
 }
 
 // NewConvTranspose2dLayer creates a new ConvTranspose2dLayer.
-// inChannels: Number of input channels
-// outChannels: Number of output channels
-// kernelSize: Size of the convolutional kernel (kernelSize x kernelSize)
-// stride: Stride of the convolution
-// padding: Padding applied to the input
-// outputPadding: Additional size added to one side of the output shape
 func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSizeCols, strideRows, strideCols, paddingRows, paddingCols, outputPaddingRows, outputPaddingCols int) *ConvTranspose2dLayer {
 	// Initialize weights with Kaiming He initialization
 	weightsData := make([]float64, inChannels*outChannels*kernelSizeRows*kernelSizeCols)

@@ -3,7 +3,14 @@ import random
 import time
 
 import torch
-from torchvision.utils import save_image
+
+
+def save_tensor_to_csv(tensor, file_path):
+    with open(file_path, 'w') as f:
+        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        tensor = tensor.reshape(-1, tensor.shape[0])
+        np.savetxt(f, tensor.numpy(), delimiter=",", fmt="%.16f")
+
 
 from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
 
@@ -70,6 +77,7 @@ if __name__ == "__main__":
 
     model.eval()
     import numpy as np
+
     # --- 生成随机图像 ---
     print(f"Generating {NUM_IMAGES} random images...")
     with torch.no_grad():
@@ -95,6 +103,8 @@ if __name__ == "__main__":
     if nrow * nrow < NUM_IMAGES:
         nrow += 1
 
+    save_tensor_to_csv(generated_images, "test.csv")
+    exit(1)
     save_image(generated_images, output_path, nrow=nrow)
 
 print(f"Generated images saved to '{output_path}'")

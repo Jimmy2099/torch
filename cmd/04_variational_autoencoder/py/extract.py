@@ -7,8 +7,8 @@ from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
 
 DEVICE = torch.device("cuda" if use_cuda else "cpu")
 model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
-
-# TODO load_state_dict
+model.load_state_dict(torch.load("./output/vae_anime/models/vae_anime_final.pth", map_location=DEVICE)['model_state_dict'])
+model.eval()
 
 
 print(model)

@@ -53,6 +53,7 @@ class VAE(nn.Module):
         decoder_input_size = gf_dim * 8 * (image_size // 16) * (
                     image_size // 16)  # Start size matches encoder output before FC
 
+        print(latent_dim, decoder_input_size)
         self.decoder_fc = nn.Linear(latent_dim, decoder_input_size)
 
         # Reshape layer will be handled in forward pass
@@ -102,11 +103,13 @@ class VAE(nn.Module):
     def decode(self, z):
         x = self.decoder_fc(z)
         # Reshape: (N, decoder_input_size) -> (N, channels, size, size)
+        print(-1,self.decoder_reshape_channels, self.decoder_reshape_size, self.decoder_reshape_size)
         x = x.view(-1, self.decoder_reshape_channels, self.decoder_reshape_size, self.decoder_reshape_size)
         x = self.decoder_conv(x)
         return x
 
     def forward(self, x):
+        return
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         recon_x = self.decode(z)

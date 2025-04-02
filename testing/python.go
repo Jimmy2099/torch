@@ -9,7 +9,7 @@ import (
 
 func RunPyScript(pythonScript string) {
 	// 打印嵌入的 Python 脚本内容
-	fmt.Println("Embedded Python script:\n", pythonScript)
+	//fmt.Println("Embedded Python script:\n", pythonScript)
 
 	// 将嵌入的 Python 脚本写入临时文件
 	file, err := os.CreateTemp("", "script.*.py")
@@ -60,6 +60,6 @@ func RunPyScript(pythonScript string) {
 
 	// 等待命令执行完成
 	if err := cmd.Wait(); err != nil {
-		panic(fmt.Sprintln("Error waiting for Python script to finish:", err))
+		panic(fmt.Sprintln(file.Name(), "Error waiting for Python script to finish:", err))
 	}
 }

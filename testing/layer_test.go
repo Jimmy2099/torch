@@ -378,7 +378,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// Flatten层测试 TODO
+	// Flatten层测试
 	t.Run("flatten layer", func(t *testing.T) {
 		script := `torch.nn.Flatten(start_dim=1, end_dim=-1)`
 		input := tensor.Random([]int{1, 512, 4, 4}, -1, 1)
