@@ -423,7 +423,7 @@ func PyConvT(x *tensor.Tensor, v torch.LayerForTesting, inChannels, outChannels 
 		stride[0], stride[1], padding[0], padding[1],
 		outputPadding[0], outputPadding[1],
 	)
-	x = testing.GetLayerTestResult(script, v, x)
+	x = testing.GetLayerTestResult32(script, v, x)
 	return x
 }
 
@@ -442,7 +442,7 @@ func PyReLU(x *tensor.Tensor, v torch.LayerForTesting) *tensor.Tensor {
 	script := fmt.Sprintf(
 		`torch.nn.ReLU(True)`,
 	)
-	x = testing.GetLayerTestResult(script, v, x)
+	x = testing.GetLayerTestResult32(script, v, x)
 	return x
 }
 
@@ -451,7 +451,7 @@ func PyTanh(x *tensor.Tensor, v torch.LayerForTesting) *tensor.Tensor {
 	script := fmt.Sprintf(
 		`torch.nn.Tanh()`,
 	)
-	x = testing.GetLayerTestResult(script, v, x)
+	x = testing.GetLayerTestResult32(script, v, x)
 	return x
 }
 
@@ -499,14 +499,27 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 	}
 
 	{
-		x = testing.GetPytorchInitData(`
+		x = testing.GetPytorchInitData(fmt.Sprint(`
 import time
+import os
 torch.manual_seed(int(time.time()))
 out = torch.randn(64, 64)
-out = torch.nn.Linear(64 ,8192)(out)
+fc_layer=torch.nn.Linear(64 ,8192)
+fc_weight = np.loadtxt("./py/data/decoder_fc.weight.csv", delimiter=",")
+
+fc_layer.weight.data = torch.tensor(
+	fc_weight,
+	dtype=torch.float32
+).to("cpu")
+
+fc_layer.bias.data = torch.tensor(
+	np.loadtxt("./py/data/decoder_fc.bias.csv", delimiter=","),
+	dtype=torch.float32
+).to("cpu")
+out = fc_layer(out)
 print(out.shape)
 out = out.view(-1 ,512 ,4 ,4)
-`)
+`))
 	}
 
 	//Decode

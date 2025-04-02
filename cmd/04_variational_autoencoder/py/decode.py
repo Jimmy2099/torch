@@ -126,5 +126,6 @@ def main():
         output = (output * 0.5 + 0.5).clamp(0, 1)
         save_image(output, "generated.png", nrow=8)
 
+
 if __name__ == "__main__":
     main()
