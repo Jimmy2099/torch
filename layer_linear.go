@@ -22,6 +22,14 @@ type LinearLayer struct {
 	VBias       *tensor.Tensor // 偏置动量
 }
 
+func (l *LinearLayer) GetWeights() *tensor.Tensor {
+	return l.Weights
+}
+
+func (l *LinearLayer) GetBias() *tensor.Tensor {
+	return l.Bias
+}
+
 // SetWeights 设置权重
 func (l *LinearLayer) SetWeights(data []float64) {
 	if len(data) != l.OutputDim*l.InputDim {

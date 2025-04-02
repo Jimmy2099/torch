@@ -64,8 +64,11 @@ func GetLayerTestResult(inPyScript string, layer torch.LayerForTesting, inTensor
 		defer os.Remove(outFile.Name())
 	}
 
-	inputPath1 := filepath.ToSlash(inFile1.Name())
-	inputPath2 := filepath.ToSlash(inFile2.Name())
+	layerWeightsPath := filepath.ToSlash(layerWeights.Name())
+	layerBiasPath := filepath.ToSlash(layerBias.Name())
+
+	inTensorPath := filepath.ToSlash(inFile2.Name())
+
 	outPutPath := filepath.ToSlash(outFile.Name())
 	inPyScript = strings.TrimSpace(inPyScript)
 	// Python 脚本
@@ -90,18 +93,26 @@ def load_tensor_from_csv(file_path):
     flattened = data.flatten()
     return torch.tensor(flattened).reshape(*shape)
 
+weight = load_tensor_from_csv("%s")
+bias = load_tensor_from_csv("%s")
+
+
 in1 = load_tensor_from_csv("%s")
-in2 = load_tensor_from_csv("%s")
 
-def process_data(in1,in2):
+def process_data(weight,bias,in1):
     out = None
-    %s
-    return out
+    #out = in1*2
+    #return out
+    layer = %s
+    layer.weight.data = weight
+    layer.bias.data = bias
+    out = layer(in1)
+    return out.detach()
 
-out = process_data(in1,in2)
+out = process_data(weight,bias,in1)
 
 save_tensor_to_csv(out,"%s")
-`, inputPath1, inputPath2, inPyScript, outPutPath)
+`, layerWeightsPath, layerBiasPath, inTensorPath, inPyScript, outPutPath)
 
 	RunPyScript(pythonScript)
 

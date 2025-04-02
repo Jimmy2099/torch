@@ -3,6 +3,8 @@ package tensor
 import (
 	"fmt"
 	"math"
+	"math/rand"
+	"time"
 )
 
 // Copy 创建张量的深拷贝
@@ -46,6 +48,28 @@ func Ones(shape []int) *Tensor {
 	for i := range data {
 		data[i] = 1.0
 	}
+	return &Tensor{Data: data, Shape: shape}
+}
+
+// Random generates a tensor with random values in the range [min, max].
+func Random(shape []int, min, max float64) *Tensor {
+	if min > max {
+		panic("min cannot be greater than max")
+	}
+
+	// Initialize the random seed only once (preferably outside this function in real applications)
+	rand.Seed(time.Now().UnixNano())
+
+	size := 1
+	for _, dim := range shape {
+		size *= dim
+	}
+
+	data := make([]float64, size)
+	for i := range data {
+		data[i] = min + rand.Float64()*(max-min) // Scale to [min, max]
+	}
+
 	return &Tensor{Data: data, Shape: shape}
 }
 
