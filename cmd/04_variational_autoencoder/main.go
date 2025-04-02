@@ -481,46 +481,46 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		x = tensor.NewTensor(d, []int{64, 64})
 	}
 	{
-		//fmt.Println("\nDecoder FC:")
-		//x = v.decoderFc.Forward(x)
-		//fmt.Printf("After decoder_fc: %v\n", x.Shape)
-		//decoderReshapeChannels := 512
-		//decoderReshapeSize := 4
-		//// --- Reshape ---
-		//fmt.Println("\nReshape for Decoder Conv:")
-		//batchSize := x.Shape[0]
-		//x = x.Reshape([]int{
-		//	batchSize,
-		//	decoderReshapeChannels,
-		//	decoderReshapeSize,
-		//	decoderReshapeSize,
-		//})
-		//fmt.Printf("After reshape: %v\n", x.Shape)
+		fmt.Println("\nDecoder FC:")
+		x = v.decoderFc.Forward(x)
+		fmt.Printf("After decoder_fc: %v\n", x.Shape)
+		decoderReshapeChannels := 512
+		decoderReshapeSize := 4
+		// --- Reshape ---
+		fmt.Println("\nReshape for Decoder Conv:")
+		batchSize := x.Shape[0]
+		x = x.Reshape([]int{
+			batchSize,
+			decoderReshapeChannels,
+			decoderReshapeSize,
+			decoderReshapeSize,
+		})
+		fmt.Printf("After reshape: %v\n", x.Shape)
 	}
 
-	{
-		x = testing.GetPytorchInitData(fmt.Sprint(`
-import time
-import os
-torch.manual_seed(int(time.time()))
-out = torch.randn(64, 64)
-fc_layer=torch.nn.Linear(64 ,8192)
-fc_weight = np.loadtxt("./py/data/decoder_fc.weight.csv", delimiter=",")
-
-fc_layer.weight.data = torch.tensor(
-	fc_weight,
-	dtype=torch.float32
-).to("cpu")
-
-fc_layer.bias.data = torch.tensor(
-	np.loadtxt("./py/data/decoder_fc.bias.csv", delimiter=","),
-	dtype=torch.float32
-).to("cpu")
-out = fc_layer(out)
-print(out.shape)
-out = out.view(-1 ,512 ,4 ,4)
-`))
-	}
+	//	{
+	//		x = testing.GetPytorchInitData(fmt.Sprint(`
+	//import time
+	//import os
+	//torch.manual_seed(int(time.time()))
+	//out = torch.randn(64, 64)
+	//fc_layer=torch.nn.Linear(64 ,8192)
+	//fc_weight = np.loadtxt("./py/data/decoder_fc.weight.csv", delimiter=",")
+	//
+	//fc_layer.weight.data = torch.tensor(
+	//	fc_weight,
+	//	dtype=torch.float32
+	//).to("cpu")
+	//
+	//fc_layer.bias.data = torch.tensor(
+	//	np.loadtxt("./py/data/decoder_fc.bias.csv", delimiter=","),
+	//	dtype=torch.float32
+	//).to("cpu")
+	//out = fc_layer(out)
+	//print(out.shape)
+	//out = out.view(-1 ,512 ,4 ,4)
+	//`))
+	//	}
 
 	//Decode
 	{
@@ -535,8 +535,8 @@ out = out.view(-1 ,512 ,4 ,4)
 		fmt.Printf("After dec_bn1: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 2:")
-		//x = v.decoderReLU2.Forward(x)
-		x = PyReLU(x, v.decoderReLU2)
+		x = v.decoderReLU2.Forward(x)
+		//x = PyReLU(x, v.decoderReLU2)
 		fmt.Printf("After dec_relu2: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 3:")
@@ -550,8 +550,8 @@ out = out.view(-1 ,512 ,4 ,4)
 		fmt.Printf("After dec_bn4: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 5:")
-		//x = v.decoderReLU5.Forward(x)
-		x = PyReLU(x, v.decoderReLU5)
+		x = v.decoderReLU5.Forward(x)
+		//x = PyReLU(x, v.decoderReLU5)
 		fmt.Printf("After dec_relu5: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 6:")
@@ -565,8 +565,8 @@ out = out.view(-1 ,512 ,4 ,4)
 		fmt.Printf("After dec_bn7: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 8:")
-		//x = v.decoderReLU8.Forward(x)
-		x = PyReLU(x, v.decoderReLU8)
+		x = v.decoderReLU8.Forward(x)
+		//x = PyReLU(x, v.decoderReLU8)
 		fmt.Printf("After dec_relu8: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 9:")
@@ -575,8 +575,8 @@ out = out.view(-1 ,512 ,4 ,4)
 		fmt.Printf("After dec_convT9: %v\n", x.Shape)
 
 		fmt.Println("Decoder Tanh 10 (Output):")
-		//x = v.decoderTanh10.Forward(x)
-		x = PyTanh(x, v.decoderTanh10)
+		x = v.decoderTanh10.Forward(x)
+		//x = PyTanh(x, v.decoderTanh10)
 		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
 		testing.GetTensorTestResult(`
 sv_image(in1)
