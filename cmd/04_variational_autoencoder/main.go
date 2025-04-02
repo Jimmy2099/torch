@@ -530,8 +530,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_convT0: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 1:")
-		x = PyBatchNorm2d(x, v.decoderConv1, 64*4)
-		//x = v.decoderConv1.Forward(x)
+		//x = PyBatchNorm2d(x, v.decoderConv1, 64*4)
+		x = v.decoderConv1.Forward(x)
 		fmt.Printf("After dec_bn1: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 2:")
@@ -545,8 +545,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_convT3: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 4:")
-		x = PyBatchNorm2d(x, v.decoderConv4, 64*2)
-		//x = v.decoderConv4.Forward(x)
+		//x = PyBatchNorm2d(x, v.decoderConv4, 64*2)
+		x = v.decoderConv4.Forward(x)
 		fmt.Printf("After dec_bn4: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 5:")
@@ -560,8 +560,8 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_convT6: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 7:")
-		x = PyBatchNorm2d(x, v.decoderConv7, 64)
-		//x = v.decoderConv7.Forward(x)
+		//x = PyBatchNorm2d(x, v.decoderConv7, 64)
+		x = v.decoderConv7.Forward(x)
 		fmt.Printf("After dec_bn7: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 8:")
@@ -578,6 +578,11 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		x = v.decoderTanh10.Forward(x)
 		//x = PyTanh(x, v.decoderTanh10)
 		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
+
+		{
+			x = x.Mul(tensor.NewTensor([]float64{0.5}, []int{1})).Add(tensor.NewTensor([]float64{0.5}, []int{1}))
+		}
+
 		testing.GetTensorTestResult(`
 sv_image(in1)
     out=in1
