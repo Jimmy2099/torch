@@ -109,3 +109,69 @@ func (t *Tensor) SaveToCSV(filename string) error {
 
 	return nil // Success
 }
+
+func LoadFromCSV(filename string) (tensorResult *Tensor, err error) {
+	// --- Open CSV File ---
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	// --- Create CSV Reader and Read All Records ---
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV file %s: %w", filename, err)
+	}
+
+	// --- Handle Empty File ---
+	if len(records) == 0 {
+		return &Tensor{
+			Data:  []float64{},
+			Shape: []int{}, // 或者根据业务需要定义空 Tensor 的形状
+		}, nil
+	}
+
+	// --- Validate and Determine Dimensions ---
+	numRows := len(records)
+	numCols := len(records[0])
+	// 确保所有行具有相同的列数
+	for i, record := range records {
+		if len(record) != numCols {
+			return nil, fmt.Errorf("inconsistent number of columns in row %d: expected %d, got %d", i, numCols, len(record))
+		}
+	}
+
+	// --- Parse Data ---
+	data := make([]float64, 0, numRows*numCols)
+	for i, record := range records {
+		for j, valueStr := range record {
+			val, err := strconv.ParseFloat(valueStr, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse float value at row %d, column %d: %w", i, j, err)
+			}
+			data = append(data, val)
+		}
+	}
+
+	// --- Infer Tensor Shape ---
+	var shape []int
+	// 如果只有一个元素，则视为标量 (形状为空)
+	// 如果只有一行，则视为向量
+	// 否则视为二维矩阵
+	if numRows == 1 && numCols == 1 {
+		shape = []int{}
+	} else if numRows == 1 {
+		shape = []int{numCols}
+	} else {
+		shape = []int{numRows, numCols}
+	}
+
+	tensorResult = &Tensor{
+		Data:  data,
+		Shape: shape,
+	}
+
+	return tensorResult, nil
+}
