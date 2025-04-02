@@ -17,6 +17,11 @@ type LayerLoader interface {
 	SetBiasAndShape(data []float64, shape []int)
 }
 
+type LayerForTesting interface {
+	GetWeights() *tensor.Tensor
+	GetBias() *tensor.Tensor
+}
+
 //Sequential forward container TODO
 
 //// DenseLayer 全连接层接口
