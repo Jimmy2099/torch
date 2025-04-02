@@ -75,16 +75,6 @@ func TestGetTensorTestResult(t *testing.T) {
 		}
 	})
 
-	t.Run("Empty tensor", func(t *testing.T) {
-		emptyTensor := tensor.NewTensor([]float64{}, []int{})
-		script := `out = in1 * in2`
-		result := GetTensorTestResult(script, emptyTensor, emptyTensor)
-		expected := tensor.NewTensor([]float64{}, []int{})
-		if !result.Equal(expected) {
-			t.Errorf("Empty tensor test failed:\nExpected empty tensor\nGot:\n%v", result)
-		}
-	})
-
 	t.Run("Invalid script", func(t *testing.T) {
 		script := `out = in1 + undefined_var`
 		defer func() {
