@@ -287,3 +287,54 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		})
 	}
 }
+
+func TestSaveAndLoadRoundTrip(t *testing.T) {
+	tests := []struct {
+		name  string
+		shape []int
+		data  []float64
+	}{
+		{"Vector", []int{3}, []float64{1, 2, 3}},
+		{"Matrix", []int{2, 3}, []float64{1, 2, 3, 4, 5, 6}},
+		{"3D Tensor", []int{2, 2, 2}, []float64{1, 2, 3, 4, 5, 6, 7, 8}},
+		{"Empty Tensor", []int{0}, []float64{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// 创建临时文件
+			tmpfile, err := os.CreateTemp("", "test.*.csv")
+			if err != nil {
+				t.Fatalf("Failed to create temp file: %v", err)
+			}
+			tmpfile.Close()
+			defer os.Remove(tmpfile.Name())
+
+			// 创建原始Tensor
+			original := &Tensor{
+				Data:  tt.data,
+				Shape: tt.shape,
+			}
+
+			// 保存到CSV
+			if err = original.SaveDataAndShapeToCSV(tmpfile.Name()); err != nil {
+				t.Fatalf("SaveDataAndShapeToCSV failed: %v", err)
+			}
+
+			// 从CSV加载
+			loaded, err := LoadFromCSV(tmpfile.Name())
+			if err != nil {
+				t.Fatalf("LoadDataAndShapeFromCSV failed: %v", err)
+			}
+
+			// 验证数据一致性
+			if !reflect.DeepEqual(original.Shape, loaded.Shape) {
+				t.Errorf("Shape mismatch\nOriginal: %v\nLoaded:   %v", original.Shape, loaded.Shape)
+			}
+
+			if !reflect.DeepEqual(original.Data, loaded.Data) {
+				t.Errorf("Data mismatch\nOriginal: %v\nLoaded:   %v", original.Data, loaded.Data)
+			}
+		})
+	}
+}

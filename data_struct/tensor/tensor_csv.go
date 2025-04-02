@@ -1,11 +1,85 @@
 package tensor
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
+	"strings"
 )
+
+const (
+	shapeHeaderPrefix = "Shape"
+)
+
+func (t *Tensor) SaveDataAndShapeToCSV(filename string) error {
+	if t == nil || t.Data == nil {
+		return fmt.Errorf("cannot save nil tensor or tensor with nil data")
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// 写入形状元数据
+	shapeRecord := make([]string, len(t.Shape)+1)
+	shapeRecord[0] = shapeHeaderPrefix
+	for i, dim := range t.Shape {
+		shapeRecord[i+1] = strconv.Itoa(dim)
+	}
+	if err := writer.Write(shapeRecord); err != nil {
+		return fmt.Errorf("failed to write shape header: %w", err)
+	}
+
+	// 处理数据写入逻辑
+	var numCols, numRows int
+	if len(t.Shape) > 0 {
+		numCols = t.Shape[len(t.Shape)-1]
+	} else {
+		numCols = 1
+	}
+
+	// 处理空张量情况
+	if numCols == 0 && len(t.Data) == 0 {
+		numRows = 0
+	} else {
+		if numCols == 0 {
+			return fmt.Errorf("invalid shape: last dimension is zero with non-empty data")
+		}
+		numRows = len(t.Data) / numCols
+		if len(t.Data)%numCols != 0 {
+			return fmt.Errorf("data length %d is not divisible by last dimension %d",
+				len(t.Data), numCols)
+		}
+	}
+
+	record := make([]string, numCols)
+	for i := 0; i < numRows; i++ {
+		start := i * numCols
+		end := start + numCols
+
+		if end > len(t.Data) {
+			return fmt.Errorf("data index out of range: %d > %d", end, len(t.Data))
+		}
+
+		for j, val := range t.Data[start:end] {
+			record[j] = strconv.FormatFloat(val, 'f', -1, 64)
+		}
+
+		if err := writer.Write(record); err != nil {
+			return fmt.Errorf("failed to write data row %d: %w", i, err)
+		}
+	}
+
+	return nil
+}
 
 func (t *Tensor) SaveToCSV(filename string) error {
 	if t == nil || t.Data == nil {
@@ -110,68 +184,82 @@ func (t *Tensor) SaveToCSV(filename string) error {
 	return nil // Success
 }
 
-func LoadFromCSV(filename string) (tensorResult *Tensor, err error) {
-	// --- Open CSV File ---
+func LoadFromCSV(filename string) (*Tensor, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
-	// --- Create CSV Reader and Read All Records ---
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
+	reader := bufio.NewReader(file)
+
+	// 1. 读取形状行
+	shapeLine, _, err := reader.ReadLine()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read CSV file %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to read header: %w", err)
+	}
+	shapeRecord := strings.Split(string(shapeLine), ",")
+
+	var shape []int
+	var records [][]string
+
+	// 判断是否为形状头
+	if len(shapeRecord) > 0 && shapeRecord[0] == shapeHeaderPrefix {
+		// 解析形状维度
+		for i := 1; i < len(shapeRecord); i++ {
+			dim, err := strconv.Atoi(shapeRecord[i])
+			if err != nil || dim < 0 {
+				return nil, fmt.Errorf("invalid dimension '%s' at position %d", shapeRecord[i], i-1)
+			}
+			shape = append(shape, dim)
+		}
+	} else {
+		// 非形状头，将当前行作为数据
+		records = append(records, shapeRecord)
 	}
 
+	// 2. 读取剩余数据行
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to read data line: %w", err)
+		}
+		record := strings.Split(string(line), ",")
+		records = append(records, record)
+	}
+
+	return loadFromRecords(records, shape)
+}
+
+func loadFromRecords(records [][]string, shape []int) (*Tensor, error) {
 	// --- Handle Empty File ---
 	if len(records) == 0 {
-		return &Tensor{
-			Data:  []float64{},
-			Shape: []int{}, // 或者根据业务需要定义空 Tensor 的形状
-		}, nil
+		return NewTensor([]float64{}, shape), nil
 	}
 
-	// --- Validate and Determine Dimensions ---
-	numRows := len(records)
-	numCols := len(records[0])
-	// 确保所有行具有相同的列数
+	// --- 数据解析 ---
+	var data []float64
 	for i, record := range records {
-		if len(record) != numCols {
-			return nil, fmt.Errorf("inconsistent number of columns in row %d: expected %d, got %d", i, numCols, len(record))
-		}
-	}
-
-	// --- Parse Data ---
-	data := make([]float64, 0, numRows*numCols)
-	for i, record := range records {
-		for j, valueStr := range record {
-			val, err := strconv.ParseFloat(valueStr, 64)
+		for j, valStr := range record {
+			val, err := strconv.ParseFloat(valStr, 64)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse float value at row %d, column %d: %w", i, j, err)
+				return nil, fmt.Errorf("invalid data value '%s' at row %d, col %d", valStr, i, j)
 			}
 			data = append(data, val)
 		}
 	}
 
-	// --- Infer Tensor Shape ---
-	var shape []int
-	// 如果只有一个元素，则视为标量 (形状为空)
-	// 如果只有一行，则视为向量
-	// 否则视为二维矩阵
-	if numRows == 1 && numCols == 1 {
-		shape = []int{}
-	} else if numRows == 1 {
-		shape = []int{numCols}
-	} else {
-		shape = []int{numRows, numCols}
+	// --- 形状验证 ---
+	if shape != nil {
+		expected := 1
+		for _, dim := range shape {
+			expected *= dim
+		}
+		if len(data) != expected {
+			return nil, fmt.Errorf("shape %v requires %d elements, got %d", shape, expected, len(data))
+		}
 	}
-
-	tensorResult = &Tensor{
-		Data:  data,
-		Shape: shape,
-	}
-
-	return tensorResult, nil
+	return NewTensor(data, shape), nil
 }

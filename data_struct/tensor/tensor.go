@@ -6,7 +6,12 @@ type Tensor struct {
 }
 
 func NewTensor(data []float64, shape []int) *Tensor {
-	return &Tensor{Data: data, Shape: shape}
+	t := &Tensor{Data: data, Shape: shape}
+	if shape == nil {
+		shape = []int{1, len(data)}
+		t.Reshape(shape)
+	}
+	return t
 }
 
 func (m *Tensor) TensorData() []float64 {

@@ -14,11 +14,7 @@ func Copy(t *Tensor) *Tensor {
 
 // Size 返回张量中元素的总数
 func (t *Tensor) Size() int {
-	size := 1
-	for _, dim := range t.Shape {
-		size *= dim
-	}
-	return size
+	return len(t.Data)
 }
 
 // At 获取指定位置的元素（适用于任意维度）
