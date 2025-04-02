@@ -89,7 +89,7 @@ out = process_data(in1,in2)
 save_tensor_to_csv(out,"%s")
 `, inputPath1, inputPath2, inPyScript, outPutPath)
 
-	runPyscript(pythonScript)
+	RunPyscript(pythonScript)
 
 	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
@@ -99,12 +99,12 @@ save_tensor_to_csv(out,"%s")
 	return outTensor
 }
 
-func runPyscript(pythonScript string) {
+func RunPyscript(pythonScript string) {
 	// 打印嵌入的 Python 脚本内容
 	fmt.Println("Embedded Python script:\n", pythonScript)
 
 	// 将嵌入的 Python 脚本写入临时文件
-	file, err := os.CreateTemp("", "script.py")
+	file, err := os.CreateTemp("", "script.*.py")
 	if err != nil {
 		panic(err)
 	}
