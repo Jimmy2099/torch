@@ -322,7 +322,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		momentum := 0.1
 
 		script := fmt.Sprintf(
-			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v)`,
+			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float64)`,
 			numFeatures, eps, momentum,
 		)
 		// 输入形状 [batch, channels, height, width]

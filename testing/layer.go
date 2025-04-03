@@ -81,6 +81,7 @@ func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTens
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
+torch.set_default_dtype(torch.float%d)
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
@@ -97,9 +98,10 @@ def load_tensor_from_csv(file_path):
         
         shape = list(map(int, header.split(",")[1:]))
         data = np.loadtxt(f, delimiter=",")
+        #print(data[0])
     
-    flattened = data.flatten()
-    return torch.tensor(flattened, dtype=torch.float%d).reshape(*shape)
+    flattened = data.flatten()#, dtype=torch.floatd
+    return torch.tensor(flattened).reshape(*shape)
 
 weight=None
 bias=None
@@ -124,8 +126,8 @@ def process_data(weight,bias,in1):
     if not bias==None:
         layer.bias.data = bias
     out = layer(in1)
-    print("python weight[0]:",weight[0])
-    print("python bias[0]:",bias[0])
+    print(f"python weight[0] (full precision): {weight[0].item():.16f}")
+    print(f"python bias[0] (full precision): {bias[0].item():.16f}")
     return out.detach()
 
 out = process_data(weight,bias,in1)
