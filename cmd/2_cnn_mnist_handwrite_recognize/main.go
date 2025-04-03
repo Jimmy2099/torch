@@ -6,7 +6,7 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/matrix"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"image"
+	"github.com/Jimmy2099/torch/testing"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -242,27 +242,11 @@ func main() {
 			fileName = append(fileName, name)
 			fmt.Println()
 		}
-		predictPlot(fileName, result)
+		if !testing.IsTesting() {
+			predictPlot(fileName, result)
+		}
 	}
 
-}
-
-// CrossEntropyLoss 计算交叉熵损失
-func CrossEntropyLoss(predictions, targets *matrix.Matrix) float64 {
-	return 0
-}
-
-// Evaluate 计算模型准确率
-func Evaluate(model *CNN, inputs, targets *matrix.Matrix) float64 {
-	//outputs := model.Forward(inputs)
-	//predictions := outputs.ArgMax()
-	//correct := 0
-	//for i := 0; i < predictions.Size(); i++ {
-	//	if predictions.At(i, 0) == targets.At(i, 0) {
-	//		correct++
-	//	}
-	//}
-	return 0 //float64(correct) / float64(predictions.Size())
 }
 
 // ReadCSV reads an image from a CSV file and converts it to a matrix
@@ -383,22 +367,6 @@ func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
 	return outputMatrix.ArgMax()
 }
 
-func loadImage(path string) (image.Image, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return img, nil
-}
-
-// 创建并执行 Python 脚本
 func predictPlot(imagePaths []string, predictions []int) error {
 	if len(imagePaths) != len(predictions) {
 		return fmt.Errorf("image paths and predictions length mismatch")

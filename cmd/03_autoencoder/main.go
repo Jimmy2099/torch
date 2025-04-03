@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/testing"
 	"io"
 	"log"
 	"math/rand"
@@ -317,7 +318,9 @@ func main() {
 				fileName = append(fileName, name)
 				fmt.Println()
 			}
-			predictPlot(fileName)
+			if !testing.IsTesting() {
+				predictPlot(fileName)
+			}
 		}
 
 	}
@@ -454,6 +457,19 @@ import matplotlib.image as mpimg
 import os
 import numpy as np
 
+def load_numpy_from_csv(file_path):
+    with open(file_path, 'r') as f:
+        header = f.readline().strip()
+        if not header.startswith("Shape,"):
+            raise ValueError("Invalid CSV format: missing shape header")
+        
+        shape = list(map(int, header.split(",")[1:]))
+        data = np.loadtxt(f, delimiter=",")
+    
+    flattened = data.flatten()
+    return (flattened).reshape(*shape)
+
+
 def load_data(file_path):
     image_paths = []
     predictions = []
@@ -474,7 +490,7 @@ def predict_plot(data_file):
         axes[0,i].imshow(img, cmap='gray')
         print(denoise_csv_path)
         print(f"Attempting to load: {denoise_csv_path}")
-        image_data = np.loadtxt(denoise_csv_path, delimiter=',', dtype=np.float64)
+        image_data = load_numpy_from_csv(denoise_csv_path)
         axes[1,i].imshow(image_data, cmap='gray')
         #plt.imshow(image_data, cmap='gray', vmin=0, vmax=1)
         os.remove(denoise_csv_path)

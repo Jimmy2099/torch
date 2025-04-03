@@ -98,7 +98,6 @@ def load_tensor_from_csv(file_path):
         
         shape = list(map(int, header.split(",")[1:]))
         data = np.loadtxt(f, delimiter=",")
-        #print(data[0])
     
     flattened = data.flatten()#, dtype=torch.floatd
     return torch.tensor(flattened).reshape(*shape)
