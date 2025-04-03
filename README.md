@@ -2,7 +2,7 @@
 
 ![CNN From Scratch](images/02_cnn.png)
 
-#### With re-design build-in Graphic Renderer that compatible Torch data struct:
+#### With re-design build-in Graphic Renderer that compatible Tensor data struct:
 ![CNN From Scratch](images/graphic_01_software_renderer.png)
 
 #### More Examples:  [README.md](images/README.md)
