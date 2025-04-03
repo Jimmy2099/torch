@@ -8,3 +8,4 @@ etc/
 *.png
 __pycache__
 restricted
+*.ini
