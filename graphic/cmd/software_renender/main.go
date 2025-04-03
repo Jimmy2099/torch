@@ -20,6 +20,7 @@ import (
 )
 
 // glm "gitlab.com/brickhill/site/fauxgl"
+
 type Render struct {
 	p          *plot.Plot
 	width      int
@@ -41,14 +42,14 @@ func (m *Render) Init() {
 	m.height = 1080
 	m.width = 1920
 	{
-		// 设置相机参数
-		m.camera = NewVec3(0, 0, 1)
-		m.lookAt = NewVec3(0, 0, 0)
-		m.up = NewVec3(0, 1, 0)
-		m.fovy = 40
+		m.fovy = 45
 		m.near = 1
 		m.far = 10
-		m.scale = 12
+		m.scale = 8.0
+		
+		m.camera = tensor.NewVec3(0, 1, 1)
+		m.lookAt = tensor.NewVec3(0, 0, 0)
+		m.up = tensor.NewVec3(0, 1, 0)
 	}
 	{
 		m.ZBuffer = make([][]float64, m.width)
@@ -63,54 +64,9 @@ func (m *Render) Init() {
 	lowRight := image.Point{m.width, m.height}
 	m.frameBuff = image.NewRGBA(image.Rectangle{upLeft, lowRight})
 	if true {
-		// 设置背景颜色为黑色
 		background := color.RGBA{0, 0, 0, 255}
 		draw.Draw(m.frameBuff, m.frameBuff.Bounds(), &image.Uniform{background}, image.ZP, draw.Src)
 	}
-}
-
-func (m *Render) AddVecData(data []*tensor.Tensor) {
-	fill := color.RGBA{R: 255, G: 0, B: 0, A: 255} // 设置绘制颜色为红色
-	for i := 0; i < len(data); i++ {
-		m.frameBuff.Set(int(data[i].X()), int(data[i].Y()), fill) // 绘制点到缓冲区
-	}
-}
-
-func (m *Render) Draw() {
-	f, _ := os.Create(fmt.Sprint(time.Now().Unix()) + ".png")
-	png.Encode(f, imaging.FlipV(m.frameBuff))
-}
-
-func NewVec3(x, y, z float64) *tensor.Tensor {
-	return tensor.NewVec3(x, y, z)
-}
-
-// 绘制两点之间的线条（包含深度信息）
-func (r *Render) drawLine(v0, v1 *tensor.Tensor) []*tensor.Tensor {
-	var result []*tensor.Tensor
-	for t := 0.0; t < 1.0; t += 0.01 {
-		x := v0.X() + (v1.X()-v0.X())*t
-		y := v0.Y() + (v1.Y()-v0.Y())*t
-		z := v0.Z() + (v1.Z()-v0.Z())*t
-		result = append(result, NewVec3(x, y, z))
-	}
-	return result
-}
-
-func (m *Render) drawLineWithoutZBuff(v0 *tensor.Tensor, v1 *tensor.Tensor) (result []*tensor.Tensor) {
-	for t := float64(0); t < 1; t += 0.01 {
-		x := v0.X() + (v1.X()-v0.X())*t
-		y := v0.Y() + (v1.Y()-v0.Y())*t
-		result = append(result, NewVec3(x, y, 0))
-	}
-	return
-}
-
-func (m *Render) drawTriangle(t0 *tensor.Tensor, t1 *tensor.Tensor, t2 *tensor.Tensor) (result []*tensor.Tensor) {
-	result = append(result, m.drawLine(t0, t1)...)
-	result = append(result, m.drawLine(t1, t2)...)
-	result = append(result, m.drawLine(t2, t0)...)
-	return
 }
 
 func main() {
@@ -188,6 +144,49 @@ func main() {
 	g.Camera = m.camera
 	g.RunGame()
 
+}
+
+func (m *Render) AddVecData(data []*tensor.Tensor) {
+	fill := color.RGBA{R: 255, G: 0, B: 0, A: 255} // 设置绘制颜色为红色
+	for i := 0; i < len(data); i++ {
+		m.frameBuff.Set(int(data[i].X()), int(data[i].Y()), fill) // 绘制点到缓冲区
+	}
+}
+
+func (m *Render) Draw() {
+	f, _ := os.Create(fmt.Sprint(time.Now().Unix()) + ".png")
+	png.Encode(f, imaging.FlipV(m.frameBuff))
+}
+
+func NewVec3(x, y, z float64) *tensor.Tensor {
+	return tensor.NewVec3(x, y, z)
+}
+
+func (r *Render) drawLine(v0, v1 *tensor.Tensor) []*tensor.Tensor {
+	var result []*tensor.Tensor
+	for t := 0.0; t < 1.0; t += 0.01 {
+		x := v0.X() + (v1.X()-v0.X())*t
+		y := v0.Y() + (v1.Y()-v0.Y())*t
+		z := v0.Z() + (v1.Z()-v0.Z())*t
+		result = append(result, NewVec3(x, y, z))
+	}
+	return result
+}
+
+func (m *Render) drawLineWithoutZBuff(v0 *tensor.Tensor, v1 *tensor.Tensor) (result []*tensor.Tensor) {
+	for t := float64(0); t < 1; t += 0.01 {
+		x := v0.X() + (v1.X()-v0.X())*t
+		y := v0.Y() + (v1.Y()-v0.Y())*t
+		result = append(result, NewVec3(x, y, 0))
+	}
+	return
+}
+
+func (m *Render) drawTriangle(t0 *tensor.Tensor, t1 *tensor.Tensor, t2 *tensor.Tensor) (result []*tensor.Tensor) {
+	result = append(result, m.drawLine(t0, t1)...)
+	result = append(result, m.drawLine(t1, t2)...)
+	result = append(result, m.drawLine(t2, t0)...)
+	return
 }
 
 func Camera(matrix *tensor.Tensor, v []*tensor.Tensor) (result []*tensor.Tensor) {
