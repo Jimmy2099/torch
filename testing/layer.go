@@ -85,8 +85,9 @@ import torch
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        tensor = tensor.reshape(-1, tensor.shape[0])
-        np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
+        tensor = tensor.detach().numpy().astype(np.float64)
+        np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
+                  delimiter=",", fmt="%%.16f")
 
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
@@ -123,6 +124,8 @@ def process_data(weight,bias,in1):
     if not bias==None:
         layer.bias.data = bias
     out = layer(in1)
+    print("python weight[0]:",weight[0])
+    print("python bias[0]:",bias[0])
     return out.detach()
 
 out = process_data(weight,bias,in1)

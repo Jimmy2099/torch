@@ -5,6 +5,7 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
+	"log"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	t.Run("linear layer1", func(t *testing.T) {
+	t.Run("linear layer tests", func(t *testing.T) {
 		// 参数化线性层测试
 		testCases := []struct {
 			name        string
@@ -329,6 +330,9 @@ func TestGetLayerTestResult(t *testing.T) {
 		weight := tensor.Random([]int{64}, -1, 1)
 		bias := tensor.Random([]int{64}, -1, 1)
 
+		log.Println("golang batchnorm2d layer weight", weight.Data[0])
+		log.Println("golang batchnorm2d bias weight", bias.Data[0])
+
 		l := torch.NewBatchNormLayer(numFeatures, eps, momentum)
 		l.SetWeightsAndShape(weight.Data, weight.Shape)
 		l.SetBiasAndShape(bias.Data, bias.Shape)
@@ -341,7 +345,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 转置卷积层测试 TODO ERROR
+	// 转置卷积层测试
 	t.Run("convtranspose2d layer", func(t *testing.T) {
 		inChannels := 512
 		outChannels := 256

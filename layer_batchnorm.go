@@ -71,30 +71,19 @@ func (l *BatchNormLayer) SetBias(data []float64) {
 }
 
 func (bn *BatchNormLayer) computeMean(x *tensor.Tensor) *tensor.Tensor {
-	// 确保输入形状正确
-	if len(x.Shape) != 4 || x.Shape[1] != bn.numFeatures {
-		panic(fmt.Sprintf("invalid input shape %v for num_features %d", x.Shape, bn.numFeatures))
-	}
-
-	// 计算并压缩维度
-	sumResult := x.SumByDim1([]int{0, 2, 3}, true) // [1, C, 1, 1]
+	sumResult := x.SumByDim1([]int{0, 2, 3}, true)
 	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
-
-	// 关键修复：确保压缩所有单例维度
-	return sumResult.DivScalar(elementCount).
-		SqueezeSpecific([]int{0, 2, 3}) // 输出形状 [C]
+	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})
 }
 
 func (bn *BatchNormLayer) computeVariance(x *tensor.Tensor, mean *tensor.Tensor) *tensor.Tensor {
 	x_mu := x.Sub(mean.Reshape([]int{1, bn.numFeatures, 1, 1}))
 	sq_diff := x_mu.Pow(2)
-
-	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true) // [1, C, 1, 1]
+	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true)
 	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
 
-	// 关键修复：确保压缩所有单例维度
-	return sumResult.DivScalar(elementCount).
-		SqueezeSpecific([]int{0, 2, 3}) // 输出形状 [C]
+	// 关键修复：使用有偏估计（PyTorch默认行为）
+	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})
 }
 
 func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
@@ -136,12 +125,12 @@ func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor)
 		log.Println(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
 			bn.runningVar.Shape, batchVar.Shape))
 	}
-	// 更新运行统计量
-	newRunningMean := bn.runningMean.MulScalar(bn.momentum).Add(
-		batchMean.MulScalar(1.0 - bn.momentum),
+	// 关键修复：动量公式方向调整
+	newRunningMean := bn.runningMean.MulScalar(1.0 - bn.momentum).Add(
+		batchMean.MulScalar(bn.momentum), // 新的权重是momentum
 	)
-	newRunningVar := bn.runningVar.MulScalar(bn.momentum).Add(
-		batchVar.MulScalar(1.0 - bn.momentum),
+	newRunningVar := bn.runningVar.MulScalar(1.0 - bn.momentum).Add(
+		batchVar.MulScalar(bn.momentum), // 新的权重是momentum
 	)
 
 	bn.runningMean = newRunningMean
