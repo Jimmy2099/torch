@@ -46,7 +46,7 @@ func (m *Render) Init() {
 		m.near = 1
 		m.far = 10
 		m.scale = 8.0
-		
+
 		m.camera = tensor.NewVec3(0, 1, 1)
 		m.lookAt = tensor.NewVec3(0, 0, 0)
 		m.up = tensor.NewVec3(0, 1, 0)
