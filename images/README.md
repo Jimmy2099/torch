@@ -1,6 +1,6 @@
 # Example
 
-## Torch base Software Renderer
+## Re-design build-in Graphic Renderer that compatible Tensor data struct
 ![Software Renderer](graphic_01_software_renderer.png)
 
 ## Variational AutoEncoder
