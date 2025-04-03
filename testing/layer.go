@@ -126,8 +126,6 @@ def process_data(weight,bias,in1):
     if not bias==None:
         layer.bias.data = bias
     out = layer(in1)
-    print(f"python weight[0] (full precision): {weight[0].item():.16f}")
-    print(f"python bias[0] (full precision): {bias[0].item():.16f}")
     return out.detach()
 
 out = process_data(weight,bias,in1)
