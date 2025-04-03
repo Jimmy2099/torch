@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+//TODO TBD
+
 var (
 	flDebug = flag.Bool("d", false, "Debug")
 )
