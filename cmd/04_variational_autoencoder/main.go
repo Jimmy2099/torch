@@ -220,7 +220,7 @@ func NewVAE() *VAE {
 	{
 		d, err := os.Getwd()
 		if err != nil {
-			panic(fmt.Sprint("Error getting working directory: %v\n", err))
+			panic(fmt.Sprintln("Error getting working directory:", err))
 		}
 		weightsDir = filepath.Join(d, "py", "data")
 		fmt.Printf("Looking for weights in: %s\n", weightsDir)

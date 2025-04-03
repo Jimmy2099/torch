@@ -6,6 +6,7 @@ import (
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
 	"log"
+	"math"
 	"testing"
 )
 
@@ -22,10 +23,10 @@ func TestGetLayerTestResult(t *testing.T) {
 		l.SetBiasAndShape(bias.Data, bias.Shape)
 
 		result := GetLayerTestResult(script, l, t1)
-		t2 := l.Forward(t1)
+		expected := l.Forward(t1)
 
-		if !result.EqualFloat32(t2) {
-			t.Errorf("Element-wise multiplication failed:\nExpected:\n%v\nGot:\n%v", t2, result)
+		if !result.EqualFloat32(expected) {
+			t.Errorf("Linear layer failed:\nExpected:\n%v\nGot:\n%v", expected, result)
 		}
 	})
 
@@ -153,21 +154,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// ReLU激活函数测试
-	t.Run("relu activation", func(t *testing.T) {
-		script := `torch.nn.ReLU()`
-		input := tensor.Random([]int{64, 64}, -100, 100)
-
-		l := torch.NewReLULayer()
-		result := GetLayerTestResult(script, l, input)
-		expected := l.Forward(input)
-
-		// 验证所有负值变为0，正值保持不变
-		if !result.EqualFloat32(expected) {
-			t.Errorf("ReLU activation failed:\nExpected:\n%v\nGot:\n%v", expected, result)
-		}
-	})
-
 	// 卷积层参数化测试
 	t.Run("conv2d layers", func(t *testing.T) {
 		testCases := []struct {
@@ -267,6 +253,21 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
+	// ReLU激活函数测试
+	t.Run("relu activation", func(t *testing.T) {
+		script := `torch.nn.ReLU()`
+		input := tensor.Random([]int{64, 64}, -100, 100)
+
+		l := torch.NewReLULayer()
+		result := GetLayerTestResult(script, l, input)
+		expected := l.Forward(input)
+
+		// 验证所有负值变为0，正值保持不变
+		if !result.EqualFloat32(expected) {
+			t.Errorf("ReLU activation failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+		}
+	})
+
 	// ReLU参数化测试
 	t.Run("relu activations", func(t *testing.T) {
 		testCases := []struct {
@@ -315,7 +316,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 批量归一化层测试 TODO fix
+	// 批量归一化层测试
 	t.Run("batchnorm2d layer", func(t *testing.T) {
 		numFeatures := 64
 		eps := 1e-5
@@ -342,6 +343,71 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		if !result.EqualFloat16(expected) {
 			t.Errorf("BatchNorm2d failed:\nExpected:\n%v\nGot:\n%v", expected.Data[:5], result.Data[:5])
+		}
+	})
+
+	// 批量归一化层测试
+	t.Run("batchnorm2d layer test", func(t *testing.T) {
+		testCases := []struct {
+			name        string
+			numFeatures int
+			eps         float64
+			momentum    float64
+			inputShape  []int
+			weightShape []int
+			biasShape   []int
+		}{
+			{
+				name:        "32 features with large eps",
+				numFeatures: 32,
+				eps:         1e-3,
+				momentum:    0.1,
+				inputShape:  []int{2, 32, 16, 16},
+				weightShape: []int{32},
+				biasShape:   []int{32},
+			},
+			{
+				name:        "128 features with high momentum",
+				numFeatures: 128,
+				eps:         1e-5,
+				momentum:    0.5,
+				inputShape:  []int{4, 128, 64, 64},
+				weightShape: []int{128},
+				biasShape:   []int{128},
+			},
+			{
+				name:        "16 features 3D input",
+				numFeatures: 16,
+				eps:         1e-5,
+				momentum:    0.1,
+				inputShape:  []int{8, 16, 8, 8},
+				weightShape: []int{16},
+				biasShape:   []int{16},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				script := fmt.Sprintf(
+					`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float64)`,
+					tc.numFeatures, tc.eps, tc.momentum,
+				)
+				input := tensor.Random(tc.inputShape, -1, 1)
+				weight := tensor.Random(tc.weightShape, -1, 1)
+				bias := tensor.Random(tc.biasShape, -1, 1)
+
+				l := torch.NewBatchNormLayer(tc.numFeatures, tc.eps, tc.momentum)
+				l.SetWeightsAndShape(weight.Data, weight.Shape)
+				l.SetBiasAndShape(bias.Data, bias.Shape)
+
+				result := GetLayerTestResult32(script, l, input)
+				expected := l.Forward(input)
+
+				if !result.EqualFloat16(expected) {
+					t.Errorf("%s failed:\nExpected:\n%v\nGot:\n%v",
+						tc.name, expected.Data[:5], result.Data[:5])
+				}
+			})
 		}
 	})
 
@@ -382,6 +448,93 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
+	// 转置卷积层测试
+	t.Run("convtranspose2d layer test", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			inChannels    int
+			outChannels   int
+			kernelSize    []int
+			stride        []int
+			padding       []int
+			outputPadding []int
+			inputShape    []int
+			weightsShape  []int
+			biasShape     []int
+		}{
+			{
+				name:          "256to128_kernel3_stride1",
+				inChannels:    256,
+				outChannels:   128,
+				kernelSize:    []int{3, 3},
+				stride:        []int{1, 1},
+				padding:       []int{1, 1},
+				outputPadding: []int{0, 0},
+				inputShape:    []int{1, 256, 8, 8},
+				weightsShape:  []int{256, 128, 3, 3},
+				biasShape:     []int{128},
+			},
+			{
+				name:          "64to32_kernel4_stride2",
+				inChannels:    64,
+				outChannels:   32,
+				kernelSize:    []int{4, 4},
+				stride:        []int{2, 2},
+				padding:       []int{1, 1},
+				outputPadding: []int{0, 0},
+				inputShape:    []int{2, 64, 16, 16},
+				weightsShape:  []int{64, 32, 4, 4},
+				biasShape:     []int{32},
+			},
+			{
+				name:          "128to64_kernel7_outputpad1",
+				inChannels:    128,
+				outChannels:   64,
+				kernelSize:    []int{7, 7},
+				stride:        []int{2, 2},
+				padding:       []int{3, 3},
+				outputPadding: []int{1, 1},
+				inputShape:    []int{1, 128, 32, 32},
+				weightsShape:  []int{128, 64, 7, 7},
+				biasShape:     []int{64},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				script := fmt.Sprintf(
+					`torch.nn.ConvTranspose2d(%d, %d, kernel_size=(%d,%d), stride=(%d,%d), padding=(%d,%d), output_padding=(%d,%d))`,
+					tc.inChannels, tc.outChannels,
+					tc.kernelSize[0], tc.kernelSize[1],
+					tc.stride[0], tc.stride[1],
+					tc.padding[0], tc.padding[1],
+					tc.outputPadding[0], tc.outputPadding[1],
+				)
+				input := tensor.Random(tc.inputShape, -1, 1)
+				weights := tensor.Random(tc.weightsShape, -1, 1)
+				bias := tensor.Random(tc.biasShape, -1, 1)
+
+				l := layer.NewConvTranspose2dLayer(
+					tc.inChannels, tc.outChannels,
+					tc.kernelSize[0], tc.kernelSize[1],
+					tc.stride[0], tc.stride[1],
+					tc.padding[0], tc.padding[1],
+					tc.outputPadding[0], tc.outputPadding[1],
+				)
+				l.SetWeightsAndShape(weights.Data, weights.Shape)
+				l.SetBiasAndShape(bias.Data, bias.Shape)
+
+				result := GetLayerTestResult(script, l, input)
+				expected := l.Forward(input)
+
+				if !result.EqualFloat32(expected) {
+					t.Errorf("%s failed:\nExpected:\n%v\nGot:\n%v",
+						tc.name, expected.Shape, result.Shape)
+				}
+			})
+		}
+	})
+
 	// Flatten层测试
 	t.Run("flatten layer", func(t *testing.T) {
 		script := `torch.nn.Flatten(start_dim=1, end_dim=-1)`
@@ -393,6 +546,41 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		if !result.EqualFloat32(input.Reshape(expectedShape)) {
 			t.Errorf("Flatten data mismatch:\nInput:\n%v\nOutput:\n%v", input, result)
+		}
+	})
+
+	// Flatten层测试
+	t.Run("flatten layer test", func(t *testing.T) {
+		testCases := []struct {
+			name       string
+			inputShape []int
+		}{
+			{
+				name:       "3D flatten",
+				inputShape: []int{4, 3, 28},
+			},
+			{
+				name:       "4D flatten middle dimensions",
+				inputShape: []int{2, 3, 28, 28},
+			},
+			{
+				name:       "5D complex flatten",
+				inputShape: []int{1, 64, 4, 4, 2},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				script := `torch.nn.Flatten(start_dim=-1, end_dim=-1).to(dtype=torch.float64)`
+				input := tensor.Random(tc.inputShape, -1, 1)
+
+				l := torch.NewFlattenLayer()
+				result := GetLayerTestResult(script, l, input)
+				expected := l.Forward(input)
+				if !result.EqualFloat32(expected) {
+					t.Errorf("Tanh failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+				}
+			})
 		}
 	})
 
@@ -416,4 +604,50 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
+	// Tanh激活层测试
+	t.Run("tanh layer", func(t *testing.T) {
+		testCases := []struct {
+			name       string
+			inputShape []int
+			inputRange [2]float32
+		}{
+			{
+				name:       "large batch small features",
+				inputShape: []int{16, 3, 8, 8},
+				inputRange: [2]float32{-1, 1},
+			},
+			{
+				name:       "extreme values",
+				inputShape: []int{1, 1, 5, 5},
+				inputRange: [2]float32{-1000, 1000},
+			},
+			{
+				name:       "3D input",
+				inputShape: []int{8, 64, 64},
+				inputRange: [2]float32{-5, 5},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				script := `torch.nn.Tanh()`
+				input := tensor.Random(tc.inputShape, float64(tc.inputRange[0]*1000), float64(tc.inputRange[1]*1000))
+
+				l := layer.NewTanhLayer()
+				result := GetLayerTestResult(script, l, input)
+				expected := l.Forward(input)
+
+				// 验证数值范围和数值一致性
+				for i, v := range result.Data {
+					if v < -1 || v > 1 {
+						t.Errorf("%s: Output[%d] out of range: %.4f", tc.name, i, v)
+					}
+					if math.Abs(float64(v-expected.Data[i])) > 1e-5 {
+						t.Errorf("%s: Data mismatch at %d: %.4f vs %.4f",
+							tc.name, i, v, expected.Data[i])
+					}
+				}
+			})
+		}
+	})
 }

@@ -185,7 +185,6 @@ func NewCNN() *CNN {
 	return cnn
 }
 
-// TODO Backward
 func (c *CNN) Backward(targets *matrix.Matrix, lr float64) {
 	//// 反向传播
 	//grad := c.fc2.Backward(targets, lr)
@@ -203,77 +202,49 @@ func (c *CNN) ZeroGrad() {
 }
 
 func main() {
-	//// 加载MNIST数据集
-	//trainData, err := mnist.LoadMNIST("./dataset/MNIST/raw/train-images-idx3-ubyte", "./dataset/MNIST/raw/train-labels-idx1-ubyte")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//X_train := trainData.Images
-	//Y_train := trainData.Labels
-
-	// 创建CNN模型
-
-	//trainer := torch.NewBasicTrainer(CrossEntropyLoss)
-
-	//// 训练模型
-	//trainer.Train(model, X_train, Y_train, 10, 0.01)
-	//
-	// 测试模型
-	//testData, err := mnist.LoadMNIST("./dataset/MNIST/raw/t10k-images-idx3-ubyte", "./dataset/MNIST/raw/t10k-labels-idx1-ubyte")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//X_test := testData.Images
-	//Y_test := testData.Labels
 
 	{
-		{
-			//gen test data
-			d, _ := os.Getwd()
-			runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
-		}
-		directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
+		//generate test data
+		d, _ := os.Getwd()
+		runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
+	}
+	directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
 
-		// Load data (images and labels)
-		images, labels, err := LoadDataFromCSVDir(directory)
-		if err != nil {
-			log.Fatalf("Error loading data: %v", err)
-		}
-
-		// Example: Print the first image matrix and its corresponding label
-		if len(images) > 0 && len(labels) > 0 {
-			fmt.Printf("First Image Matrix:\n%v\n", images[0])
-			fmt.Printf("First Image Label: %s\n", labels[0])
-		}
-
-		//num := 4
-		result := []int{}
-		for num := 0; num < len(images); num++ {
-			model := NewCNN()
-			prediction := Predict(model, images[num])
-			fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
-			result = append(result, int(prediction.Data[0][0]))
-		}
-		fmt.Println("label:", labels)
-		fmt.Println("predictions:", result)
-		fileName := []string{}
-		{
-
-			for i := 0; i < len(labels); i++ {
-				d, _ := os.Getwd()
-				name := filepath.Join(d, "py", "mnist_images", labels[i])
-				name = strings.Replace(name, ".csv", "", -1)
-				fileName = append(fileName, name)
-				fmt.Println()
-			}
-			predictPlot(fileName, result)
-		}
-
+	// Load data (images and labels)
+	images, labels, err := LoadDataFromCSVDir(directory)
+	if err != nil {
+		log.Fatalf("Error loading data: %v", err)
 	}
 
-	// 计算测试集准确率
-	//accuracy := Evaluate(model, X_test, Y_test)
-	//fmt.Printf("Test Accuracy: %.2f%%\n", accuracy*100)
+	// Example: Print the first image matrix and its corresponding label
+	if len(images) > 0 && len(labels) > 0 {
+		fmt.Printf("First Image Matrix:\n%v\n", images[0])
+		fmt.Printf("First Image Label: %s\n", labels[0])
+	}
+
+	//num := 4
+	result := []int{}
+	for num := 0; num < len(images); num++ {
+		model := NewCNN()
+		prediction := Predict(model, images[num])
+		fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
+		result = append(result, int(prediction.Data[0][0]))
+	}
+	fmt.Println("label:", labels)
+	fmt.Println("predictions:", result)
+	fileName := []string{}
+	{
+
+		for i := 0; i < len(labels); i++ {
+			d, _ := os.Getwd()
+			name := filepath.Join(d, "py", "mnist_images", labels[i])
+			name = strings.Replace(name, ".csv", "", -1)
+			fileName = append(fileName, name)
+			fmt.Println()
+		}
+		predictPlot(fileName, result)
+	}
+
 }
 
 // CrossEntropyLoss 计算交叉熵损失
