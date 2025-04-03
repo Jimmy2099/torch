@@ -537,15 +537,15 @@ func TestGetLayerTestResult(t *testing.T) {
 
 	// Flatten层测试
 	t.Run("flatten layer", func(t *testing.T) {
-		script := `torch.nn.Flatten(start_dim=1, end_dim=-1)`
+		script := `torch.nn.Flatten(start_dim=0, end_dim=-1)`
 		input := tensor.Random([]int{1, 512, 4, 4}, -1, 1)
 		expectedShape := []int{1, 512 * 4 * 4}
 
 		l := torch.NewFlattenLayer()
 		result := GetLayerTestResult(script, l, input)
-
+		expected := l.Forward(input)
 		if !result.EqualFloat32(input.Reshape(expectedShape)) {
-			t.Errorf("Flatten data mismatch:\nInput:\n%v\nOutput:\n%v", input, result)
+			t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.Shape, result.Data[:5], result.Shape)
 		}
 	})
 
@@ -571,14 +571,14 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				script := `torch.nn.Flatten(start_dim=-1, end_dim=-1).to(dtype=torch.float64)`
+				script := `torch.nn.Flatten(start_dim=0, end_dim=-1).to(dtype=torch.float64)`
 				input := tensor.Random(tc.inputShape, -1, 1)
 
 				l := torch.NewFlattenLayer()
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
 				if !result.EqualFloat32(expected) {
-					t.Errorf("Tanh failed:\nExpected:\n%v\nGot:\n%v", expected, result)
+					t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.Shape, result.Data[:5], result.Shape)
 				}
 			})
 		}

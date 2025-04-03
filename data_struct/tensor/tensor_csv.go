@@ -184,6 +184,7 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 	return nil // Success
 }
 
+// LoadFromCSV support big row
 func LoadFromCSV(filename string) (*Tensor, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -191,46 +192,73 @@ func LoadFromCSV(filename string) (*Tensor, error) {
 	}
 	defer file.Close()
 
-	reader := bufio.NewReader(file)
+	// 为处理超长行设置较大的缓冲区（例如1MB）
+	reader := bufio.NewReaderSize(file, 1024*1024)
 
-	// 1. 读取形状行
-	shapeLine, _, err := reader.ReadLine()
+	// 1. 读取形状头（假定形状头行不会特别长）
+	headerLine, err := readLargeLine(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read header: %w", err)
 	}
-	shapeRecord := strings.Split(string(shapeLine), ",")
+	headerRecord := splitCSVLine(headerLine)
 
 	var shape []int
 	var records [][]string
 
-	// 判断是否为形状头
-	if len(shapeRecord) > 0 && shapeRecord[0] == shapeHeaderPrefix {
+	// 判断是否为形状头（忽略首尾空格）
+	if len(headerRecord) > 0 && strings.TrimSpace(headerRecord[0]) == shapeHeaderPrefix {
 		// 解析形状维度
-		for i := 1; i < len(shapeRecord); i++ {
-			dim, err := strconv.Atoi(shapeRecord[i])
+		for i := 1; i < len(headerRecord); i++ {
+			dim, err := strconv.Atoi(strings.TrimSpace(headerRecord[i]))
 			if err != nil || dim < 0 {
-				return nil, fmt.Errorf("invalid dimension '%s' at position %d", shapeRecord[i], i-1)
+				return nil, fmt.Errorf("invalid dimension '%s' at position %d", headerRecord[i], i-1)
 			}
 			shape = append(shape, dim)
 		}
 	} else {
 		// 非形状头，将当前行作为数据
-		records = append(records, shapeRecord)
+		records = append(records, headerRecord)
 	}
 
-	// 2. 读取剩余数据行
+	// 2. 逐行读取剩余数据
 	for {
-		line, _, err := reader.ReadLine()
+		line, err := readLargeLine(reader)
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			return nil, fmt.Errorf("failed to read data line: %w", err)
 		}
-		record := strings.Split(string(line), ",")
+		// 忽略空行
+		if len(strings.TrimSpace(line)) == 0 {
+			continue
+		}
+		record := splitCSVLine(line)
 		records = append(records, record)
 	}
 
 	return loadFromRecords(records, shape)
+}
+
+// readLargeLine 逐块读取一行数据，避免一次性加载整个超长行到内存
+func readLargeLine(reader *bufio.Reader) (string, error) {
+	var lineBuilder strings.Builder
+	for {
+		// ReadLine 可能返回 isPrefix==true 表示行还未结束
+		chunk, isPrefix, err := reader.ReadLine()
+		if err != nil {
+			return "", err
+		}
+		lineBuilder.Write(chunk)
+		if !isPrefix {
+			break
+		}
+	}
+	return lineBuilder.String(), nil
+}
+
+// splitCSVLine
+func splitCSVLine(line string) []string {
+	return strings.Split(line, ",")
 }
 
 func loadFromRecords(records [][]string, shape []int) (*Tensor, error) {
