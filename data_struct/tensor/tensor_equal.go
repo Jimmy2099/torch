@@ -1,6 +1,7 @@
 package tensor
 
 import (
+	"fmt"
 	"log"
 	"math"
 )
@@ -21,9 +22,9 @@ func (t *Tensor) EqualFloat16(other *Tensor) bool {
 		return false
 	}
 
-	// 4. 元素级浮点数比较
 	for i := range t.Data {
-		if float32(t.Data[i]) != float32(other.Data[i]) {
+		//TODO
+		if fmt.Sprintf("%.10f", t.Data[i]) != fmt.Sprintf("%.10f", other.Data[i]) {
 			log.Println(i, t.Data[i], " != ", other.Data[i])
 			return false
 		}

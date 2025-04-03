@@ -89,7 +89,7 @@ func TestGetLayerTestResult(t *testing.T) {
 				result := GetLayerTestResult(script, l, t1)
 				t2 := l.Forward(t1)
 
-				if !result.EqualFloat32(t2) {
+				if !result.EqualFloat16(t2) {
 					t.Errorf("%s failed:\nInput shape: %v\nExpected:\n%v\nGot:\n%v",
 						tc.name,
 						tc.inputShape,
@@ -120,7 +120,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
 
-		if !result.EqualFloat32(expected) {
+		if !result.EqualFloat16(expected) {
 			t.Errorf("Linear layer failed:\nExpected:\n%v\nGot:\n%v", expected, result)
 		}
 	})
