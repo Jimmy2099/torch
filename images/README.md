@@ -1,6 +1,6 @@
 # Example
 
-## Re-design build-in Graphic Renderer that compatible Tensor data struct
+## Re-design Graphic Renderer that compatible with Tensor data struct
 ![Software Renderer](graphic_01_software_renderer.png)
 
 ## Variational AutoEncoder
