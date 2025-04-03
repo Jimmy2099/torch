@@ -1,4 +1,4 @@
-# Torch - A Golang ML Inference Computing Library From Scratch
+# Torch - A Golang DeepLearning Inference Computing Library From Scratch
 
 ![CNN From Scratch](images/02_cnn.png)
 
