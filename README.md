@@ -2,9 +2,10 @@
 
 ![CNN From Scratch](images/02_cnn.png)
 
+#### With re-design build-in Graphic Renderer that compatible Torch data struct:
+![CNN From Scratch](images/graphic_01_software_renderer.png)
+
 #### More Examples:  [README.md](images/README.md)
-
-
 
 ####  Notice
 Some parts of this project’s code may have been generated, optimized, or annotated by AI.

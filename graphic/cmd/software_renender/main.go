@@ -109,7 +109,7 @@ func main() {
 	go func() {
 		for {
 			view = tensor.LookAt(m.camera, m.lookAt, m.up)
-			model = model.Rotate(tensor.NewTensor([]float64{1, 0, 0}, []int{3}), glm.Radians(5))
+			//model = model.Rotate(tensor.NewTensor([]float64{1, 0, 0}, []int{3}), glm.Radians(5))
 			matrix = projection.MatMulMatrix(view).MatMulMatrix(viewport).MatMulMatrix(model)
 			data4 := Camera(matrix, data3)
 			//Multithreading Optimize

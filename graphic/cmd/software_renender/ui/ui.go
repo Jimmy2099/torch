@@ -13,7 +13,7 @@ import (
 
 func UIMain(frameBuff *ebiten.Image, camera *tensor.Tensor) *G {
 	gg := &G{
-		name:       "Hello, Dear ImGui",
+		name:       "Torch Graphic",
 		clearColor: [3]float32{0, 0, 0},
 		FrameBuff:  frameBuff,
 		Camera:     camera,
@@ -56,7 +56,7 @@ func (g *G) Update() error {
 		//mgr.Cache.RemoveTexture(imgui.TextureID(&myImageIDRef))
 	}()
 
-	imgui.Text("ภาษาไทย测试조선말")                      // To display these, you'll need to register a compatible font
+	imgui.Text("ภาษาไทย测试조선말")                        // To display these, you'll need to register a compatible font
 	imgui.Text("Hello, world!")                       // Display some text
 	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0) // Edit 1 float using a slider from 0.0f to 1.0f
 	imgui.ColorEdit3("clear color", &g.clearColor)    // Edit 3 floats representing a color
