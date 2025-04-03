@@ -2,16 +2,16 @@ package ui
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_struct/tensor"
 	imgui "github.com/gabstv/cimgui-go"
 	ebimgui "github.com/gabstv/ebiten-imgui/v3"
 	"github.com/gabstv/ebiten-imgui/v3/imcolor"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	glm "gitlab.com/brickhill/site/fauxgl"
 	"image/color"
 )
 
-func UIMain(frameBuff *ebiten.Image, camera *glm.Vector) *G {
+func UIMain(frameBuff *ebiten.Image, camera *tensor.Tensor) *G {
 	gg := &G{
 		name:       "Hello, Dear ImGui",
 		clearColor: [3]float32{0, 0, 0},
@@ -35,7 +35,7 @@ type G struct {
 	counter    int
 	name       string
 	FrameBuff  *ebiten.Image
-	Camera     *glm.Vector
+	Camera     *tensor.Tensor
 }
 
 func (g *G) Draw(screen *ebiten.Image) {
@@ -56,7 +56,7 @@ func (g *G) Update() error {
 		//mgr.Cache.RemoveTexture(imgui.TextureID(&myImageIDRef))
 	}()
 
-	imgui.Text("ภาษาไทย测试조선말")                        // To display these, you'll need to register a compatible font
+	imgui.Text("ภาษาไทย测试조선말")                      // To display these, you'll need to register a compatible font
 	imgui.Text("Hello, world!")                       // Display some text
 	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0) // Edit 1 float using a slider from 0.0f to 1.0f
 	imgui.ColorEdit3("clear color", &g.clearColor)    // Edit 3 floats representing a color
@@ -98,18 +98,16 @@ func (g *G) Update() error {
 	return nil
 }
 
-func Setting(camera *glm.Vector) {
+func Setting(camera *tensor.Tensor) {
 	imgui.Begin("Settings")
-	cx := float32(camera.X)
-	cy := float32(camera.Y)
-	cz := float32(camera.Z)
+	cx := float32(camera.X())
+	cy := float32(camera.Y())
+	cz := float32(camera.Z())
 	imgui.Text("Camera")
 	imgui.SliderFloat("X", &cx, -10.0, 10)
 	imgui.SliderFloat("Y", &cy, -10.0, 10)
 	imgui.SliderFloat("Z", &cz, -10.0, 10)
-	camera.X = float64(cx)
-	camera.Y = float64(cy)
-	camera.Z = float64(cz)
+	camera.Data = []float64{float64(cx), float64(cy), float64(cz)}
 	imgui.End()
 }
 
