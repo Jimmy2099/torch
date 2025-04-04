@@ -171,10 +171,6 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 }
 
 // MatMul 矩阵乘法 支持批量矩阵乘法
-func (t *Tensor) MatMul1(other *Tensor) *Tensor {
-	return t.MatMul(other)
-}
-
 func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	a := t
 	b := other
@@ -241,17 +237,14 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		aBatchIndices := getBroadcastedIndices(indices, aBatchShape, batchShape)
 		bBatchIndices := getBroadcastedIndices(indices, bBatchShape, batchShape)
 
-		aOffset := 0
-		for i, idx := range aBatchIndices {
-			aOffset += idx * aStrides[i]
-		}
-		bOffset := 0
-		for i, idx := range bBatchIndices {
-			bOffset += idx * bStrides[i]
-		}
+		// 修正：使用完整的批量维度计算偏移量
+		aOffset := dotProduct(aBatchIndices, aStrides[:len(aBatchIndices)])
+		bOffset := dotProduct(bBatchIndices, bStrides[:len(bBatchIndices)])
 
+		// 确保矩阵数据块正确分割
 		aMatrix := a.Data[aOffset : aOffset+m*aLastDim]
-		bMatrix := b.Data[bOffset : bOffset+bSecondLastDim*p]
+		bMatrix := b.Data[bOffset : bOffset+aLastDim*p] // aLastDim = n = bSecondLastDim
+
 		resultMatrix := matrixMultiply(aMatrix, bMatrix, m, aLastDim, p)
 
 		resultOffset := batchIdx * matrixSize
@@ -268,6 +261,15 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	}
 
 	return result
+}
+
+// 新增辅助函数计算点积
+func dotProduct(a, b []int) int {
+	sum := 0
+	for i := range a {
+		sum += a[i] * b[i]
+	}
+	return sum
 }
 
 // 辅助函数
@@ -298,12 +300,11 @@ func getBroadcastedIndices(bcIndices, origShape, bcShape []int) []int {
 func matrixMultiply(a, b []float64, m, n, p int) []float64 {
 	result := make([]float64, m*p)
 	for i := 0; i < m; i++ {
-		for j := 0; j < p; j++ {
-			sum := 0.0
-			for k := 0; k < n; k++ {
-				sum += a[i*n+k] * b[k*p+j]
+		for k := 0; k < n; k++ { // 先遍历k，优化内存访问
+			aVal := a[i*n+k]
+			for j := 0; j < p; j++ {
+				result[i*p+j] += aVal * b[k*p+j]
 			}
-			result[i*p+j] = sum
 		}
 	}
 	return result

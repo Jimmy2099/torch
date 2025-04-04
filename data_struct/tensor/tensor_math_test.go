@@ -208,3 +208,137 @@ func TestTensorAdd1(t *testing.T) {
 		}
 	})
 }
+
+func TestMatMul99(t *testing.T) {
+	// ----------------------------
+	// 测试用例 1: 基本二维矩阵乘法
+	// ----------------------------
+	t.Run("Basic 2D MatMul", func(t *testing.T) {
+		a := NewTensor(
+			[]float64{1, 2, 3, 4}, // [[1 2], [3 4]]
+			[]int{2, 2},
+		)
+		b := NewTensor(
+			[]float64{5, 6, 7, 8}, // [[5 6], [7 8]]
+			[]int{2, 2},
+		)
+		result := a.MatMul(b)
+		expected := []float64{
+			1*5 + 2*7, // [0][0] = (1,2) · (5,7)
+			1*6 + 2*8, // [0][1] = (1,2) · (6,8)
+			3*5 + 4*7, // [1][0] = (3,4) · (5,7)
+			3*6 + 4*8, // [1][1] = (3,4) · (6,8)
+		}
+		assertTensorEqual(t, result, expected, []int{2, 2})
+	})
+
+	// ----------------------------
+	// 测试用例 2: 批量矩阵乘法
+	// ----------------------------
+	t.Run("Batch MatMul", func(t *testing.T) {
+		a := NewTensor(
+			[]float64{
+				// Batch 0
+				1, 2, // [[1 2]
+				3, 4, //  [3 4]]
+				// Batch 1
+				5, 6, // [[5 6]
+				7, 8}, //  [7 8]]
+			[]int{2, 2, 2},
+		)
+		b := NewTensor(
+			[]float64{
+				// Batch 0
+				9, 10, // [[9 10]
+				11, 12, //  [11 12]]
+				// Batch 1
+				13, 14, // [[13 14]
+				15, 16}, //  [15 16]]
+			[]int{2, 2, 2},
+		)
+		result := a.MatMul(b)
+		expected := []float64{
+			// Batch 0
+			1*9 + 2*11,  // [0][0][0]
+			1*10 + 2*12, // [0][0][1]
+			3*9 + 4*11,  // [0][1][0]
+			3*10 + 4*12, // [0][1][1]
+
+			// Batch 1
+			5*13 + 6*15, // [1][0][0]
+			5*14 + 6*16, // [1][0][1]
+			7*13 + 8*15, // [1][1][0]
+			7*14 + 8*16, // [1][1][1]
+		}
+		assertTensorEqual(t, result, expected, []int{2, 2, 2})
+	})
+
+	// ----------------------------
+	// 测试用例 3: 广播批量维度
+	// ----------------------------
+	t.Run("Broadcast Batch Dims", func(t *testing.T) {
+		a := NewTensor(
+			[]float64{1, 2, 3, 4, 5, 6}, // 形状 [3,2]，广播为 [2,3,2]
+			[]int{3, 2},
+		)
+		b := NewTensor(
+			[]float64{
+				7, 8, // Batch 0 [[7], [8]]
+				11, 12, // Batch 1 [[11], [12]]
+			},
+			[]int{2, 2, 1}, // 正确形状，4个元素
+		)
+		result := a.MatMul(b)
+		expected := []float64{
+			// Batch 0
+			1*7 + 2*8, // 23
+			3*7 + 4*8, // 53
+			5*7 + 6*8, // 83
+
+			// Batch 1
+			1*11 + 2*12, // 35
+			3*11 + 4*12, // 81
+			5*11 + 6*12, // 127
+		}
+		assertTensorEqual(t, result, expected, []int{2, 3, 1})
+	})
+
+	// ----------------------------
+	// 测试用例 4: 一维张量（向量）
+	// ----------------------------
+	t.Run("1D Vectors", func(t *testing.T) {
+		vec := NewTensor([]float64{1, 2, 3}, []int{3}) // 被广播为 (1,3)
+		mat := NewTensor(
+			[]float64{
+				4, 5, // 第0行
+				6, 7, // 第1行
+				8, 9, // 第2行
+			},
+			[]int{3, 2},
+		)
+		result := vec.MatMul(mat)
+		expected := []float64{
+			1*4 + 2*6 + 3*8, // (1,2,3) · 第0列(4,6,8)
+			1*5 + 2*7 + 3*9, // (1,2,3) · 第1列(5,7,9)
+		}
+		assertTensorEqual(t, result, expected, []int{2})
+	})
+
+}
+
+// 辅助断言函数
+func assertTensorEqual(t *testing.T, actual *Tensor, expectedData []float64, expectedShape []int) {
+	t.Helper()
+	if !shapeEqual(actual.Shape, expectedShape) {
+		t.Errorf("形状不匹配\n期望: %v\n实际: %v", expectedShape, actual.Shape)
+	}
+	if len(actual.Data) != len(expectedData) {
+		t.Fatalf("数据长度不匹配: 期望 %d 实际 %d", len(expectedData), len(actual.Data))
+	}
+	for i := range actual.Data {
+		if actual.Data[i] != expectedData[i] {
+			t.Errorf("数据不匹配在索引 %d\n期望: %v\n实际: %v", i, expectedData[i], actual.Data[i])
+			break
+		}
+	}
+}

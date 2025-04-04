@@ -253,6 +253,16 @@ func (t *Tensor) Max() float64 {
 	return maxVal
 }
 
+func (t *Tensor) Min() float64 {
+	maxVal := math.Inf(1)
+	for _, val := range t.Data {
+		if val < maxVal {
+			maxVal = val
+		}
+	}
+	return maxVal
+}
+
 // Copy returns a deep copy of the tensor
 func (t *Tensor) Copy() *Tensor {
 	data := make([]float64, len(t.Data))
