@@ -7,6 +7,9 @@ import (
 	"math/rand"
 )
 
+// TODO add bias=False
+// Linear(in_features=2048, out_features=8192, bias=False)
+
 // LinearLayer 实现全连接线性层
 type LinearLayer struct {
 	InputDim    int
