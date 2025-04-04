@@ -1,6 +1,9 @@
 package tensor
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // Transpose 交换两个维度的位置，返回新的张量
 func (t *Tensor) TransposeByDim(dim1, dim2 int) *Tensor {
@@ -219,4 +222,196 @@ func (t *Tensor) Concat(other *Tensor, dim int) *Tensor {
 		Data:  newData,
 		Shape: newShape,
 	}
+}
+
+// Max 沿指定维度计算最大值，keepdim决定是否保持该维度长度
+func (t *Tensor) MaxByDim(dim int, keepdim bool) *Tensor {
+	// 参数验证
+	if dim < 0 || dim >= len(t.Shape) {
+		panic(fmt.Sprintf("无效维度 %d，张量维度为 %d", dim, len(t.Shape)))
+	}
+
+	// 计算输出形状
+	outputShape := make([]int, len(t.Shape))
+	copy(outputShape, t.Shape)
+	if keepdim {
+		outputShape[dim] = 1
+	} else {
+		outputShape = append(outputShape[:dim], outputShape[dim+1:]...)
+	}
+
+	// 计算每个切片的元素数量
+	elementSize := 1
+	for i := dim + 1; i < len(t.Shape); i++ {
+		elementSize *= t.Shape[i]
+	}
+
+	// 计算总切片数（沿dim维度的前部元素乘积）
+	totalSlices := 1
+	for i := 0; i < dim; i++ {
+		totalSlices *= t.Shape[i]
+	}
+
+	// 初始化结果数据
+	result := make([]float64, totalSlices*elementSize)
+
+	// 遍历每个切片
+	for sliceIdx := 0; sliceIdx < totalSlices; sliceIdx++ {
+		// 计算起始位置
+		start := sliceIdx * t.Shape[dim] * elementSize
+
+		// 遍历切片内的每个位置
+		for pos := 0; pos < elementSize; pos++ {
+			maxVal := math.Inf(-1)
+
+			// 遍历dim维度的所有元素
+			for d := 0; d < t.Shape[dim]; d++ {
+				// 计算实际索引
+				idx := start + d*elementSize + pos
+				if t.Data[idx] > maxVal {
+					maxVal = t.Data[idx]
+				}
+			}
+
+			// 存储最大值
+			result[sliceIdx*elementSize+pos] = maxVal
+		}
+	}
+
+	return &Tensor{
+		Data:  result,
+		Shape: outputShape,
+	}
+}
+
+// 1. 实现索引转换方法
+func (t *Tensor) getIndices(flatIndex int) []int {
+	indices := make([]int, len(t.Shape))
+	remaining := flatIndex
+
+	// 按维度顺序从右到左处理（最后一个维度变化最快）
+	for i := len(t.Shape) - 1; i >= 0; i-- {
+		dimSize := t.Shape[i]
+		indices[i] = remaining % dimSize
+		remaining = remaining / dimSize
+	}
+	return indices
+}
+
+// 2. 实现广播值获取方法
+func (t *Tensor) getBroadcastedValue(indices []int) float64 {
+	mappedIndices := make([]int, len(t.Shape))
+
+	// 按维度顺序处理广播
+	for i := 0; i < len(t.Shape); i++ {
+		if i >= len(indices) {
+			mappedIndices[i] = 0
+			continue
+		}
+
+		// 获取当前维度大小
+		dimSize := t.Shape[i]
+
+		// 处理广播维度（dimSize=1时允许任意索引）
+		if dimSize == 1 {
+			mappedIndices[i] = 0
+		} else {
+			if indices[i] >= dimSize {
+				return 0
+			}
+			mappedIndices[i] = indices[i]
+		}
+	}
+
+	return t.Get(mappedIndices)
+}
+
+// 3. 实现Sum方法
+func (t *Tensor) SumByDim2(dim int, keepdim bool) *Tensor {
+	if dim < 0 || dim >= len(t.Shape) {
+		panic(fmt.Sprintf("invalid dimension %d", dim))
+	}
+
+	// 计算输出形状
+	outputShape := make([]int, len(t.Shape))
+	copy(outputShape, t.Shape)
+	if keepdim {
+		outputShape[dim] = 1
+	} else {
+		outputShape = append(outputShape[:dim], outputShape[dim+1:]...)
+	}
+
+	// 计算元素步长
+	elementSize := 1
+	for i := dim + 1; i < len(t.Shape); i++ {
+		elementSize *= t.Shape[i]
+	}
+
+	totalSlices := 1
+	for i := 0; i < dim; i++ {
+		totalSlices *= t.Shape[i]
+	}
+
+	result := make([]float64, totalSlices*elementSize)
+
+	for sliceIdx := 0; sliceIdx < totalSlices; sliceIdx++ {
+		start := sliceIdx * t.Shape[dim] * elementSize
+		for pos := 0; pos < elementSize; pos++ {
+			var sum float64
+			for d := 0; d < t.Shape[dim]; d++ {
+				idx := start + d*elementSize + pos
+				sum += t.Data[idx]
+			}
+			result[sliceIdx*elementSize+pos] = sum
+		}
+	}
+
+	return &Tensor{
+		Data:  result,
+		Shape: outputShape,
+	}
+}
+
+// MaskedFill 根据bool类型的mask张量填充指定值
+func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
+	// 确保mask与当前张量形状可广播
+	if !canBroadcast(t.Shape, mask.Shape) {
+		panic("mask shape is not broadcastable")
+	}
+
+	outData := make([]float64, len(t.Data))
+	copy(outData, t.Data)
+
+	// 遍历所有元素(实际应优化为按维度广播计算)
+	for i := range outData {
+		// 计算多维索引(需实现flat到多维的转换)
+		idx := t.getIndices(i)
+		// 获取mask对应位置的值(考虑广播)
+		maskVal := mask.getBroadcastedValue(idx)
+		if maskVal != 0 { // 假设mask为1表示True
+			outData[i] = value
+		}
+	}
+	return &Tensor{
+		Data:  outData,
+		Shape: t.Shape,
+	}
+}
+
+// Softmax 沿指定维度计算softmax
+func (t *Tensor) SoftmaxByDim(dim int) *Tensor {
+	maxVals := t.MaxByDim(dim, true)
+	expandedMax := maxVals.Expand(t.Shape)
+
+	// 创建临时张量进行稳定化计算
+	shifted := t.Sub(expandedMax)
+
+	expData := shifted.Apply(func(x float64) float64 {
+		return math.Exp(x)
+	})
+
+	sumExp := expData.SumByDim2(dim, true)
+	normalized := expData.Div(sumExp.Expand(t.Shape))
+
+	return normalized
 }
