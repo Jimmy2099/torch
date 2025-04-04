@@ -190,42 +190,45 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float64) *tensor.Te
 }
 
 func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	// 检查输入维度
-	if len(x.Shape) == 1 {
-		// 如果是一维输入，转换为二维 [1, n]
-		x = tensor.NewTensor(x.Data, []int{1, x.Shape[0]})
-	} else if len(x.Shape) != 2 {
-		panic(fmt.Sprintf("输入必须为 1D 或 2D 张量，实际 %v", x.Shape))
+	// 保存原始形状并检查最后一维
+	originalShape := x.ShapeCopy()
+	if len(originalShape) == 0 {
+		panic("输入张量形状不能为空")
+	}
+	inputDim := originalShape[len(originalShape)-1]
+	if inputDim != l.InputDim {
+		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
 	}
 
-	// 确保输入的第二维与 InputDim 匹配（关键兼容性修复）
-	if x.Shape[1] != l.InputDim {
-		// 尝试转置输入矩阵
-		if x.Shape[0] == l.InputDim {
-			x = tensor.Transpose(x)
-		} else {
-			panic(fmt.Sprintf("输入维度不匹配：实际 %v，期望 [?,%d]", x.Shape, l.InputDim))
-		}
+	// 展平前部维度
+	flattenedBatch := 1
+	for _, dim := range originalShape[:len(originalShape)-1] {
+		flattenedBatch *= dim
 	}
+	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
-	batchSize := x.Shape[0]
+	// 保存输入并执行计算
+	l.Input = reshapedX.Clone()
+	batchSize := reshapedX.Shape[0]
 	outputData := make([]float64, batchSize*l.OutputDim)
 
-	// 保存转置处理后的输入用于反向传播
-	l.Input = x.Clone()
-
-	// 手动实现矩阵乘法（保持与 Forward1 逻辑一致）
+	// 矩阵乘法
 	for b := 0; b < batchSize; b++ {
 		for out := 0; out < l.OutputDim; out++ {
 			sum := l.Bias.Data[out]
 			for in := 0; in < l.InputDim; in++ {
-				// 注意：权重矩阵形状应为 [OutputDim, InputDim]
 				sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[out*l.InputDim+in]
 			}
 			outputData[b*l.OutputDim+out] = sum
 		}
 	}
 
-	l.Output = tensor.NewTensor(outputData, []int{batchSize, l.OutputDim})
-	return l.Output
+	// 恢复原始形状
+	newShape := make([]int, len(originalShape))
+	copy(newShape, originalShape)
+	newShape[len(newShape)-1] = l.OutputDim
+	output := tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
+	l.Output = output
+
+	return output
 }

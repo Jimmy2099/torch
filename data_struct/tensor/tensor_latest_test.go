@@ -367,3 +367,75 @@ func sameInf(a, b float64) bool {
 	return math.IsInf(a, 1) && math.IsInf(b, 1) ||
 		math.IsInf(a, -1) && math.IsInf(b, -1)
 }
+
+func TestTensor_ShapeCopy(t *testing.T) {
+	// 定义辅助断言函数
+	assertShapeEqual := func(t *testing.T, got, want []int) {
+		t.Helper()
+		if len(got) != len(want) {
+			t.Errorf("长度不匹配: got %v, want %v", got, want)
+			return
+		}
+		for i := range got {
+			if got[i] != want[i] {
+				t.Errorf("索引 %d 不匹配: got %d, want %d", i, got[i], want[i])
+			}
+		}
+	}
+
+	// 测试用例
+	t.Run("Nil Shape", func(t *testing.T) {
+		// 直接构造而不是使用NewTensor来测试nil情况
+		tsr := &Tensor{
+			Data:  []float64{1, 2, 3},
+			Shape: nil,
+		}
+		copyShape := tsr.ShapeCopy()
+		if copyShape != nil {
+			t.Errorf("期望nil，实际得到: %v", copyShape)
+		}
+	})
+
+	t.Run("Empty Shape", func(t *testing.T) {
+		tsr := NewTensor([]float64{}, []int{})
+		copyShape := tsr.ShapeCopy()
+		assertShapeEqual(t, copyShape, []int{})
+	})
+
+	t.Run("Standard 2D Shape", func(t *testing.T) {
+		tsr := NewTensor([]float64{1, 2, 3, 4}, []int{2, 2})
+		copyShape := tsr.ShapeCopy()
+		assertShapeEqual(t, copyShape, []int{2, 2})
+	})
+
+	t.Run("High Dimension Shape", func(t *testing.T) {
+		tsr := NewTensor(make([]float64, 24), []int{2, 3, 4})
+		copyShape := tsr.ShapeCopy()
+		assertShapeEqual(t, copyShape, []int{2, 3, 4})
+	})
+
+	t.Run("Deep Copy Verification", func(t *testing.T) {
+		originalShape := []int{3, 4, 5}
+		tsr := NewTensor(make([]float64, 60), originalShape)
+		copyShape := tsr.ShapeCopy()
+
+		// 修改复制后的shape
+		copyShape[0] = 99
+		copyShape[1] = 100
+
+		// 验证原始shape未改变
+		assertShapeEqual(t, tsr.Shape, originalShape)
+	})
+
+	t.Run("Zero Value Dimensions", func(t *testing.T) {
+		tsr := NewTensor([]float64{}, []int{0})
+		copyShape := tsr.ShapeCopy()
+		assertShapeEqual(t, copyShape, []int{0})
+	})
+
+	t.Run("Complex Shape with Zeros", func(t *testing.T) {
+		tsr := NewTensor(make([]float64, 0), []int{0, 2, 0})
+		copyShape := tsr.ShapeCopy()
+		assertShapeEqual(t, copyShape, []int{0, 2, 0})
+	})
+}

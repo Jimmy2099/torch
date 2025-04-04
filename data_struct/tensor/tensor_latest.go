@@ -415,3 +415,17 @@ func (t *Tensor) SoftmaxByDim(dim int) *Tensor {
 
 	return normalized
 }
+
+// ShapeCopy 返回Shape的深拷贝副本
+func (m *Tensor) ShapeCopy() []int {
+	if m.Shape == nil {
+		return nil
+	}
+
+	// 创建新切片
+	copyShape := make([]int, len(m.Shape))
+	// 复制数据
+	copy(copyShape, m.Shape)
+
+	return copyShape
+}
