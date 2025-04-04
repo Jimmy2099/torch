@@ -429,3 +429,5 @@ func (m *Tensor) ShapeCopy() []int {
 
 	return copyShape
 }
+
+// MatMul 矩阵乘法 支持批量矩阵乘法

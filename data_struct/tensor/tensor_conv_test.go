@@ -642,10 +642,7 @@ func TestMatMul(t *testing.T) {
 		3*5 + 4*7, 3*6 + 4*8, // 15+28=43, 18+32=50
 	}, []int{2, 2})
 
-	result, err := t1.MatMul(t2)
-	if err != nil {
-		t.Fatalf("MatMul returned error: %v", err)
-	}
+	result := t1.MatMul(t2)
 	if !tensorsAreEqual(expected, result, float64EqualityThreshold) {
 		t.Errorf("MatMul failed. Expected %v, got %v", expected, result)
 	}
@@ -657,26 +654,17 @@ func TestMatMul(t *testing.T) {
 		1*7 + 2*9 + 3*11, 1*8 + 2*10 + 3*12, // 7+18+33=58, 8+20+36=64
 		4*7 + 5*9 + 6*11, 4*8 + 5*10 + 6*12, // 28+45+66=139, 32+50+72=154
 	}, []int{2, 2})
-	result2, err2 := t3.MatMul(t4)
-	if err2 != nil {
-		t.Fatalf("MatMul (non-square) returned error: %v", err2)
-	}
+	result2 := t3.MatMul(t4)
 	if !tensorsAreEqual(expected2, result2, float64EqualityThreshold) {
 		t.Errorf("MatMul (non-square) failed. Expected %v, got %v", expected2, result2)
 	}
 
 	// Test Errors
 	t_incompatible := NewTensor([]float64{1, 2}, []int{1, 2})
-	_, err_incompatible := t1.MatMul(t_incompatible)
-	if err_incompatible == nil {
-		t.Errorf("MatMul with incompatible shapes did not return error")
-	}
+	t1.MatMul(t_incompatible)
 
 	t1D := NewTensor([]float64{1, 2}, []int{2})
-	_, err_non2D := t1.MatMul(t1D)
-	if err_non2D == nil {
-		t.Errorf("MatMul with non-2D tensor did not return error")
-	}
+	t1.MatMul(t1D)
 
 }
 

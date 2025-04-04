@@ -242,15 +242,6 @@ func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 	}
 }
 
-// 辅助函数：计算数组乘积
-func product(dims []int) int {
-	p := 1
-	for _, dim := range dims {
-		p *= dim
-	}
-	return p
-}
-
 // DivScalar 张量每个元素除标量
 func (t *Tensor) DivScalar(scalar float64) *Tensor {
 	result := make([]float64, len(t.Data))

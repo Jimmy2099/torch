@@ -77,3 +77,12 @@ func getBroadcastedShape(a, b []int) []int {
 	}
 	return shape
 }
+
+// product 计算总元素数
+func product(dims []int) int {
+	total := 1
+	for _, dim := range dims {
+		total *= dim
+	}
+	return total
+}

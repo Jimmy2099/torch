@@ -2,6 +2,7 @@ package tensor
 
 import (
 	"math"
+	"slices"
 	"testing"
 )
 
@@ -438,4 +439,24 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{0, 2, 0})
 	})
+}
+
+func Test2DMatrixMultiplication(t *testing.T) {
+	// 输入形状自动转换为[1,2,2]
+	a := NewTensor([]float64{1, 2, 3, 4}, []int{2, 2})
+	b := NewTensor([]float64{5, 6, 7, 8}, []int{2, 2})
+
+	expected := []float64{
+		1*5 + 2*7, 1*6 + 2*8,
+		3*5 + 4*7, 3*6 + 4*8,
+	}
+
+	result := a.MatMul(b)
+
+	// 验证数据
+	if !slices.Equal(result.Data, expected) {
+		t.Errorf("结果错误:\n期望: %v\n实际: %v",
+			expected,
+			result.Data)
+	}
 }

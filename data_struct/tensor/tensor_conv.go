@@ -607,10 +607,7 @@ func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, 
 		reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
 
 		// Matrix multiplication
-		result, err := reshapedWeights.MatMul(unfolded)
-		if err != nil {
-			return nil, err
-		}
+		result := reshapedWeights.MatMul(unfolded)
 
 		// Reshape to output dimensions
 		reshapedResult := result.Reshape([]int{outChannels, outHeight, outWidth})
@@ -620,32 +617,6 @@ func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, 
 	}
 
 	return output, nil
-}
-
-// MatMul performs matrix multiplication between two 2D tensors
-func (t *Tensor) MatMul(other *Tensor) (*Tensor, error) {
-	if len(t.Shape) != 2 || len(other.Shape) != 2 {
-		return nil, errors.New("both tensors must be 2D for matrix multiplication")
-	}
-	if t.Shape[1] != other.Shape[0] {
-		return nil, fmt.Errorf("shape mismatch: %v and %v", t.Shape, other.Shape)
-	}
-
-	m, n := t.Shape[0], other.Shape[1]
-	k := t.Shape[1]
-	result := make([]float64, m*n)
-
-	for i := 0; i < m; i++ {
-		for j := 0; j < n; j++ {
-			sum := 0.0
-			for l := 0; l < k; l++ {
-				sum += t.Data[i*k+l] * other.Data[l*n+j]
-			}
-			result[i*n+j] = sum
-		}
-	}
-
-	return NewTensor(result, []int{m, n}), nil
 }
 
 // Expand expands the tensor to the target shape using broadcasting rules
@@ -781,33 +752,6 @@ func (t *Tensor) Conv2D1(weights *Tensor, kernelSize, stride, pad int) (*Tensor,
 
 	// For batch size > 1, stack results along batch dimension
 	return StackTensors(results, 0) // Need to implement StackTensors function
-}
-
-// MatMul 矩阵乘法
-func (t *Tensor) MatMul1(other *Tensor) *Tensor {
-	// 简单实现，假设是2D矩阵
-	if len(t.Shape) != 2 || len(other.Shape) != 2 {
-		panic("MatMul requires 2D tensors")
-	}
-	if t.Shape[1] != other.Shape[0] {
-		panic("matrix dimensions mismatch")
-	}
-
-	m, n := t.Shape[0], other.Shape[1]
-	k := t.Shape[1]
-	result := make([]float64, m*n)
-
-	for i := 0; i < m; i++ {
-		for j := 0; j < n; j++ {
-			sum := 0.0
-			for l := 0; l < k; l++ {
-				sum += t.Data[i*k+l] * other.Data[l*n+j]
-			}
-			result[i*n+j] = sum
-		}
-	}
-
-	return &Tensor{Data: result, Shape: []int{m, n}}
 }
 
 func (t *Tensor) GetRow(row int) *Tensor {
