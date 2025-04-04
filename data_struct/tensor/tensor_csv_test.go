@@ -317,7 +317,7 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 			}
 
 			// 保存到CSV
-			if err = original.SaveDataAndShapeToCSV(tmpfile.Name()); err != nil {
+			if err = original.SaveToCSV(tmpfile.Name()); err != nil {
 				t.Fatalf("SaveDataAndShapeToCSV failed: %v", err)
 			}
 

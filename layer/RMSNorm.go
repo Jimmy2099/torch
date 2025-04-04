@@ -40,6 +40,9 @@ func NewRMSNorm(features int, eps float64) *RMSNorm {
 
 // Forward performs the RMSNorm forward pass.
 func (r *RMSNorm) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
+	if len(inputTensor.Shape) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	}
 	// Input validation
 	if len(inputTensor.Shape) < 2 {
 		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
