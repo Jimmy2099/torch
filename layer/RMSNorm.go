@@ -153,12 +153,8 @@ func (r *RMSNorm) Parameters() []*tensor.Tensor {
 }
 
 // SetWeights sets the weights of the layer.
-func (r *RMSNorm) SetWeights(data [][]float64) {
-	flattenedData := make([]float64, 0)
-	for _, row := range data {
-		flattenedData = append(flattenedData, row...)
-	}
-	r.Weights = tensor.NewTensor(flattenedData, r.Weights.Shape)
+func (r *RMSNorm) SetWeights(data []float64) {
+	r.Weights = tensor.NewTensor(data, r.Weights.Shape)
 }
 
 // SetWeightsAndShape sets the weights and shape of the layer.

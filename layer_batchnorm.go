@@ -22,7 +22,7 @@ func (l *BatchNormLayer) SetBiasAndShape(data []float64, shape []int) {
 type BatchNormLayer struct {
 	weights     *tensor.Tensor
 	bias        *tensor.Tensor
-	runningMean *tensor.Tensor
+	RunningMean *tensor.Tensor
 	runningVar  *tensor.Tensor
 	eps         float64
 	momentum    float64
@@ -47,7 +47,7 @@ func NewBatchNormLayer(numFeatures int, eps, momentum float64) *BatchNormLayer {
 	return &BatchNormLayer{
 		weights:     weights,
 		bias:        bias,
-		runningMean: runningMean,
+		RunningMean: runningMean,
 		runningVar:  runningVar,
 		eps:         eps,
 		momentum:    momentum,
@@ -95,7 +95,7 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("Training mode - batchMean shape: %v, batchVar shape: %v\n",
 			batchMean.Shape, batchVar.Shape)
 		fmt.Printf("Running stats - mean shape: %v, var shape: %v\n",
-			bn.runningMean.Shape, bn.runningVar.Shape)
+			bn.RunningMean.Shape, bn.runningVar.Shape)
 
 		bn.updateRunningStats(batchMean, batchVar)
 
@@ -108,7 +108,7 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 			Add(bn.bias.Reshape(broadcastDims))
 	} else {
 		// 推理模式使用运行统计量
-		mean4d := bn.runningMean.Reshape([]int{1, bn.numFeatures, 1, 1})
+		mean4d := bn.RunningMean.Reshape([]int{1, bn.numFeatures, 1, 1})
 		std4d := bn.runningVar.AddScalar(bn.eps).Sqrt().Reshape([]int{1, bn.numFeatures, 1, 1})
 		x_normalized := x.Sub(mean4d).Div(std4d)
 		return x_normalized.Mul(bn.weights.Reshape([]int{1, bn.numFeatures, 1, 1})).Add(bn.bias.Reshape([]int{1, bn.numFeatures, 1, 1}))
@@ -117,22 +117,22 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 
 func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor) {
 	// 增强的形状检查
-	if !bn.runningMean.ShapesMatch(batchMean) {
+	if !bn.RunningMean.ShapesMatch(batchMean) {
 		log.Println(fmt.Sprintf("running mean shape mismatch: expect %v, got %v",
-			bn.runningMean.Shape, batchMean.Shape))
+			bn.RunningMean.Shape, batchMean.Shape))
 	}
 	if !bn.runningVar.ShapesMatch(batchVar) {
 		log.Println(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
 			bn.runningVar.Shape, batchVar.Shape))
 	}
 	// 关键修复：动量公式方向调整
-	newRunningMean := bn.runningMean.MulScalar(1.0 - bn.momentum).Add(
+	newRunningMean := bn.RunningMean.MulScalar(1.0 - bn.momentum).Add(
 		batchMean.MulScalar(bn.momentum), // 新的权重是momentum
 	)
 	newRunningVar := bn.runningVar.MulScalar(1.0 - bn.momentum).Add(
 		batchVar.MulScalar(bn.momentum), // 新的权重是momentum
 	)
 
-	bn.runningMean = newRunningMean
+	bn.RunningMean = newRunningMean
 	bn.runningVar = newRunningVar
 }

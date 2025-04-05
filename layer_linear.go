@@ -38,7 +38,12 @@ func (l *LinearLayer) SetWeights(data []float64) {
 	if len(data) != l.OutputDim*l.InputDim {
 		panic("Weights data length mismatch")
 	}
-	l.Weights = tensor.NewTensor(data, []int{l.OutputDim, l.InputDim})
+
+	// 创建新数组并拷贝数据
+	copiedData := make([]float64, len(data))
+	copy(copiedData, data) // 深拷贝
+
+	l.Weights = tensor.NewTensor(copiedData, []int{l.OutputDim, l.InputDim})
 }
 
 // SetBias 设置偏置
@@ -46,7 +51,12 @@ func (l *LinearLayer) SetBias(data []float64) {
 	if len(data) != l.OutputDim {
 		panic("bias data length mismatch")
 	}
-	l.Bias = tensor.NewTensor(data, []int{l.OutputDim, 1})
+
+	// 深拷贝偏置数据
+	copiedData := make([]float64, len(data))
+	copy(copiedData, data)
+
+	l.Bias = tensor.NewTensor(copiedData, []int{l.OutputDim, 1})
 }
 
 func (l *LinearLayer) SetWeightsAndShape(data []float64, shape []int) {

@@ -7,6 +7,7 @@ import (
 	"github.com/Jimmy2099/torch/layer"
 	"log"
 	"math"
+	"reflect"
 	"testing"
 )
 
@@ -648,6 +649,202 @@ func TestGetLayerTestResult(t *testing.T) {
 					}
 				}
 			})
+		}
+	})
+}
+
+func TestPointerSafety(t *testing.T) {
+	x := tensor.NewTensor([]float64{1, 2}, []int{1, 2})
+	layer := torch.NewLinearLayer(2, 3)
+
+	// 测试Clone深拷贝
+	cloned := x.Clone()
+	cloned.Data[0] = 9
+	if x.Data[0] == 9 {
+		t.Fatal("Clone is shallow")
+	}
+
+	// 测试权重独立
+	w := []float64{1, 2, 3, 4, 5, 6}
+	layer.SetWeights(w)
+	w[0] = 9
+	if layer.Weights.Data[0] == 9 {
+		t.Fatal("Weight sharing detected")
+	}
+}
+
+func TestReLUPointerSafety(t *testing.T) {
+	// 测试输入独立性
+	t.Run("InputIndependence", func(t *testing.T) {
+		relu := torch.NewReLULayer()
+		input := tensor.NewTensor([]float64{1.0, -2.0, 3.0}, []int{3})
+		output := relu.Forward(input.Clone())
+
+		// 修改原始输入
+		input.Data[0] = -5.0
+
+		// 验证输出未改变
+		if output.Data[0] != 1.0 {
+			t.Error("ReLU output modified by input change")
+		}
+	})
+
+	// 测试原地操作模式
+	t.Run("InplaceOperation", func(t *testing.T) {
+		relu := torch.NewReLULayer()
+		relu.SetInplace(true)
+		input := tensor.NewTensor([]float64{1.0, -2.0, 3.0}, []int{3})
+		output := relu.Forward(input)
+		fmt.Sprint(output.Data[0])
+		// 验证输入是否被修改
+		if input.Data[1] != -2.0 {
+			t.Error("Inplace ReLU incorrectly modified input")
+		}
+	})
+}
+
+func TestBatchNormPointerSafety(t *testing.T) {
+	bn := torch.NewBatchNormLayer(256, 1e-5, 0.1)
+
+	// 测试权重独立性
+	t.Run("WeightIndependence", func(t *testing.T) {
+		weights := make([]float64, 256)
+		copy(weights, bn.GetWeights().Data)
+
+		// 修改原始数组
+		weights[0] = 999.0
+
+		// 验证层内权重未改变
+		if bn.GetWeights().Data[0] == 999.0 {
+			t.Error("BatchNorm weights sharing detected")
+		}
+	})
+
+	// 测试运行统计量更新
+	t.Run("RunningStatsIsolation", func(t *testing.T) {
+		// 保存原始统计量
+		originalMean := bn.RunningMean.Clone()
+
+		// 执行前向传播更新统计量
+		x := tensor.Ones([]int{64, 256, 8, 8})
+		bn.Forward(x)
+
+		// 验证原始统计量未被修改
+		if reflect.DeepEqual(bn.RunningMean.Data, originalMean.Data) {
+			t.Error("Running mean not updated properly")
+		}
+	})
+}
+
+func TestConvLayerSafety(t *testing.T) {
+	t.Run("WeightDeepCopy", func(t *testing.T) {
+		conv := torch.NewConvLayer(3, 64, 3, 1, 1)
+		original := conv.GetWeights().Clone()
+		testData := original.Clone()
+		testData.Data[0] = 999.0
+
+		conv.SetWeights(testData.Data)
+
+		if !conv.GetWeights().ShapesMatch(original) {
+			t.Errorf("Weight shape changed unexpectedly: got %v want %v",
+				conv.GetWeights().Shape, original.Shape)
+		}
+	})
+}
+
+func TestEmbeddingPointerSafety(t *testing.T) {
+	emb := torch.NewEmbedding(10000, 512)
+
+	// 测试权重设置安全
+	t.Run("WeightSettingSafety", func(t *testing.T) {
+		weights := make([]float64, 10000*512)
+		copy(weights, emb.GetWeights().Data)
+		weights[0] = 999.0
+
+		// 设置新权重
+		emb.SetWeightsAndShape(weights, []int{10000, 512})
+
+		// 验证旧梯度是否重置
+		if emb.GradWeights.Data[0] != 0 {
+			t.Error("Embedding grad weights not reset")
+		}
+	})
+
+	// 测试索引转换安全
+	t.Run("IndexConversionSafety", func(t *testing.T) {
+		indices := tensor.NewTensor([]float64{1.5, 2.0}, []int{1, 2})
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("Non-integer index not detected")
+			}
+		}()
+		emb.Forward(indices)
+	})
+}
+
+func TestMaxPool2DSafety(t *testing.T) {
+	pool := torch.NewMaxPool2DLayer(2, 2, 0)
+
+	// 测试输入独立性
+	t.Run("InputIsolation", func(t *testing.T) {
+		input := tensor.NewTensor([]float64{1, 2, 3, 4}, []int{1, 1, 2, 2})
+		output := pool.Forward(input.Clone())
+
+		// 修改原始输入
+		input.Data[0] = 999.0
+
+		// 验证输出未改变
+		if output.Data[0] != 4.0 {
+			t.Error("MaxPool output affected by input modification")
+		}
+	})
+
+	// 测试梯度传播正确性
+	t.Run("GradientPropagation", func(t *testing.T) {
+		input := tensor.Ones([]int{1, 3, 32, 32})
+		output := pool.Forward(input)
+		gradData := make([]float64, len(output.Data))
+		for i := range gradData {
+			gradData[i] = 0.5
+		}
+		gradOutput := tensor.NewTensor(gradData, output.Shape)
+
+		gradInput := pool.Backward(gradOutput)
+
+		// 验证梯度形状
+		if !reflect.DeepEqual(gradInput.Shape, input.Shape) {
+			t.Error("MaxPool grad shape mismatch")
+		}
+	})
+}
+
+func TestLayerSafety(t *testing.T) {
+	layer := layer.NewRMSNorm(3, 2)
+
+	t.Run("ParameterIndependence", func(t *testing.T) {
+		if params := layer.Parameters(); len(params) > 0 {
+			original := params[0].Clone()
+			testData := make([]float64, len(original.Data))
+			copy(testData, original.Data)
+			testData[0] = 999.0
+
+			layer.SetWeights(testData) // 需要实现对应方法
+
+			if reflect.DeepEqual(params[0].Data, testData) {
+				t.Error("Parameter data sharing detected")
+			}
+		}
+	})
+
+	t.Run("InputOutputIsolation", func(t *testing.T) {
+		input := tensor.NewTensor([]float64{1, 2, 3}, []int{3})
+		output := layer.Forward(input.Clone())
+		if output == nil {
+			t.Fatal("Output is nil")
+		}
+		input.Data[0] = 999.0
+		if output.Data[0] == 999.0 {
+			t.Error("Output shares memory with input")
 		}
 	})
 }

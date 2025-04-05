@@ -32,7 +32,12 @@ func (l *ConvLayer) SetWeights(data []float64) {
 	if len(data) != l.OutChannels*l.InChannels*l.KernelSize*l.KernelSize {
 		panic("Weights data length mismatch")
 	}
-	l.Weights = tensor.NewTensor(data, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
+
+	// 创建新数组并拷贝数据
+	copiedData := make([]float64, len(data))
+	copy(copiedData, data) // 深拷贝
+
+	l.Weights = tensor.NewTensor(copiedData, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
 }
 
 // SetBias 设置偏置
@@ -40,7 +45,12 @@ func (l *ConvLayer) SetBias(data []float64) {
 	if len(data) != l.OutChannels {
 		panic("bias data length mismatch")
 	}
-	l.Bias = tensor.NewTensor(data, []int{l.OutChannels, 1})
+
+	// 深拷贝偏置数据
+	copiedData := make([]float64, len(data))
+	copy(copiedData, data)
+
+	l.Bias = tensor.NewTensor(copiedData, []int{l.OutChannels, 1})
 }
 
 func (l *ConvLayer) SetWeightsAndShape(data []float64, shape []int) {
