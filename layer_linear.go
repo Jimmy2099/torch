@@ -36,7 +36,7 @@ func (l *LinearLayer) GetBias() *tensor.Tensor {
 // SetWeights 设置权重
 func (l *LinearLayer) SetWeights(data []float64) {
 	if len(data) != l.OutputDim*l.InputDim {
-		panic("weights data length mismatch")
+		panic("Weights data length mismatch")
 	}
 	l.Weights = tensor.NewTensor(data, []int{l.OutputDim, l.InputDim})
 }

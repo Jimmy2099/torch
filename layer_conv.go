@@ -30,7 +30,7 @@ func (l *ConvLayer) GetBias() *tensor.Tensor {
 // SetWeights 设置权重
 func (l *ConvLayer) SetWeights(data []float64) {
 	if len(data) != l.OutChannels*l.InChannels*l.KernelSize*l.KernelSize {
-		panic("weights data length mismatch")
+		panic("Weights data length mismatch")
 	}
 	l.Weights = tensor.NewTensor(data, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
 }

@@ -27,7 +27,7 @@ type LayerForTesting interface {
 //// DenseLayer 全连接层接口
 //type DenseLayer interface {
 //	Layer
-//	SetWeights(weights *tensor.Tensor)
+//	SetWeights(Weights *tensor.Tensor)
 //	SetBias(bias *tensor.Tensor)
 //}
 //

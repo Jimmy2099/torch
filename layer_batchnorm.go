@@ -58,7 +58,7 @@ func NewBatchNormLayer(numFeatures int, eps, momentum float64) *BatchNormLayer {
 
 func (l *BatchNormLayer) SetWeights(data []float64) {
 	if len(data) != l.numFeatures {
-		panic(fmt.Sprintf("weights data length mismatch: expected %d, got %d", l.numFeatures, len(data)))
+		panic(fmt.Sprintf("Weights data length mismatch: expected %d, got %d", l.numFeatures, len(data)))
 	}
 	l.weights = tensor.NewTensor(data, []int{l.numFeatures})
 }
