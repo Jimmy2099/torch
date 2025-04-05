@@ -3,6 +3,7 @@ package testing
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 )
@@ -13,6 +14,7 @@ func RunPyScript(pythonScript string) {
 
 	// 将嵌入的 Python 脚本写入临时文件
 	file, err := os.CreateTemp("", "script.*.py")
+	log.Println("pyScript Path: ", file.Name())
 	if err != nil {
 		panic(err)
 	}

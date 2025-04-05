@@ -374,7 +374,6 @@ func (t *Tensor) SumByDim2(dim int, keepdim bool) *Tensor {
 
 // MaskedFill 根据bool类型的mask张量填充指定值
 func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
-	// 确保mask与当前张量形状可广播
 	if !canBroadcast(t.Shape, mask.Shape) {
 		panic("mask shape is not broadcastable")
 	}
@@ -382,13 +381,28 @@ func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
 	outData := make([]float64, len(t.Data))
 	copy(outData, t.Data)
 
-	// 遍历所有元素(实际应优化为按维度广播计算)
+	// 遍历所有元素
 	for i := range outData {
-		// 计算多维索引(需实现flat到多维的转换)
-		idx := t.getIndices(i)
-		// 获取mask对应位置的值(考虑广播)
-		maskVal := mask.getBroadcastedValue(idx)
-		if maskVal != 0 { // 假设mask为1表示True
+		idx := t.getIndices(i) // 获取当前元素的原始索引
+		// 计算对应mask的索引，考虑广播规则
+		maskIndices := make([]int, len(mask.Shape))
+		// 从原始索引的末尾截取与mask维度相同的部分
+		startIdx := len(idx) - len(mask.Shape)
+		if startIdx < 0 {
+			panic("mask dimensions exceed tensor dimensions")
+		}
+		for dim := 0; dim < len(mask.Shape); dim++ {
+			originalDimIdx := idx[startIdx+dim]
+			// 处理广播：如果mask的当前维度大小为1，则索引为0，否则使用原索引
+			if mask.Shape[dim] == 1 {
+				maskIndices[dim] = 0
+			} else {
+				maskIndices[dim] = originalDimIdx
+			}
+		}
+		// 获取mask中的值
+		maskVal := mask.GetValue(maskIndices)
+		if maskVal != 0 { // 假设非零值表示需要替换
 			outData[i] = value
 		}
 	}
@@ -396,6 +410,23 @@ func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
 		Data:  outData,
 		Shape: t.Shape,
 	}
+}
+
+// 辅助函数：根据索引获取张量中的值
+func (t *Tensor) GetValue(indices []int) float64 {
+	if len(indices) != len(t.Shape) {
+		panic("indices length does not match tensor dimensions")
+	}
+	flat := 0
+	stride := 1
+	for i := len(indices) - 1; i >= 0; i-- {
+		if indices[i] >= t.Shape[i] || indices[i] < 0 {
+			panic("index out of range")
+		}
+		flat += indices[i] * stride
+		stride *= t.Shape[i]
+	}
+	return t.Data[flat]
 }
 
 // Softmax 沿指定维度计算softmax
@@ -430,4 +461,68 @@ func (m *Tensor) ShapeCopy() []int {
 	return copyShape
 }
 
-// MatMul 矩阵乘法 支持批量矩阵乘法
+func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
+	if len(t.Shape) != 2 && len(t.Shape) != 4 {
+		panic("RepeatInterleave currently only supports 2D or 4D tensors")
+	}
+
+	var newData []float64
+	var newShape []int
+
+	if len(t.Shape) == 2 {
+		rows, cols := t.Shape[0], t.Shape[1]
+		switch dim {
+		case 0:
+			newData = make([]float64, rows*repeats*cols)
+			newShape = []int{rows * repeats, cols}
+			for i := 0; i < rows; i++ {
+				for r := 0; r < repeats; r++ {
+					copy(newData[(i*repeats+r)*cols:(i*repeats+r+1)*cols],
+						t.Data[i*cols:(i+1)*cols])
+				}
+			}
+		case 1:
+			newData = make([]float64, rows*cols*repeats)
+			newShape = []int{rows, cols * repeats}
+			for i := 0; i < rows; i++ {
+				for j := 0; j < cols; j++ {
+					for r := 0; r < repeats; r++ {
+						newData[i*cols*repeats+j*repeats+r] = t.Data[i*cols+j]
+					}
+				}
+			}
+		default:
+			panic("Invalid dimension for 2D tensor")
+		}
+	} else {
+		batch, channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2], t.Shape[3]
+		elementSize := height * width
+		switch dim {
+		case 0:
+			newData = make([]float64, batch*repeats*channels*elementSize)
+			newShape = []int{batch * repeats, channels, height, width}
+			for i := 0; i < batch; i++ {
+				for r := 0; r < repeats; r++ {
+					copy(newData[(i*repeats+r)*channels*elementSize:(i*repeats+r+1)*channels*elementSize],
+						t.Data[i*channels*elementSize:(i+1)*channels*elementSize])
+				}
+			}
+		case 1:
+			newData = make([]float64, batch*channels*repeats*elementSize)
+			newShape = []int{batch, channels * repeats, height, width}
+			for b := 0; b < batch; b++ {
+				for c := 0; c < channels; c++ {
+					for r := 0; r < repeats; r++ {
+						srcStart := b*channels*elementSize + c*elementSize
+						destStart := b*channels*repeats*elementSize + (c*repeats+r)*elementSize
+						copy(newData[destStart:destStart+elementSize],
+							t.Data[srcStart:srcStart+elementSize])
+					}
+				}
+			}
+		default:
+			panic("Spatial dimension repeating not implemented")
+		}
+	}
+	return NewTensor(newData, newShape)
+}

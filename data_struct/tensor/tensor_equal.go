@@ -6,6 +6,34 @@ import (
 	"math"
 )
 
+func (t *Tensor) EqualFloat5(other *Tensor) bool {
+	// 1. 空指针检查
+	if t == nil || other == nil {
+		return t == nil && other == nil
+	}
+
+	// 2. 形状比较
+	if !shapeEqual(t.Shape, other.Shape) {
+		return false
+	}
+
+	// 3. 数据长度验证
+	if len(t.Data) != len(other.Data) {
+		return false
+	}
+
+	for i := range t.Data {
+		//TODO
+		if math.Abs(t.Data[i]-other.Data[i]) > 0.3 {
+			fmt.Println("---", fmt.Sprintf("%.5f", t.Data[i]), fmt.Sprintf("%.5f", other.Data[i]))
+			log.Println(i, t.Data[i], " != ", other.Data[i])
+			return false
+		}
+	}
+
+	return true
+}
+
 func (t *Tensor) EqualFloat16(other *Tensor) bool {
 	// 1. 空指针检查
 	if t == nil || other == nil {

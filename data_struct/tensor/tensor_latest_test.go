@@ -2,6 +2,7 @@ package tensor
 
 import (
 	"math"
+	"reflect"
 	"slices"
 	"testing"
 )
@@ -458,5 +459,291 @@ func Test2DMatrixMultiplication(t *testing.T) {
 		t.Errorf("结果错误:\n期望: %v\n实际: %v",
 			expected,
 			result.Data)
+	}
+}
+
+func TestRepeatInterleave(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *Tensor
+		dim      int
+		repeats  int
+		expected *Tensor
+	}{
+		// 2D测试用例
+		{
+			name: "2D dim0 repeats2",
+			input: NewTensor(
+				[]float64{1, 2, 3, 4, 5, 6},
+				[]int{2, 3},
+			),
+			dim:     0,
+			repeats: 2,
+			expected: NewTensor(
+				[]float64{
+					1, 2, 3,
+					1, 2, 3,
+					4, 5, 6,
+					4, 5, 6,
+				},
+				[]int{4, 3},
+			),
+		},
+		{
+			name: "2D dim1 repeats3",
+			input: NewTensor(
+				[]float64{1, 2, 3, 4},
+				[]int{2, 2},
+			),
+			dim:     1,
+			repeats: 3,
+			expected: NewTensor(
+				[]float64{
+					1, 1, 1, 2, 2, 2,
+					3, 3, 3, 4, 4, 4,
+				},
+				[]int{2, 6},
+			),
+		},
+		{
+			name: "2D dim1 repeats1 (no change)",
+			input: NewTensor(
+				[]float64{1, 2, 3, 4},
+				[]int{2, 2},
+			),
+			dim:     1,
+			repeats: 1,
+			expected: NewTensor(
+				[]float64{1, 2, 3, 4},
+				[]int{2, 2},
+			),
+		},
+
+		// 4D测试用例
+		{
+			name: "4D dim1 repeats2 channels",
+			input: NewTensor(
+				[]float64{
+					1, 2, 3, 4, // 通道1 (2x2)
+					5, 6, 7, 8, // 通道2
+				},
+				[]int{1, 2, 2, 2}, // (batch, channels, height, width)
+			),
+			dim:     1,
+			repeats: 2,
+			expected: NewTensor(
+				[]float64{
+					1, 2, 3, 4, // 通道1 重复
+					1, 2, 3, 4, // 重复副本
+					5, 6, 7, 8, // 通道2 重复
+					5, 6, 7, 8, // 重复副本
+				},
+				[]int{1, 4, 2, 2},
+			),
+		},
+		{
+			name: "4D dim0 repeats3 batch",
+			input: NewTensor(
+				[]float64{
+					1, 1, 1, 1, // 批次1
+					2, 2, 2, 2, // 批次2
+				},
+				[]int{2, 1, 2, 2},
+			),
+			dim:     0,
+			repeats: 3,
+			expected: NewTensor(
+				[]float64{
+					1, 1, 1, 1,
+					1, 1, 1, 1,
+					1, 1, 1, 1,
+					2, 2, 2, 2,
+					2, 2, 2, 2,
+					2, 2, 2, 2,
+				},
+				[]int{6, 1, 2, 2},
+			),
+		},
+		{
+			name: "4D multi-batch channels repeat",
+			input: NewTensor(
+				[]float64{
+					// Batch 1
+					1, 1, 2, 2, // 通道1 (2x2)
+					3, 3, 4, 4, // 通道2
+					// Batch 2
+					5, 5, 6, 6,
+					7, 7, 8, 8,
+				},
+				[]int{2, 2, 2, 2},
+			),
+			dim:     1,
+			repeats: 2,
+			expected: NewTensor(
+				[]float64{
+					// Batch1
+					1, 1, 2, 2, // 通道1 ×2
+					1, 1, 2, 2,
+					3, 3, 4, 4, // 通道2 ×2
+					3, 3, 4, 4,
+					// Batch2
+					5, 5, 6, 6,
+					5, 5, 6, 6,
+					7, 7, 8, 8,
+					7, 7, 8, 8,
+				},
+				[]int{2, 4, 2, 2},
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.input.RepeatInterleave(tt.dim, tt.repeats)
+
+			// 验证数据
+			if !result.Equal(tt.expected) {
+				t.Errorf("数据不符\n期望: %v %v 实际: %v %v", tt.expected.Data[:5], result.Data[:5], tt.expected.Shape, result.Shape)
+			}
+		})
+	}
+}
+
+func TestGetValue(t *testing.T) {
+	// 测试用例表
+	tests := []struct {
+		name      string
+		tensor    *Tensor
+		indices   []int
+		expected  float64
+		wantPanic bool
+	}{
+		// 一维张量
+		{
+			name:      "1D valid index",
+			tensor:    NewTensor([]float64{1, 2, 3, 4}, []int{4}),
+			indices:   []int{2},
+			expected:  3,
+			wantPanic: false,
+		},
+		{
+			name:      "1D index out of range",
+			tensor:    NewTensor([]float64{1, 2}, []int{2}),
+			indices:   []int{2},
+			wantPanic: true,
+		},
+
+		// 二维张量
+		{
+			name:      "2D valid index",
+			tensor:    NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{2, 3}),
+			indices:   []int{1, 2}, // 第二行第三列
+			expected:  6,
+			wantPanic: false,
+		},
+		{
+			name:      "2D negative index",
+			tensor:    NewTensor([]float64{1, 2, 3}, []int{3, 1}),
+			indices:   []int{-1, 0},
+			wantPanic: true,
+		},
+
+		// 三维张量
+		{
+			name:      "3D valid index",
+			tensor:    NewTensor([]float64{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2}),
+			indices:   []int{1, 0, 1},
+			expected:  6, // 正确值
+			wantPanic: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); (r != nil) != tt.wantPanic {
+					t.Errorf("GetValue() panic = %v, wantPanic %v", r, tt.wantPanic)
+				}
+			}()
+
+			got := tt.tensor.GetValue(tt.indices)
+			if got != tt.expected {
+				t.Errorf("GetValue() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMaskedFill1(t *testing.T) {
+	// 测试用例表
+	tests := []struct {
+		name     string
+		input    *Tensor
+		mask     *Tensor
+		value    float64
+		expected []float64
+	}{
+		// 基础测试：无需广播
+		{
+			name:     "No broadcast - exact shape match",
+			input:    NewTensor([]float64{1, 2, 3, 4}, []int{2, 2}),
+			mask:     NewTensor([]float64{0, 1, 1, 0}, []int{2, 2}),
+			value:    -99,
+			expected: []float64{1, -99, -99, 4},
+		},
+
+		//// 广播测试：mask维度少于输入张量
+		//{
+		//	name: "Broadcast mask with fewer dimensions",
+		//	input: NewTensor([]float64{
+		//		1, 2, 3,
+		//		4, 5, 6,
+		//		7, 8, 9,
+		//		10, 11, 12,
+		//	}, []int{2, 2, 3}), // 形状：2层, 2行, 3列
+		//	mask: NewTensor([]float64{
+		//		0, 1, // 最后一个维度为1的mask [2,1]
+		//		1, 0,
+		//	}, []int{2, 2}), // 广播至 [2,2,3]
+		//	value: -99,
+		//	expected: []float64{
+		//		1, -99, -99, // 第一层第一行：mask[0,0]=0 → 不填充
+		//		4, 5, 6, // 第一层第二行：mask[0,1]=1 → 全填充
+		//
+		//		-99, -99, -99, // 第二层第一行：mask[1,0]=1 → 全填充
+		//		10, 11, 12, // 第二层第二行：mask[1,1]=0 → 不填充
+		//	},
+		//},
+
+		// 广播测试：mask维度为1的维度
+		{
+			name:  "Broadcast with size-1 dimensions",
+			input: NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{3, 2}),
+			mask:  NewTensor([]float64{0, 1}, []int{1, 2}), // 广播至 [3,2]
+			value: -99,
+			expected: []float64{
+				1, -99, // 第一行应用 mask [0,1]
+				3, -99, // 第二行相同
+				5, -99, // 第三行相同
+			},
+		},
+
+		// 边缘情况：全填充
+		{
+			name:     "Full masking",
+			input:    NewTensor([]float64{1, 2, 3}, []int{3}),
+			mask:     NewTensor([]float64{1, 1, 1}, []int{3}),
+			value:    0,
+			expected: []float64{0, 0, 0},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.input.MaskedFill(tt.mask, tt.value)
+			if !reflect.DeepEqual(result.Data, tt.expected) {
+				t.Errorf("MaskedFill() mismatch:\nGot: %v\nWant: %v", result.Data, tt.expected)
+			}
+		})
 	}
 }
