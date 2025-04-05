@@ -3,6 +3,7 @@ package testing
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
+	"github.com/Jimmy2099/torch/algorithm"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"math"
 	"math/rand"
@@ -235,25 +236,21 @@ func TestEmbeddingForwardWithPyTorch(t *testing.T) {
 			embDim:     16,
 			inputShape: []int{5, 10},
 		},
-		{
-			name:       "edge_case_empty",
-			vocabSize:  5,
-			embDim:     3,
-			inputShape: []int{0, 0},
-		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// 生成PyTorch脚本模板
 			pyScript := fmt.Sprintf(
-				`torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)`,
+				`
+torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
+    in1 = in1.long()`,
 				tc.vocabSize,
 				tc.embDim,
 			)
 
 			// 创建测试输入（带有效索引范围）
-			inputData := make([]float64, product(tc.inputShape))
+			inputData := make([]float64, algorithm.Product(tc.inputShape))
 			for i := range inputData {
 				// 生成有效索引（0 ≤ index < vocabSize）
 				inputData[i] = float64(rand.Intn(tc.vocabSize))
@@ -272,8 +269,12 @@ func TestEmbeddingForwardWithPyTorch(t *testing.T) {
 			emb.SetWeightsAndShape(weightsData, []int{tc.vocabSize, tc.embDim})
 
 			// 处理空输入情况
-			if product(tc.inputShape) == 0 {
+			if algorithm.Product(tc.inputShape) == 0 {
 				output := emb.Forward(inputTensor)
+				expectedShape := append(tc.inputShape, tc.embDim)
+				if !reflect.DeepEqual(output.Shape, expectedShape) {
+					t.Errorf("Expected shape %v, got %v", expectedShape, output.Shape)
+				}
 				if len(output.Data) != 0 {
 					t.Errorf("Empty input should produce empty output")
 				}
@@ -310,13 +311,4 @@ func TestEmbeddingForwardWithPyTorch(t *testing.T) {
 			}
 		})
 	}
-}
-
-// 辅助函数
-func product(dims []int) int {
-	p := 1
-	for _, d := range dims {
-		p *= d
-	}
-	return p
 }

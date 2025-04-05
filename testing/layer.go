@@ -120,9 +120,9 @@ def process_data(weight,bias,in1):
     #out = in1*2
     #return out
     layer = %s
-    if not layer.weight ==None and not weight==None:
+    if hasattr(layer, 'weight') and layer.weight is not None and not weight==None:
         layer.weight.data = weight
-    if not layer.bias ==None and not bias==None:
+    if hasattr(layer, 'bias')   and  layer.bias  is not None and not bias==None:
         layer.bias.data = bias
     out = layer(in1)
     return out.detach()
