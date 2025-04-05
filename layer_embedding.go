@@ -15,6 +15,9 @@ type Embedding struct {
 	LastIndices []int // 缓存前向传播的整数索引
 }
 
+func (e *Embedding) SetBiasAndShape(data []float64, shape []int) {
+}
+
 func (e *Embedding) GetWeights() *tensor.Tensor {
 	return e.Weights
 }
