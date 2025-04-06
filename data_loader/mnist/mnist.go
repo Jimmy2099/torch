@@ -32,7 +32,7 @@ func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {
 		return nil, fmt.Errorf("labels data is nil")
 	}
 
-	// 将[][]float64转换为Matrix
+	// 将[][]float32转换为Matrix
 	imageMatrix := matrix.NewMatrixFromSlice(images)
 	labelMatrix := matrix.NewMatrixFromSlice(labels)
 

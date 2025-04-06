@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 	"math/rand"
 	"time"
 )
@@ -11,10 +11,10 @@ import (
 
 // NeuronCellUnit represents a neuron, storing weights, bias, forward propagation output, and error term
 type NeuronCellUnit struct {
-	weights []float64
-	bias    float64
-	output  float64
-	delta   float64
+	weights []float32
+	bias    float32
+	output  float32
+	delta   float32
 }
 
 // Layer represents a layer of neurons
@@ -28,22 +28,22 @@ type Network struct {
 }
 
 // sigmoid is the activation function
-func sigmoid(x float64) float64 {
+func sigmoid(x float32) float32 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
 // sigmoidDerivative is the derivative of sigmoid, used for backpropagation
-func sigmoidDerivative(output float64) float64 {
+func sigmoidDerivative(output float32) float32 {
 	return output * (1 - output)
 }
 
 // newNeuron randomly initializes a neuron, numInputs is the number of inputs for this neuron
 func newNeuron(numInputs int) NeuronCellUnit {
-	weights := make([]float64, numInputs)
+	weights := make([]float32, numInputs)
 	for i := range weights {
-		weights[i] = rand.Float64()*0.1 - 0.05 // Small random values
+		weights[i] = rand.Float32()*0.1 - 0.05 // Small random values
 	}
-	bias := rand.Float64()*0.1 - 0.05
+	bias := rand.Float32()*0.1 - 0.05
 	return NeuronCellUnit{weights: weights, bias: bias}
 }
 
@@ -72,11 +72,11 @@ func newNetwork(numInputs int, hiddenLayerSizes []int, numOutputs int) *Network 
 }
 
 // forward performs one forward propagation and returns the final output
-func (net *Network) forward(input []float64) []float64 {
+func (net *Network) forward(input []float32) []float32 {
 	outputs := input
 	for li := 0; li < len(net.layers); li++ {
 		layer := &net.layers[li]
-		newOutputs := make([]float64, len(layer.neurons))
+		newOutputs := make([]float32, len(layer.neurons))
 		for ni := 0; ni < len(layer.neurons); ni++ {
 			sum := layer.neurons[ni].bias
 			for wi := 0; wi < len(layer.neurons[ni].weights); wi++ {
@@ -91,7 +91,7 @@ func (net *Network) forward(input []float64) []float64 {
 }
 
 // backward calculates the errors for each layer using backpropagation and updates weights and biases
-func (net *Network) backward(expected []float64, learningRate float64, inputs []float64) {
+func (net *Network) backward(expected []float32, learningRate float32, inputs []float32) {
 	// Calculate delta for output layer
 	outputLayerIndex := len(net.layers) - 1
 	outputLayer := &net.layers[outputLayerIndex]
@@ -106,7 +106,7 @@ func (net *Network) backward(expected []float64, learningRate float64, inputs []
 		layer := &net.layers[li]
 		nextLayer := net.layers[li+1]
 		for i := 0; i < len(layer.neurons); i++ {
-			var errorSum float64
+			var errorSum float32
 			for j := 0; j < len(nextLayer.neurons); j++ {
 				errorSum += nextLayer.neurons[j].weights[i] * nextLayer.neurons[j].delta
 			}
@@ -116,12 +116,12 @@ func (net *Network) backward(expected []float64, learningRate float64, inputs []
 
 	// Update weights and biases for all layers
 	for li := 0; li < len(net.layers); li++ {
-		var layerInputs []float64
+		var layerInputs []float32
 		if li == 0 {
 			layerInputs = inputs
 		} else {
 			prevLayer := net.layers[li-1]
-			layerInputs = make([]float64, len(prevLayer.neurons))
+			layerInputs = make([]float32, len(prevLayer.neurons))
 			for i := 0; i < len(prevLayer.neurons); i++ {
 				layerInputs[i] = prevLayer.neurons[i].output
 			}
@@ -141,26 +141,26 @@ func main() {
 	// Generate data: randomly generate points in a 2D plane, and classify using the equation y = 2x + 1
 	// If the y-coordinate is greater than 2x+1, the label is 1; otherwise, it's 0
 	numPoints := 200
-	var inputs [][]float64
-	var expectedOutputs [][]float64
+	var inputs [][]float32
+	var expectedOutputs [][]float32
 
 	// Randomly generate points within the x, y range
 	for i := 0; i < numPoints; i++ {
-		x := rand.Float64()*10 - 5 // x in [-5, 5]
-		y := rand.Float64()*10 - 5 // y in [-5, 5]
-		inputs = append(inputs, []float64{x, y})
-		label := 0.0
+		x := rand.Float32()*10 - 5 // x in [-5, 5]
+		y := rand.Float32()*10 - 5 // y in [-5, 5]
+		inputs = append(inputs, []float32{x, y})
+		label := float32(0.0)
 		if y > 2*x+1 {
 			label = 1.0
 		}
-		expectedOutputs = append(expectedOutputs, []float64{label})
+		expectedOutputs = append(expectedOutputs, []float32{label})
 	}
 
 	// Create a neural network with 2 inputs, one hidden layer (2 neurons), and 1 output for binary classification
 	net := newNetwork(2, []int{2}, 1)
 
 	epochs := 10000
-	learningRate := 0.5
+	learningRate := float32(0.5)
 
 	// Training process
 	for epoch := 0; epoch < epochs; epoch++ {

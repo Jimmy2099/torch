@@ -2,7 +2,7 @@ package matrix
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Multiply performs matrix multiplication: a * b
@@ -15,7 +15,7 @@ func Multiply(a, b *Matrix) *Matrix {
 	result := NewMatrix(a.Rows, b.Cols)
 	for i := 0; i < a.Rows; i++ {
 		for j := 0; j < b.Cols; j++ {
-			sum := 0.0
+			var sum float32
 			for k := 0; k < a.Cols; k++ {
 				sum += a.Data[i][k] * b.Data[k][j]
 			}
@@ -35,7 +35,7 @@ func (a *Matrix) Multiply(b *Matrix) *Matrix {
 	result := NewMatrix(a.Rows, b.Cols)
 	for i := 0; i < a.Rows; i++ {
 		for j := 0; j < b.Cols; j++ {
-			sum := 0.0
+			var sum float32
 			for k := 0; k < a.Cols; k++ {
 				sum += a.Data[i][k] * b.Data[k][j]
 			}
@@ -100,7 +100,7 @@ func (m *Matrix) Transpose() *Matrix {
 }
 
 // Apply applies a function to each element of the matrix
-func (m *Matrix) Apply(fn func(float64) float64) *Matrix {
+func (m *Matrix) Apply(fn func(float32) float32) *Matrix {
 	result := NewMatrix(m.Rows, m.Cols)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
@@ -111,7 +111,7 @@ func (m *Matrix) Apply(fn func(float64) float64) *Matrix {
 }
 
 // Apply applies a function to each element of the matrix
-func Apply(m *Matrix, fn func(float64) float64) *Matrix {
+func Apply(m *Matrix, fn func(float32) float32) *Matrix {
 	result := NewMatrix(m.Rows, m.Cols)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
@@ -122,17 +122,17 @@ func Apply(m *Matrix, fn func(float64) float64) *Matrix {
 }
 
 // SubScalar 矩阵每个元素减去标量
-func (m *Matrix) SubScalar(s float64) *Matrix {
-	return m.Apply(func(x float64) float64 { return x - s })
+func (m *Matrix) SubScalar(s float32) *Matrix {
+	return m.Apply(func(x float32) float32 { return x - s })
 }
 
 // DivScalar 矩阵每个元素除以标量
-func (m *Matrix) DivScalar(s float64) *Matrix {
-	return m.Apply(func(x float64) float64 { return x / s })
+func (m *Matrix) DivScalar(s float32) *Matrix {
+	return m.Apply(func(x float32) float32 { return x / s })
 }
 
 // Max 获取矩阵最大值
-func (m *Matrix) Max() float64 {
+func (m *Matrix) Max() float32 {
 	maxN := math.Inf(-1)
 	for i := range m.Data {
 		for j := range m.Data[i] {
@@ -145,12 +145,12 @@ func (m *Matrix) Max() float64 {
 }
 
 // Mean 计算矩阵元素的平均值
-func (m *Matrix) Mean() float64 {
-	return m.Sum() / float64(m.Rows*m.Cols)
+func (m *Matrix) Mean() float32 {
+	return m.Sum() / float32(m.Rows*m.Cols)
 }
 
 // Power raises each element of the matrix to the given power
-func Power(m *Matrix, power float64) *Matrix {
+func Power(m *Matrix, power float32) *Matrix {
 	result := NewMatrix(m.Rows, m.Cols)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
@@ -208,7 +208,7 @@ func PolynomialFeatures(X *Matrix, degree int) *Matrix {
 		idx := 1
 		for d := 1; d <= degree; d++ {
 			for f := 0; f < X.Rows; f++ {
-				result.Data[idx][s] = math.Pow(X.Data[f][s], float64(d))
+				result.Data[idx][s] = math.Pow(X.Data[f][s], float32(d))
 				idx++
 			}
 		}
@@ -250,8 +250,8 @@ func HadamardProduct(a, b *Matrix) *Matrix {
 }
 
 // Sum returns the sum of all elements in the matrix
-func (m *Matrix) Sum() float64 {
-	sum := 0.0
+func (m *Matrix) Sum() float32 {
+	var sum float32
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
 			sum += m.Data[i][j]
@@ -261,8 +261,8 @@ func (m *Matrix) Sum() float64 {
 }
 
 // Sum returns the sum of all elements in the matrix
-func Sum(m *Matrix) float64 {
-	sum := 0.0
+func Sum(m *Matrix) float32 {
+	var sum float32
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
 			sum += m.Data[i][j]
@@ -281,7 +281,7 @@ func (m *Matrix) Dot(other *Matrix) *Matrix {
 	result := NewMatrix(m.Rows, other.Cols)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < other.Cols; j++ {
-			sum := 0.0
+			var sum float32
 			for k := 0; k < m.Cols; k++ {
 				sum += m.Data[i][k] * other.Data[k][j]
 			}
@@ -341,7 +341,7 @@ func Add(a, b *Matrix) *Matrix {
 func (m *Matrix) SumRows() *Matrix {
 	result := NewMatrix(m.Rows, 1)
 	for i := 0; i < m.Rows; i++ {
-		sum := 0.0
+		var sum float32
 		for j := 0; j < m.Cols; j++ {
 			sum += m.Data[i][j]
 		}
@@ -351,7 +351,7 @@ func (m *Matrix) SumRows() *Matrix {
 }
 
 // MulScalar multiplies each element of the matrix by a scalar value
-func (m *Matrix) MulScalar(scalar float64) *Matrix {
+func (m *Matrix) MulScalar(scalar float32) *Matrix {
 	result := NewMatrix(m.Rows, m.Cols)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
@@ -429,7 +429,7 @@ func (m *Matrix) Softmax() *Matrix {
 	// 先计算指数
 	exp := m.Apply(math.Exp)
 	// 计算每行的和
-	rowSums := make([]float64, m.Rows)
+	rowSums := make([]float32, m.Rows)
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
 			rowSums[i] += exp.Data[i][j]
@@ -456,7 +456,7 @@ func (m *Matrix) ArgMax() *Matrix {
 				maxIdx = j
 			}
 		}
-		result.Data[i][0] = float64(maxIdx)
+		result.Data[i][0] = float32(maxIdx)
 	}
 	return result
 }

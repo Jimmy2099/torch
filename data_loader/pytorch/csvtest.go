@@ -10,7 +10,7 @@ import (
 )
 
 // 读取 CSV 文件并返回浮动数值的切片
-func readCSV(filename string) ([]float64, error) {
+func readCSV(filename string) ([]float32, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func readCSV(filename string) ([]float64, error) {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	var data []float64
+	var data []float32
 
 	// 读取每一行
 	for {
@@ -59,7 +59,7 @@ func main() {
 	fmt.Printf("biases维度: %d行, %d列\n", biasRows, biasCols)
 
 	// 创建一个输入向量（784个元素），此处用全零初始化
-	inputData := make([]float64, 784)
+	inputData := make([]float32, 784)
 	input := mat64.NewDense(1, 784, inputData)
 
 	// 计算线性变换：output = input * weights^T + biases

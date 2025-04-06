@@ -2,7 +2,7 @@ package torch
 
 import (
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // SoftmaxLayer 实现带稳定性的Softmax层

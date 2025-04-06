@@ -142,7 +142,7 @@ func NewAutoEncoder() *AutoEncoder {
 		weightFilePath := filepath.Join(dataPath, weightFileName)
 		fmt.Printf("Attempting to load weights from: %s\n", weightFilePath)
 
-		// Assuming LoadMatrixFromCSV returns a struct with a Data field (like [][]float64)
+		// Assuming LoadMatrixFromCSV returns a struct with a Data field (like [][]float32)
 		weightMatrix, err := torch.LoadMatrixFromCSV(weightFilePath)
 		if err != nil {
 			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
@@ -150,7 +150,7 @@ func NewAutoEncoder() *AutoEncoder {
 
 		// Set weights using the method from the LinearLayer
 		// Adapt this if the method signature is different (e.g., expects *tensor.Tensor)
-		info.goLayer.SetWeights(weightMatrix.Data) // Assuming SetWeights takes [][]float64
+		info.goLayer.SetWeights(weightMatrix.Data) // Assuming SetWeights takes [][]float32
 
 		// Reshape the internal weight tensor *after* setting the data
 		if info.goLayer.Weights == nil {
@@ -170,7 +170,7 @@ func NewAutoEncoder() *AutoEncoder {
 		}
 
 		// Set bias using the method from the LinearLayer
-		info.goLayer.SetBias(biasMatrix.Data) // Assuming SetBias takes [][]float64
+		info.goLayer.SetBias(biasMatrix.Data) // Assuming SetBias takes [][]float32
 
 		// Reshape the internal bias tensor *after* setting the data
 		if info.goLayer.Bias == nil {
@@ -351,16 +351,16 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 	}
 
 	// Convert the CSV data to a flat matrix (784,)
-	data := make([]float64, rows*cols)
+	data := make([]float32, rows*cols)
 
 	for i, line := range lines {
 		for j, value := range line {
-			// Convert string to float64
+			// Convert string to float32
 			val, err := strconv.ParseFloat(value, 64)
 			if err != nil {
 				return nil, err
 			}
-			data[i*cols+j] = val
+			data[i*cols+j] = float32(val)
 		}
 	}
 

@@ -1,6 +1,6 @@
 package matrix
 
-import "math"
+import math "github.com/chewxy/math32"
 
 // Conv2D 实现二维卷积操作
 func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {

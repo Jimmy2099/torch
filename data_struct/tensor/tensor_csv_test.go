@@ -14,7 +14,7 @@ import (
 // Assumes a NewTensor function exists that validates shape and data.
 // If NewTensor is not available, we can manually create the struct,
 // but using the constructor is better if it enforces invariants.
-func newTestTensor(t *testing.T, shape []int, data []float64) *Tensor {
+func newTestTensor(t *testing.T, shape []int, data []float32) *Tensor {
 	// If you have a constructor like NewTensor, use it:
 	// tensor, err := NewTensor(shape, data)
 	// if err != nil {
@@ -108,31 +108,31 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 	testCases := []struct {
 		name        string
 		tensorShape []int
-		tensorData  []float64
+		tensorData  []float32
 		expectedCSV [][]string // Expected content as slice of slices of strings
 	}{
 		{
 			name:        "Scalar Tensor",
 			tensorShape: []int{},
-			tensorData:  []float64{42.5},
+			tensorData:  []float32{42.5},
 			expectedCSV: [][]string{{"42.5"}},
 		},
 		{
 			name:        "1D Vector (Row)",
 			tensorShape: []int{4},
-			tensorData:  []float64{1.1, 2.2, 3.3, 4.4},
+			tensorData:  []float32{1.1, 2.2, 3.3, 4.4},
 			expectedCSV: [][]string{{"1.1", "2.2", "3.3", "4.4"}},
 		},
 		{
 			name:        "2D Matrix",
 			tensorShape: []int{2, 3},
-			tensorData:  []float64{1, 2, 3, 4, 5, 6},
+			tensorData:  []float32{1, 2, 3, 4, 5, 6},
 			expectedCSV: [][]string{{"1", "2", "3"}, {"4", "5", "6"}},
 		},
 		{
 			name:        "3D Tensor (Flattened)",
 			tensorShape: []int{2, 2, 2},
-			tensorData:  []float64{1, 2, 3, 4, 5, 6, 7, 8},
+			tensorData:  []float32{1, 2, 3, 4, 5, 6, 7, 8},
 			expectedCSV: [][]string{
 				{"1", "2"}, // First inner vector of first matrix
 				{"3", "4"}, // Second inner vector of first matrix
@@ -143,19 +143,19 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 		{
 			name:        "Empty Tensor (Shape [0])",
 			tensorShape: []int{0},
-			tensorData:  []float64{},
+			tensorData:  []float32{},
 			expectedCSV: [][]string{}, // Expect an empty file (no records)
 		},
 		{
 			name:        "Empty Tensor (Shape [3, 0])",
 			tensorShape: []int{3, 0},
-			tensorData:  []float64{},
+			tensorData:  []float32{},
 			expectedCSV: [][]string{}, // Expect an empty file (no records)
 		},
 		{
 			name:        "Tensor with Zeros",
 			tensorShape: []int{2, 2},
-			tensorData:  []float64{1, 0, 0, -5},
+			tensorData:  []float32{1, 0, 0, -5},
 			expectedCSV: [][]string{{"1", "0"}, {"0", "-5"}},
 		},
 	}
@@ -219,25 +219,25 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		},
 		{
 			name:        "Scalar shape with incorrect data length",
-			tensor:      &Tensor{Shape: []int{}, Data: []float64{1, 2}}, // Manually create invalid state
+			tensor:      &Tensor{Shape: []int{}, Data: []float32{1, 2}}, // Manually create invalid state
 			filename:    validFilename,
 			expectedErr: "invalid tensor state: empty shape but 2 data elements", // Matches error in SaveToCSV
 		},
 		{
 			name:        "1D Shape/Data Mismatch (Data too short)",
-			tensor:      newTestTensor(t, []int{5}, []float64{1, 2, 3}), // Use helper, mismatch allowed for test
+			tensor:      newTestTensor(t, []int{5}, []float32{1, 2, 3}), // Use helper, mismatch allowed for test
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match shape[0] (5)",
 		},
 		{
 			name:        "1D Shape/Data Mismatch (Data too long)",
-			tensor:      newTestTensor(t, []int{2}, []float64{1, 2, 3}),
+			tensor:      newTestTensor(t, []int{2}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match shape[0] (2)",
 		},
 		{
 			name:        "ND Shape/Data Mismatch",
-			tensor:      newTestTensor(t, []int{2, 2}, []float64{1, 2, 3}), // Expected 4 elements
+			tensor:      newTestTensor(t, []int{2, 2}, []float32{1, 2, 3}), // Expected 4 elements
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match product of shape dimensions (4)",
 		},
@@ -246,13 +246,13 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 			// This state should ideally be prevented by NewTensor, but test SaveToCSV's defense
 			// Note: If data is empty [], it's a valid empty tensor handled earlier.
 			// This tests the case where shape implies zero size but data exists.
-			tensor:      &Tensor{Shape: []int{2, 0}, Data: []float64{1.0}}, // Manually create inconsistent state
+			tensor:      &Tensor{Shape: []int{2, 0}, Data: []float32{1.0}}, // Manually create inconsistent state
 			filename:    validFilename,
 			expectedErr: "data length (1) does not match product of shape dimensions (0)", // Caught by general size validation
 		},
 		{
 			name:   "Invalid Filename (causes create error)",
-			tensor: newTestTensor(t, []int{1}, []float64{1}),
+			tensor: newTestTensor(t, []int{1}, []float32{1}),
 			// Use a path that likely cannot be created (e.g., empty string or invalid chars depending on OS)
 			// Using a directory as a file is a common way to trigger this cross-platform
 			filename:    tempDir,                 // Try to write to the directory itself
@@ -292,12 +292,12 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 	tests := []struct {
 		name  string
 		shape []int
-		data  []float64
+		data  []float32
 	}{
-		{"Vector", []int{3}, []float64{1, 2, 3}},
-		{"Matrix", []int{2, 3}, []float64{1, 2, 3, 4, 5, 6}},
-		{"3D Tensor", []int{2, 2, 2}, []float64{1, 2, 3, 4, 5, 6, 7, 8}},
-		{"Empty Tensor", []int{0}, []float64{}},
+		{"Vector", []int{3}, []float32{1, 2, 3}},
+		{"Matrix", []int{2, 3}, []float32{1, 2, 3, 4, 5, 6}},
+		{"3D Tensor", []int{2, 2, 2}, []float32{1, 2, 3, 4, 5, 6, 7, 8}},
+		{"Empty Tensor", []int{0}, []float32{}},
 	}
 
 	for _, tt := range tests {

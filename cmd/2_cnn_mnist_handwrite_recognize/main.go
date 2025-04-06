@@ -185,7 +185,7 @@ func NewCNN() *CNN {
 	return cnn
 }
 
-func (c *CNN) Backward(targets *matrix.Matrix, lr float64) {
+func (c *CNN) Backward(targets *matrix.Matrix, lr float32) {
 	//// 反向传播
 	//grad := c.fc2.Backward(targets, lr)
 	//grad = c.fc1.Backward(grad, lr)
@@ -274,16 +274,16 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 	}
 
 	// Convert the CSV data to a flat matrix (784,)
-	data := make([]float64, rows*cols)
+	data := make([]float32, rows*cols)
 
 	for i, line := range lines {
 		for j, value := range line {
-			// Convert string to float64
+			// Convert string to float32
 			val, err := strconv.ParseFloat(value, 64)
 			if err != nil {
 				return nil, err
 			}
-			data[i*cols+j] = val
+			data[i*cols+j] = float32(val)
 		}
 	}
 
@@ -359,7 +359,7 @@ func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
 
 	// Convert tensor to matrix for argmax operation
 	outputMatrix := &matrix.Matrix{
-		Data: [][]float64{output.Data},
+		Data: [][]float32{output.Data},
 		Rows: 1,
 		Cols: len(output.Data),
 	}

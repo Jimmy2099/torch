@@ -3,7 +3,7 @@ package tensor
 import (
 	"errors"
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Dimensions returns the number of dimensions of the tensor.
@@ -21,7 +21,7 @@ func (t *Tensor) DimSize(dim int) int {
 
 // Clone creates a deep copy of the tensor.
 func (t *Tensor) Clone() *Tensor {
-	newData := make([]float64, len(t.Data))
+	newData := make([]float32, len(t.Data))
 	copy(newData, t.Data)
 	newShape := make([]int, len(t.Shape))
 	copy(newShape, t.Shape)
@@ -37,7 +37,7 @@ func (t *Tensor) Multiply(other *Tensor) *Tensor {
 		panic("Tensors must have the same shape for element-wise multiplication")
 	}
 
-	resultData := make([]float64, len(t.Data))
+	resultData := make([]float32, len(t.Data))
 	for i := 0; i < len(t.Data); i++ {
 		resultData[i] = t.Data[i] * other.Data[i]
 	}
@@ -57,7 +57,7 @@ func (t *Tensor) Transpose() *Tensor {
 	rows := t.Shape[0]
 	cols := t.Shape[1]
 
-	newData := make([]float64, len(t.Data))
+	newData := make([]float32, len(t.Data))
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
 			newData[j*rows+i] = t.Data[i*cols+j]
@@ -100,7 +100,7 @@ func (t *Tensor) GetSample(batchIdx int) *Tensor {
 
 	channels, height, width := t.Shape[1], t.Shape[2], t.Shape[3]
 	sampleSize := channels * height * width
-	data := make([]float64, sampleSize)
+	data := make([]float32, sampleSize)
 
 	copy(data, t.Data[batchIdx*sampleSize:(batchIdx+1)*sampleSize])
 
@@ -132,7 +132,7 @@ func StackTensors(tensors []*Tensor, dim int) (*Tensor, error) {
 
 	// Combine data
 	elementSize := len(tensors[0].Data)
-	newData := make([]float64, len(tensors)*elementSize)
+	newData := make([]float32, len(tensors)*elementSize)
 	for i, t := range tensors {
 		copy(newData[i*elementSize:(i+1)*elementSize], t.Data)
 	}
@@ -144,7 +144,7 @@ func StackTensors(tensors []*Tensor, dim int) (*Tensor, error) {
 }
 
 // im2col_get_pixel implements boundary check for pixel access.
-func (t *Tensor) im2col_get_pixel(row, col, channel, pad int) float64 {
+func (t *Tensor) im2col_get_pixel(row, col, channel, pad int) float32 {
 	height, width := t.Shape[1], t.Shape[2]
 
 	row -= pad
@@ -173,7 +173,7 @@ func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
 	widthCol := (width-kernelSize)/stride + 1
 	channelsCol := channels * kernelSize * kernelSize
 
-	cols := NewTensor(make([]float64, channelsCol*heightCol*widthCol), []int{channelsCol, heightCol * widthCol})
+	cols := NewTensor(make([]float32, channelsCol*heightCol*widthCol), []int{channelsCol, heightCol * widthCol})
 	dataCol := cols.Data
 
 	for c := 0; c < channelsCol; c++ {
@@ -223,12 +223,12 @@ func (t *Tensor) Pad2D(pad int) *Tensor {
 	var padded *Tensor
 	if is4D {
 		padded = NewTensor(
-			make([]float64, batchSize*channels*newHeight*newWidth),
+			make([]float32, batchSize*channels*newHeight*newWidth),
 			[]int{batchSize, channels, newHeight, newWidth},
 		)
 	} else {
 		padded = NewTensor(
-			make([]float64, channels*newHeight*newWidth),
+			make([]float32, channels*newHeight*newWidth),
 			[]int{channels, newHeight, newWidth},
 		)
 	}
@@ -268,17 +268,17 @@ func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
 	if len(t.Shape) == 2 {
 		// Original 2D implementation
 		rows, cols := t.Shape[0], t.Shape[1]
-		var newData []float64
+		var newData []float32
 		var newShape []int
 
 		if dim == 0 {
-			newData = make([]float64, rows*repeats*cols)
+			newData = make([]float32, rows*repeats*cols)
 			newShape = []int{rows * repeats, cols}
 			for r := 0; r < repeats; r++ {
 				copy(newData[r*rows*cols:(r+1)*rows*cols], t.Data)
 			}
 		} else if dim == 1 {
-			newData = make([]float64, rows*cols*repeats)
+			newData = make([]float32, rows*cols*repeats)
 			newShape = []int{rows, cols * repeats}
 			for i := 0; i < rows; i++ {
 				for r := 0; r < repeats; r++ {
@@ -293,19 +293,19 @@ func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
 	} else {
 		// 4D tensor implementation (batch, channels, height, width)
 		batch, channels, height, width := t.Shape[0], t.Shape[1], t.Shape[2], t.Shape[3]
-		var newData []float64
+		var newData []float32
 		var newShape []int
 
 		switch dim {
 		case 0: // Repeat along batch dimension
-			newData = make([]float64, batch*repeats*channels*height*width)
+			newData = make([]float32, batch*repeats*channels*height*width)
 			newShape = []int{batch * repeats, channels, height, width}
 			for r := 0; r < repeats; r++ {
 				copy(newData[r*batch*channels*height*width:(r+1)*batch*channels*height*width],
 					t.Data)
 			}
 		case 1: // Repeat along channel dimension
-			newData = make([]float64, batch*channels*repeats*height*width)
+			newData = make([]float32, batch*channels*repeats*height*width)
 			newShape = []int{batch, channels * repeats, height, width}
 			for b := 0; b < batch; b++ {
 				for r := 0; r < repeats; r++ {
@@ -367,7 +367,7 @@ func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) (*Tensor
 	origHeight := inHeight + 2*pad
 	origWidth := inWidth + 2*pad
 
-	output := NewTensor(make([]float64, origHeight*origWidth), []int{origHeight, origWidth})
+	output := NewTensor(make([]float32, origHeight*origWidth), []int{origHeight, origWidth})
 
 	for i := 0; i < t.Shape[1]; i++ {
 		h := (i / origWidth) * stride
@@ -401,7 +401,7 @@ func (t *Tensor) Pad(padding int) *Tensor {
 	newRows := rows + 2*padding
 	newCols := cols + 2*padding
 
-	paddedData := make([]float64, newRows*newCols)
+	paddedData := make([]float32, newRows*newCols)
 	padded := NewTensor(paddedData, []int{newRows, newCols})
 
 	// Copy original data to the center of the padded tensor
@@ -423,7 +423,7 @@ func (t *Tensor) Crop(padding int) *Tensor {
 	newRows := rows - 2*padding
 	newCols := cols - 2*padding
 
-	croppedData := make([]float64, newRows*newCols)
+	croppedData := make([]float32, newRows*newCols)
 	cropped := NewTensor(croppedData, []int{newRows, newCols})
 
 	for i := 0; i < newRows; i++ {
@@ -477,7 +477,7 @@ func (t *Tensor) GetCols(start, end int) *Tensor {
 
 	rows := t.Shape[0]
 	newCols := end - start
-	resultData := make([]float64, rows*newCols)
+	resultData := make([]float32, rows*newCols)
 
 	for i := 0; i < rows; i++ {
 		for j := start; j < end; j++ {
@@ -512,7 +512,7 @@ func (t *Tensor) GetCol(colIdx int) *Tensor {
 	}
 
 	rows := t.Shape[0]
-	resultData := make([]float64, rows)
+	resultData := make([]float32, rows)
 
 	for i := 0; i < rows; i++ {
 		resultData[i] = t.Data[i*t.Shape[1]+colIdx]
@@ -529,10 +529,10 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 	}
 
 	if dim == 0 { // Sum along rows, returns a column vector
-		resultData := make([]float64, t.Shape[1])
+		resultData := make([]float32, t.Shape[1])
 
 		for j := 0; j < t.Shape[1]; j++ {
-			sum := 0.0
+			var sum float32
 			for i := 0; i < t.Shape[0]; i++ {
 				sum += t.Data[i*t.Shape[1]+j]
 			}
@@ -541,10 +541,10 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 
 		return NewTensor(resultData, []int{t.Shape[1]})
 	} else if dim == 1 { // Sum along columns, returns a row vector
-		resultData := make([]float64, t.Shape[0])
+		resultData := make([]float32, t.Shape[0])
 
 		for i := 0; i < t.Shape[0]; i++ {
-			sum := 0.0
+			var sum float32
 			for j := 0; j < t.Shape[1]; j++ {
 				sum += t.Data[i*t.Shape[1]+j]
 			}
@@ -592,7 +592,7 @@ func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, 
 	}
 
 	// Initialize output tensor
-	output := NewTensor(make([]float64, batchSize*outChannels*outHeight*outWidth),
+	output := NewTensor(make([]float32, batchSize*outChannels*outHeight*outWidth),
 		[]int{batchSize, outChannels, outHeight, outWidth})
 
 	// Process each sample in batch
@@ -640,7 +640,7 @@ func (t *Tensor) Expand(targetShape []int) *Tensor {
 	}
 
 	// Create new data slice
-	newData := make([]float64, totalElements)
+	newData := make([]float32, totalElements)
 
 	// Calculate strides for original and target shapes
 	origStrides := make([]int, len(t.Shape))
@@ -762,14 +762,14 @@ func (t *Tensor) GetRow(row int) *Tensor {
 		panic("row index out of range")
 	}
 
-	data := make([]float64, t.Shape[1])
+	data := make([]float32, t.Shape[1])
 	copy(data, t.Data[row*t.Shape[1]:(row+1)*t.Shape[1]])
 
 	return NewTensor(data, []int{1, t.Shape[1]})
 }
 
 func (t *Tensor) Sigmoid() *Tensor {
-	data := make([]float64, len(t.Data))
+	data := make([]float32, len(t.Data))
 	for i, val := range t.Data {
 		data[i] = 1.0 / (1.0 + math.Exp(-val))
 	}

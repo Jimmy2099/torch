@@ -66,7 +66,7 @@ func (t Type) String() string {
 		return "int64"
 
 	case Float64:
-		return "float64"
+		return "float32"
 
 	default:
 		return fmt.Sprintf("unknown-type-%d", t)

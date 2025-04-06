@@ -62,7 +62,7 @@ func main() {
 
 		switch vv := v.(type) {
 		// 打印标量类型
-		case uint8, int8, uint16, int16, uint32, int32, float32, bool, string, uint64, int64, float64, fmt.Stringer:
+		case uint8, int8, uint16, int16, uint32, int32, float32, bool, string, uint64, int64, float32, fmt.Stringer:
 			print(k, vv)
 
 		// 打印数组类型
@@ -88,7 +88,7 @@ func main() {
 			printArray(k, vv)
 		case []int64:
 			printArray(k, vv)
-		case []float64:
+		case []float32:
 			printArray(k, vv)
 
 		default:

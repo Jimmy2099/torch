@@ -5,8 +5,8 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
+	math "github.com/chewxy/math32"
 	"log"
-	"math"
 	"reflect"
 	"testing"
 )
@@ -300,7 +300,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				script := `torch.nn.ReLU()`
-				input := tensor.Random(tc.inputShape, float64(tc.minVal), float64(tc.maxVal))
+				input := tensor.Random(tc.inputShape, float32(tc.minVal), float32(tc.maxVal))
 
 				l := torch.NewReLULayer()
 				result := GetLayerTestResult(script, l, input)
@@ -324,7 +324,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		momentum := 0.1
 
 		script := fmt.Sprintf(
-			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float64)`,
+			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float32)`,
 			numFeatures, eps, momentum,
 		)
 		// 输入形状 [batch, channels, height, width]
@@ -352,8 +352,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		testCases := []struct {
 			name        string
 			numFeatures int
-			eps         float64
-			momentum    float64
+			eps         float32
+			momentum    float32
 			inputShape  []int
 			weightShape []int
 			biasShape   []int
@@ -390,7 +390,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				script := fmt.Sprintf(
-					`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float64)`,
+					`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float32)`,
 					tc.numFeatures, tc.eps, tc.momentum,
 				)
 				input := tensor.Random(tc.inputShape, -1, 1)
@@ -572,7 +572,7 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				script := `torch.nn.Flatten(start_dim=0, end_dim=-1).to(dtype=torch.float64)`
+				script := `torch.nn.Flatten(start_dim=0, end_dim=-1).to(dtype=torch.float32)`
 				input := tensor.Random(tc.inputShape, -1, 1)
 
 				l := torch.NewFlattenLayer()
@@ -632,7 +632,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				script := `torch.nn.Tanh()`
-				input := tensor.Random(tc.inputShape, float64(tc.inputRange[0]*1000), float64(tc.inputRange[1]*1000))
+				input := tensor.Random(tc.inputShape, float32(tc.inputRange[0]*1000), float32(tc.inputRange[1]*1000))
 
 				l := layer.NewTanhLayer()
 				result := GetLayerTestResult(script, l, input)
@@ -643,7 +643,7 @@ func TestGetLayerTestResult(t *testing.T) {
 					if v < -1 || v > 1 {
 						t.Errorf("%s: Output[%d] out of range: %.4f", tc.name, i, v)
 					}
-					if math.Abs(float64(v-expected.Data[i])) > 1e-5 {
+					if math.Abs(float32(v-expected.Data[i])) > 1e-5 {
 						t.Errorf("%s: Data mismatch at %d: %.4f vs %.4f",
 							tc.name, i, v, expected.Data[i])
 					}
@@ -654,7 +654,7 @@ func TestGetLayerTestResult(t *testing.T) {
 }
 
 func TestPointerSafety(t *testing.T) {
-	x := tensor.NewTensor([]float64{1, 2}, []int{1, 2})
+	x := tensor.NewTensor([]float32{1, 2}, []int{1, 2})
 	layer := torch.NewLinearLayer(2, 3)
 
 	// 测试Clone深拷贝
@@ -665,7 +665,7 @@ func TestPointerSafety(t *testing.T) {
 	}
 
 	// 测试权重独立
-	w := []float64{1, 2, 3, 4, 5, 6}
+	w := []float32{1, 2, 3, 4, 5, 6}
 	layer.SetWeights(w)
 	w[0] = 9
 	if layer.Weights.Data[0] == 9 {
@@ -677,7 +677,7 @@ func TestReLUPointerSafety(t *testing.T) {
 	// 测试输入独立性
 	t.Run("InputIndependence", func(t *testing.T) {
 		relu := torch.NewReLULayer()
-		input := tensor.NewTensor([]float64{1.0, -2.0, 3.0}, []int{3})
+		input := tensor.NewTensor([]float32{1.0, -2.0, 3.0}, []int{3})
 		output := relu.Forward(input.Clone())
 
 		// 修改原始输入
@@ -693,7 +693,7 @@ func TestReLUPointerSafety(t *testing.T) {
 	t.Run("InplaceOperation", func(t *testing.T) {
 		relu := torch.NewReLULayer()
 		relu.SetInplace(true)
-		input := tensor.NewTensor([]float64{1.0, -2.0, 3.0}, []int{3})
+		input := tensor.NewTensor([]float32{1.0, -2.0, 3.0}, []int{3})
 		output := relu.Forward(input)
 		fmt.Sprint(output.Data[0])
 		// 验证输入是否被修改
@@ -708,7 +708,7 @@ func TestBatchNormPointerSafety(t *testing.T) {
 
 	// 测试权重独立性
 	t.Run("WeightIndependence", func(t *testing.T) {
-		weights := make([]float64, 256)
+		weights := make([]float32, 256)
 		copy(weights, bn.GetWeights().Data)
 
 		// 修改原始数组
@@ -757,7 +757,7 @@ func TestEmbeddingPointerSafety(t *testing.T) {
 
 	// 测试权重设置安全
 	t.Run("WeightSettingSafety", func(t *testing.T) {
-		weights := make([]float64, 10000*512)
+		weights := make([]float32, 10000*512)
 		copy(weights, emb.GetWeights().Data)
 		weights[0] = 999.0
 
@@ -772,7 +772,7 @@ func TestEmbeddingPointerSafety(t *testing.T) {
 
 	// 测试索引转换安全
 	t.Run("IndexConversionSafety", func(t *testing.T) {
-		indices := tensor.NewTensor([]float64{1.5, 2.0}, []int{1, 2})
+		indices := tensor.NewTensor([]float32{1.5, 2.0}, []int{1, 2})
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("Non-integer index not detected")
@@ -787,7 +787,7 @@ func TestMaxPool2DSafety(t *testing.T) {
 
 	// 测试输入独立性
 	t.Run("InputIsolation", func(t *testing.T) {
-		input := tensor.NewTensor([]float64{1, 2, 3, 4}, []int{1, 1, 2, 2})
+		input := tensor.NewTensor([]float32{1, 2, 3, 4}, []int{1, 1, 2, 2})
 		output := pool.Forward(input.Clone())
 
 		// 修改原始输入
@@ -803,7 +803,7 @@ func TestMaxPool2DSafety(t *testing.T) {
 	t.Run("GradientPropagation", func(t *testing.T) {
 		input := tensor.Ones([]int{1, 3, 32, 32})
 		output := pool.Forward(input)
-		gradData := make([]float64, len(output.Data))
+		gradData := make([]float32, len(output.Data))
 		for i := range gradData {
 			gradData[i] = 0.5
 		}
@@ -824,7 +824,7 @@ func TestLayerSafety(t *testing.T) {
 	t.Run("ParameterIndependence", func(t *testing.T) {
 		if params := layer.Parameters(); len(params) > 0 {
 			original := params[0].Clone()
-			testData := make([]float64, len(original.Data))
+			testData := make([]float32, len(original.Data))
 			copy(testData, original.Data)
 			testData[0] = 999.0
 
@@ -837,7 +837,7 @@ func TestLayerSafety(t *testing.T) {
 	})
 
 	t.Run("InputOutputIsolation", func(t *testing.T) {
-		input := tensor.NewTensor([]float64{1, 2, 3}, []int{3})
+		input := tensor.NewTensor([]float32{1, 2, 3}, []int{3})
 		output := layer.Forward(input.Clone())
 		if output == nil {
 			t.Fatal("Output is nil")

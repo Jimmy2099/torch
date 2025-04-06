@@ -107,7 +107,7 @@ func Setting(camera *tensor.Tensor) {
 	imgui.SliderFloat("X", &cx, -10.0, 10)
 	imgui.SliderFloat("Y", &cy, -10.0, 10)
 	imgui.SliderFloat("Z", &cz, -10.0, 10)
-	camera.Data = []float64{float64(cx), float64(cy), float64(cz)}
+	camera.Data = []float32{float32(cx), float32(cy), float32(cz)}
 	imgui.End()
 }
 

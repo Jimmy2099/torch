@@ -11,7 +11,7 @@ func NewTensorWithShape(shape []int) *Tensor {
 		size *= dim
 	}
 	return &Tensor{
-		Data:  make([]float64, size),
+		Data:  make([]float32, size),
 		Shape: shape,
 	}
 }
@@ -19,19 +19,19 @@ func NewTensorWithShape(shape []int) *Tensor {
 func NewRandomTensor(shape []int) *Tensor {
 	t := NewTensorWithShape(shape)
 	for i := range t.Data {
-		t.Data[i] = rand.Float64()*2 - 1 // Random between -1 and 1
+		t.Data[i] = float32(rand.Float32())*2 - 1 // Random between -1 and 1
 	}
 	return t
 }
 
-func NewTensorFromSlice(data [][]float64) *Tensor {
+func NewTensorFromSlice(data [][]float32) *Tensor {
 	rows := len(data)
 	if rows == 0 {
 		return NewTensorWithShape([]int{0, 0})
 	}
 	cols := len(data[0])
 
-	flatData := make([]float64, 0, rows*cols)
+	flatData := make([]float32, 0, rows*cols)
 	for i := 0; i < rows; i++ {
 		if len(data[i]) != cols {
 			panic("All rows must have the same length")

@@ -11,7 +11,7 @@ func (t *Tensor) Sub_bak(other *Tensor) *Tensor {
 		}
 	}()
 	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] - other.Data[i]
 	}
@@ -21,7 +21,7 @@ func (t *Tensor) Sub_bak(other *Tensor) *Tensor {
 // Div 张量除法
 func (t *Tensor) Div_bak(other *Tensor) *Tensor {
 	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] / other.Data[i]
 	}
@@ -31,7 +31,7 @@ func (t *Tensor) Div_bak(other *Tensor) *Tensor {
 // Mul 张量乘法
 func (t *Tensor) Mul_bak(other *Tensor) *Tensor {
 	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] * other.Data[i]
 	}
@@ -41,7 +41,7 @@ func (t *Tensor) Mul_bak(other *Tensor) *Tensor {
 // Add 张量加法
 func (t *Tensor) Add_bak(other *Tensor) *Tensor {
 	// 需要实现张量形状检查
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] + other.Data[i]
 	}

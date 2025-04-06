@@ -53,14 +53,14 @@ type layerLoadInfo struct {
 }
 
 type Matrix struct {
-	Data [][]float64
+	Data [][]float32
 }
 
 func NewVAE() *VAE {
 	fmt.Println("Initializing VAE layers...")
 
-	bnEps := 1e-5
-	bnMomentum := 0.1
+	bnEps := float32(1e-5)
+	bnMomentum := float32(0.1)
 
 	vae := &VAE{
 		//	  (0): Conv2d(3, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
@@ -256,7 +256,7 @@ func main() {
 	log.Println("VAE model created and loaded.")
 	x := tensor.RandomNormal([]int{64, 64})
 	x = vae.Decode(x)
-	//x = x.Mul(tensor.NewTensor([]float64{0.5}, []int{1})).Add(tensor.NewTensor([]float64{0.5}, []int{1}))
+	//x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))
 	//x = x.Clamp(0, 1)
 	x.Reshape([]int{1, len(x.Data)})
 	x.SaveToCSV("./py/test.csv")
@@ -432,7 +432,7 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
 
 		{
-			x = x.Mul(tensor.NewTensor([]float64{0.5}, []int{1})).Add(tensor.NewTensor([]float64{0.5}, []int{1}))
+			x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))
 			x = x.Clamp(0, 1)
 		}
 

@@ -30,7 +30,7 @@ func LoadMatrixFromCSV(filename string) (*tensor.Tensor, error) {
 
 	rows := len(lines)
 	cols := len(lines[0])
-	data := make([]float64, 0, rows*cols)
+	data := make([]float32, 0, rows*cols)
 
 	for i := 0; i < rows; i++ {
 		if len(lines[i]) != cols {
@@ -42,7 +42,7 @@ func LoadMatrixFromCSV(filename string) (*tensor.Tensor, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid float value at row %d, col %d: %v", i, j, err)
 			}
-			data = append(data, val)
+			data = append(data, float32(val))
 		}
 	}
 
@@ -62,8 +62,8 @@ func LoadImageFromCSV(filename string) *tensor.Tensor {
 	return t.Reshape([]int{1, t.Shape[0], t.Shape[1]})
 }
 
-// LoadFlatDataFromCSV Reads a CSV file and returns its contents as a flat float64 slice.
-func LoadFlatDataFromCSV(filePath string) ([]float64, error) {
+// LoadFlatDataFromCSV Reads a CSV file and returns its contents as a flat float32 slice.
+func LoadFlatDataFromCSV(filePath string) ([]float32, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		// Don't return error immediately if file not found, let caller decide
@@ -76,7 +76,7 @@ func LoadFlatDataFromCSV(filePath string) ([]float64, error) {
 
 	reader := csv.NewReader(file)
 	reader.TrimLeadingSpace = true
-	var flatData []float64
+	var flatData []float32
 
 	for {
 		record, err := reader.Read()
@@ -101,7 +101,7 @@ func LoadFlatDataFromCSV(filePath string) ([]float64, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse float value '%s' in %s: %w", valueStr, filePath, err)
 			}
-			flatData = append(flatData, value)
+			flatData = append(flatData, float32(value))
 		}
 	}
 

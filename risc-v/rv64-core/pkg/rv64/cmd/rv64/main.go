@@ -3,10 +3,9 @@ package main
 import (
 	"debug/elf"
 	"flag"
+	"github.com/Jimmy2099/torch/risc-v/rv64-core/pkg/rv64"
 	"log"
 	"os"
-
-	"github.com/mohanson/rv64"
 )
 
 var (

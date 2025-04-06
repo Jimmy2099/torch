@@ -1,6 +1,6 @@
 package matrix
 
-import "math"
+import math "github.com/chewxy/math32"
 
 // Conv2D 实现二维卷积操作
 func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
@@ -23,8 +23,8 @@ func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
 }
 
 // im2col_get_pixel 实现边界检查的像素获取
-func im2col_get_pixel(im []float64, height, width, channels int,
-	row, col, channel, pad int) float64 {
+func im2col_get_pixel(im []float32, height, width, channels int,
+	row, col, channel, pad int) float32 {
 	row -= pad
 	col -= pad
 
@@ -37,7 +37,7 @@ func im2col_get_pixel(im []float64, height, width, channels int,
 // im2col 基于Caffe实现的高效版本，使用一维数组和前置递增
 func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 	channels := m.Rows
-	height := int(math.Sqrt(float64(m.Cols))) // 假设是方阵
+	height := int(math.Sqrt(float32(m.Cols))) // 假设是方阵
 	width := height
 
 	height_col := (height+2*pad-kernelSize)/stride + 1
@@ -45,14 +45,14 @@ func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 	channels_col := channels * kernelSize * kernelSize
 
 	// 将输入数据展平为一维数组
-	im := make([]float64, 0, channels*height*width)
+	im := make([]float32, 0, channels*height*width)
 	for c := 0; c < channels; c++ {
 		im = append(im, m.Data[c]...)
 	}
 
 	// 创建一维输出数组
 	cols := NewMatrix(channels_col, height_col*width_col)
-	data_col := make([]float64, channels_col*height_col*width_col)
+	data_col := make([]float32, channels_col*height_col*width_col)
 
 	for c := 0; c < channels_col; c++ {
 		w_offset := c % kernelSize
@@ -90,7 +90,7 @@ func (m *Matrix) Pad2D(pad int) *Matrix {
 	}
 
 	channels := m.Rows
-	size := int(math.Sqrt(float64(m.Cols))) // 原始尺寸
+	size := int(math.Sqrt(float32(m.Cols))) // 原始尺寸
 	newSize := size + 2*pad
 
 	padded := NewMatrix(channels, newSize*newSize)
@@ -289,7 +289,7 @@ func (m *Matrix) SumByDim(dim int) *Matrix {
 	if dim == 0 { // 沿列求和，返回行向量
 		result := NewMatrix(1, m.Cols)
 		for j := 0; j < m.Cols; j++ {
-			sum := 0.0
+			var sum float32
 			for i := 0; i < m.Rows; i++ {
 				sum += m.Data[i][j]
 			}
@@ -299,7 +299,7 @@ func (m *Matrix) SumByDim(dim int) *Matrix {
 	} else if dim == 1 { // 沿行求和，返回列向量
 		result := NewMatrix(m.Rows, 1)
 		for i := 0; i < m.Rows; i++ {
-			sum := 0.0
+			var sum float32
 			for j := 0; j < m.Cols; j++ {
 				sum += m.Data[i][j]
 			}
@@ -315,9 +315,9 @@ func (m *Matrix) Pad(padding int) *Matrix {
 	newRows := m.Rows + 2*padding
 	newCols := m.Cols + 2*padding
 	// 初始化全零矩阵
-	paddedData := make([][]float64, newRows)
+	paddedData := make([][]float32, newRows)
 	for i := range paddedData {
-		paddedData[i] = make([]float64, newCols)
+		paddedData[i] = make([]float32, newCols)
 	}
 	// 将原矩阵拷贝到中间位置
 	for i := 0; i < m.Rows; i++ {
@@ -339,9 +339,9 @@ func (m *Matrix) Crop(padding int) *Matrix {
 	}
 	newRows := m.Rows - 2*padding
 	newCols := m.Cols - 2*padding
-	croppedData := make([][]float64, newRows)
+	croppedData := make([][]float32, newRows)
 	for i := 0; i < newRows; i++ {
-		croppedData[i] = make([]float64, newCols)
+		croppedData[i] = make([]float32, newCols)
 		for j := 0; j < newCols; j++ {
 			croppedData[i][j] = m.Data[i+padding][j+padding]
 		}

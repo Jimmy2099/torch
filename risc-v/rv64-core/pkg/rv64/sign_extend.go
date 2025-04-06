@@ -4,7 +4,7 @@ package rv64
 // Chapter 1.1
 
 import (
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Sign extension is the operation, in computer arithmetic, of increasing the number of bits of a binary number while

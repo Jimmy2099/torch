@@ -5,7 +5,7 @@ import "testing"
 func TestTensorEqual(t *testing.T) {
 	// Basic test cases
 	t.Run("Identical tensors", func(t *testing.T) {
-		data := []float64{1.0, 2.0, 3.0}
+		data := []float32{1.0, 2.0, 3.0}
 		t1 := NewTensor(data, []int{3})
 		t2 := NewTensor(data, []int{3})
 		if !t1.Equal(t2) {
@@ -15,8 +15,8 @@ func TestTensorEqual(t *testing.T) {
 
 	// Special shape test
 	t.Run("Empty tensor comparison", func(t *testing.T) {
-		empty1 := NewTensor([]float64{}, []int{0})
-		empty2 := NewTensor([]float64{}, []int{0})
+		empty1 := NewTensor([]float32{}, []int{0})
+		empty2 := NewTensor([]float32{}, []int{0})
 		if !empty1.Equal(empty2) {
 			t.Error("Empty tensors should be equal")
 		}

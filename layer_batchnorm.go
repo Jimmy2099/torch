@@ -7,13 +7,13 @@ import (
 	// "log" // 如果需要添加日志或调试信息
 )
 
-func (l *BatchNormLayer) SetWeightsAndShape(data []float64, shape []int) {
+func (l *BatchNormLayer) SetWeightsAndShape(data []float32, shape []int) {
 	l.SetWeights(data)
 	// Ensure shape is compatible if needed, but typically keep (1,C,1,1)
 	// l.gamma.Reshape(shape) // Be careful with this if shape is not (1,C,1,1)
 }
 
-func (l *BatchNormLayer) SetBiasAndShape(data []float64, shape []int) {
+func (l *BatchNormLayer) SetBiasAndShape(data []float32, shape []int) {
 	l.SetBias(data)
 	// Ensure shape is compatible if needed, but typically keep (1,C,1,1)
 	// l.beta.Reshape(shape) // Be careful with this if shape is not (1,C,1,1)
@@ -24,8 +24,8 @@ type BatchNormLayer struct {
 	bias        *tensor.Tensor
 	RunningMean *tensor.Tensor
 	runningVar  *tensor.Tensor
-	eps         float64
-	momentum    float64
+	eps         float32
+	momentum    float32
 	training    bool
 	numFeatures int
 }
@@ -38,7 +38,7 @@ func (l *BatchNormLayer) GetBias() *tensor.Tensor {
 	return l.bias
 }
 
-func NewBatchNormLayer(numFeatures int, eps, momentum float64) *BatchNormLayer {
+func NewBatchNormLayer(numFeatures int, eps, momentum float32) *BatchNormLayer {
 	weights := tensor.Ones([]int{numFeatures})
 	bias := tensor.Zeros([]int{numFeatures})
 	runningMean := tensor.Zeros([]int{numFeatures})
@@ -56,14 +56,14 @@ func NewBatchNormLayer(numFeatures int, eps, momentum float64) *BatchNormLayer {
 	}
 }
 
-func (l *BatchNormLayer) SetWeights(data []float64) {
+func (l *BatchNormLayer) SetWeights(data []float32) {
 	if len(data) != l.numFeatures {
 		panic(fmt.Sprintf("Weights data length mismatch: expected %d, got %d", l.numFeatures, len(data)))
 	}
 	l.weights = tensor.NewTensor(data, []int{l.numFeatures})
 }
 
-func (l *BatchNormLayer) SetBias(data []float64) {
+func (l *BatchNormLayer) SetBias(data []float32) {
 	if len(data) != l.numFeatures {
 		panic(fmt.Sprintf("bias data length mismatch: expected %d, got %d", l.numFeatures, len(data)))
 	}
@@ -72,7 +72,7 @@ func (l *BatchNormLayer) SetBias(data []float64) {
 
 func (bn *BatchNormLayer) computeMean(x *tensor.Tensor) *tensor.Tensor {
 	sumResult := x.SumByDim1([]int{0, 2, 3}, true)
-	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
+	elementCount := float32(x.Shape[0] * x.Shape[2] * x.Shape[3])
 	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})
 }
 
@@ -80,7 +80,7 @@ func (bn *BatchNormLayer) computeVariance(x *tensor.Tensor, mean *tensor.Tensor)
 	x_mu := x.Sub(mean.Reshape([]int{1, bn.numFeatures, 1, 1}))
 	sq_diff := x_mu.Pow(2)
 	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true)
-	elementCount := float64(x.Shape[0] * x.Shape[2] * x.Shape[3])
+	elementCount := float32(x.Shape[0] * x.Shape[2] * x.Shape[3])
 
 	// 关键修复：使用有偏估计（PyTorch默认行为）
 	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})

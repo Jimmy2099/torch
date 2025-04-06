@@ -5,14 +5,14 @@ import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/algorithm"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 	"math/rand"
 	"reflect"
 	"testing"
 )
 
 // 辅助函数：比较浮点数切片是否近似相等
-func floatsEqual(a, b []float64, epsilon float64) bool {
+func floatsEqual(a, b []float32, epsilon float32) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -46,50 +46,50 @@ func TestEmbeddingForward(t *testing.T) {
 		name          string
 		input         *tensor.Tensor
 		shouldPanic   bool
-		expected      []float64
+		expected      []float32
 		expectedShape []int
 	}{
 		{
 			name:          "valid_2D_input",
-			input:         tensor.NewTensor([]float64{0, 1, 2, 0}, []int{2, 2}),
+			input:         tensor.NewTensor([]float32{0, 1, 2, 0}, []int{2, 2}),
 			shouldPanic:   false,
-			expected:      []float64{1, 2, 3, 4, 5, 6, 1, 2},
+			expected:      []float32{1, 2, 3, 4, 5, 6, 1, 2},
 			expectedShape: []int{2, 2, 2},
 		},
 		{
 			name:          "empty_batch",
-			input:         tensor.NewTensor([]float64{}, []int{0, 2}), // 空batch
+			input:         tensor.NewTensor([]float32{}, []int{0, 2}), // 空batch
 			shouldPanic:   false,
-			expected:      []float64{},
+			expected:      []float32{},
 			expectedShape: []int{0, 2, 2},
 		},
 		{
 			name:          "max_index",
-			input:         tensor.NewTensor([]float64{2}, []int{1, 1}), // 最大合法索引
+			input:         tensor.NewTensor([]float32{2}, []int{1, 1}), // 最大合法索引
 			shouldPanic:   false,
-			expected:      []float64{5, 6},
+			expected:      []float32{5, 6},
 			expectedShape: []int{1, 1, 2},
 		},
 		{
 			name:        "non_integer_indices",
-			input:       tensor.NewTensor([]float64{0.5, 1.0}, []int{1, 2}),
+			input:       tensor.NewTensor([]float32{0.5, 1.0}, []int{1, 2}),
 			shouldPanic: true,
 		},
 		{
 			name:        "3D_input",
-			input:       tensor.NewTensor([]float64{0, 1}, []int{1, 1, 2}),
+			input:       tensor.NewTensor([]float32{0, 1}, []int{1, 1, 2}),
 			shouldPanic: true,
 		},
 		{
 			name:        "index_out_of_range",
-			input:       tensor.NewTensor([]float64{0, 3}, []int{1, 2}),
+			input:       tensor.NewTensor([]float32{0, 3}, []int{1, 2}),
 			shouldPanic: true,
 		},
 	}
 	emb := &torch.Embedding{
 		VocabSize: 3,
 		EmbDim:    2,
-		Weights:   tensor.NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{3, 2}),
+		Weights:   tensor.NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
 	}
 
 	for _, tt := range tests {
@@ -124,12 +124,12 @@ func TestEmbeddingBackward(t *testing.T) {
 	emb := &torch.Embedding{
 		VocabSize:   3,
 		EmbDim:      2,
-		Weights:     tensor.NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{3, 2}),
-		GradWeights: tensor.NewTensor(make([]float64, 6), []int{3, 2}),
+		Weights:     tensor.NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
+		GradWeights: tensor.NewTensor(make([]float32, 6), []int{3, 2}),
 		LastIndices: []int{0, 1, 0, 2}, // 对应batch_size=2, seq_len=2
 	}
 
-	gradOutput := tensor.NewTensor([]float64{
+	gradOutput := tensor.NewTensor([]float32{
 		0.1, 0.2, // 第一个元素梯度
 		0.3, 0.4, // 第二个元素梯度
 		0.5, 0.6, // 第三个元素梯度
@@ -143,7 +143,7 @@ func TestEmbeddingBackward(t *testing.T) {
 		// 索引0: [0.1+0.5, 0.2+0.6] = [0.6, 0.8]
 		// 索引1: [0.3, 0.4]
 		// 索引2: [0.7, 0.8]
-		expectedGrad := []float64{0.6, 0.8, 0.3, 0.4, 0.7, 0.8}
+		expectedGrad := []float32{0.6, 0.8, 0.3, 0.4, 0.7, 0.8}
 		if !floatsEqual(emb.GradWeights.Data, expectedGrad, 1e-6) {
 			t.Errorf("Gradient accumulation failed\nexpected: %v\ngot: %v", expectedGrad, emb.GradWeights.Data)
 		}
@@ -152,7 +152,7 @@ func TestEmbeddingBackward(t *testing.T) {
 	t.Run("weight_update", func(t *testing.T) {
 		// 初始权重: [1,2,3,4,5,6]
 		// 学习率0.1，梯度如上面测试
-		expectedWeights := []float64{
+		expectedWeights := []float32{
 			1 - 0.1*0.6, 2 - 0.1*0.8, // 索引0
 			3 - 0.1*0.3, 4 - 0.1*0.4, // 索引1
 			5 - 0.1*0.7, 6 - 0.1*0.8, // 索引2
@@ -166,7 +166,7 @@ func TestEmbeddingBackward(t *testing.T) {
 
 func TestEmbeddingZeroGrad(t *testing.T) {
 	emb := &torch.Embedding{
-		GradWeights: tensor.NewTensor([]float64{1, 2, 3, 4}, []int{2, 2}),
+		GradWeights: tensor.NewTensor([]float32{1, 2, 3, 4}, []int{2, 2}),
 	}
 
 	emb.ZeroGrad()
@@ -182,7 +182,7 @@ func TestEmbeddingSetWeightsAndShape(t *testing.T) {
 	emb := &torch.Embedding{VocabSize: 2, EmbDim: 3}
 
 	t.Run("valid_shape", func(t *testing.T) {
-		newWeights := []float64{1, 2, 3, 4, 5, 6}
+		newWeights := []float32{1, 2, 3, 4, 5, 6}
 		emb.SetWeightsAndShape(newWeights, []int{2, 3})
 
 		if !floatsEqual(emb.Weights.Data, newWeights, 0) {
@@ -196,12 +196,12 @@ func TestEmbeddingSetWeightsAndShape(t *testing.T) {
 				t.Error("Expected panic for invalid shape")
 			}
 		}()
-		emb.SetWeightsAndShape([]float64{1, 2}, []int{1, 2})
+		emb.SetWeightsAndShape([]float32{1, 2}, []int{1, 2})
 	})
 }
 
 func TestEmbeddingParameters(t *testing.T) {
-	weights := tensor.NewTensor([]float64{1, 2}, []int{1, 2})
+	weights := tensor.NewTensor([]float32{1, 2}, []int{1, 2})
 	emb := &torch.Embedding{Weights: weights}
 
 	params := emb.Parameters()
@@ -250,10 +250,10 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			)
 
 			// 创建测试输入（带有效索引范围）
-			inputData := make([]float64, algorithm.Product(tc.inputShape))
+			inputData := make([]float32, algorithm.Product(tc.inputShape))
 			for i := range inputData {
 				// 生成有效索引（0 ≤ index < vocabSize）
-				inputData[i] = float64(rand.Intn(tc.vocabSize))
+				inputData[i] = float32(rand.Intn(tc.vocabSize))
 			}
 			inputTensor := tensor.NewTensor(inputData, tc.inputShape)
 
@@ -261,8 +261,8 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			emb := torch.NewEmbedding(tc.vocabSize, tc.embDim)
 
 			// 设置与PyTorch一致的随机权重
-			weightsData := make([]float64, tc.vocabSize*tc.embDim)
-			scale := math.Sqrt(2.0 / float64(tc.embDim))
+			weightsData := make([]float32, tc.vocabSize*tc.embDim)
+			scale := math.Sqrt(2.0 / float32(tc.embDim))
 			for i := range weightsData {
 				weightsData[i] = rand.NormFloat64() * scale
 			}

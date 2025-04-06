@@ -7,20 +7,20 @@ import (
 // ReLULayer 实现带泄漏的ReLU激活层
 type ReLULayer struct {
 	input    *tensor.Tensor // 保存输入用于反向传播
-	negative float64        // 负半轴斜率（支持LeakyReLU）
+	negative float32        // 负半轴斜率（支持LeakyReLU）
 	inplace  bool           // 是否原地操作
 }
 
 func (r *ReLULayer) GetWeights() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }
 
 func (r *ReLULayer) GetBias() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }
@@ -34,7 +34,7 @@ func NewReLULayer() *ReLULayer {
 }
 
 // NewLeakyReLULayer 创建带泄漏的ReLU层
-func NewLeakyReLULayer(negativeSlope float64) *ReLULayer {
+func NewLeakyReLULayer(negativeSlope float32) *ReLULayer {
 	if negativeSlope < 0 {
 		panic("negative slope must be non-negative")
 	}
@@ -63,7 +63,7 @@ func (r *ReLULayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	}
 
 	// 应用ReLU激活函数
-	return x.Apply(func(val float64) float64 {
+	return x.Apply(func(val float32) float32 {
 		if val > 0 {
 			return val
 		}
@@ -84,7 +84,7 @@ func (r *ReLULayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 //	}
 //
 //	// 计算ReLU梯度
-//	grad := r.input.Apply(func(val float64) float64 {
+//	grad := r.input.Apply(func(val float32) float32 {
 //		if val > 0 {
 //			return 1.0
 //		}
@@ -117,11 +117,11 @@ func (r *ReLULayer) ActivationType() string {
 }
 
 // NegativeSlope 返回负半轴斜率
-func (r *ReLULayer) NegativeSlope() float64 {
+func (r *ReLULayer) NegativeSlope() float32 {
 	return r.negative
 }
 
-func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	if r.input == nil {
 		panic("must call Forward first")
 	}
@@ -133,7 +133,7 @@ func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *t
 	}
 
 	// 计算ReLU梯度
-	grad := r.input.Apply(func(val float64) float64 {
+	grad := r.input.Apply(func(val float32) float32 {
 		if val > 0 {
 			return 1.0
 		}

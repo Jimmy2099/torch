@@ -7,7 +7,7 @@ import (
 
 // readables is a type that can be read from a binary stream by read() and readCast().
 type readables interface {
-	~uint8 | ~int8 | ~uint16 | ~int16 | ~uint32 | ~int32 | ~uint64 | ~int64 | ~float32 | ~float64
+	~uint8 | ~int8 | ~uint16 | ~int16 | ~uint32 | ~int32 | ~uint64 | ~int64 | ~float32 | ~float32
 }
 
 // read reads a value of type T from a binary stream.

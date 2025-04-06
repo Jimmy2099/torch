@@ -48,7 +48,7 @@ func MetaValue[T any](metadata Metadata, name string) (T, error) {
 // returned. The number will be cast to the type T. This can be
 // useful if you don't really care about the exact type of the
 // number.
-func MetaValueNumber[T ~int | ~uint8 | ~int8 | ~uint16 | ~int16 | ~uint32 | ~int32 | ~uint64 | ~int64 | ~float32 | ~float64](metadata Metadata, name string) (T, error) {
+func MetaValueNumber[T ~int | ~uint8 | ~int8 | ~uint16 | ~int16 | ~uint32 | ~int32 | ~uint64 | ~int64 | ~float32 | ~float32](metadata Metadata, name string) (T, error) {
 	v, found := metadata[name]
 	if !found {
 		return 0, fmt.Errorf("metadata value %q not found", name)
@@ -85,7 +85,7 @@ func MetaValueNumber[T ~int | ~uint8 | ~int8 | ~uint16 | ~int16 | ~uint32 | ~int
 	case float32:
 		return T(vv), nil
 
-	case float64:
+	case float32:
 		return T(vv), nil
 
 	default:

@@ -28,50 +28,50 @@ func (l *ConvLayer) GetBias() *tensor.Tensor {
 }
 
 // SetWeights 设置权重
-func (l *ConvLayer) SetWeights(data []float64) {
+func (l *ConvLayer) SetWeights(data []float32) {
 	if len(data) != l.OutChannels*l.InChannels*l.KernelSize*l.KernelSize {
 		panic("Weights data length mismatch")
 	}
 
 	// 创建新数组并拷贝数据
-	copiedData := make([]float64, len(data))
+	copiedData := make([]float32, len(data))
 	copy(copiedData, data) // 深拷贝
 
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
 }
 
 // SetBias 设置偏置
-func (l *ConvLayer) SetBias(data []float64) {
+func (l *ConvLayer) SetBias(data []float32) {
 	if len(data) != l.OutChannels {
 		panic("bias data length mismatch")
 	}
 
 	// 深拷贝偏置数据
-	copiedData := make([]float64, len(data))
+	copiedData := make([]float32, len(data))
 	copy(copiedData, data)
 
 	l.Bias = tensor.NewTensor(copiedData, []int{l.OutChannels, 1})
 }
 
-func (l *ConvLayer) SetWeightsAndShape(data []float64, shape []int) {
+func (l *ConvLayer) SetWeightsAndShape(data []float32, shape []int) {
 	l.SetWeights(data)
 	l.Weights.Reshape(shape)
 }
 
-func (l *ConvLayer) SetBiasAndShape(data []float64, shape []int) {
+func (l *ConvLayer) SetBiasAndShape(data []float32, shape []int) {
 	l.SetBias(data)
 	l.Bias.Reshape(shape)
 }
 
 func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 	// 初始化权重和偏置
-	weightsData := make([]float64, outCh*inCh*kSize*kSize)
-	biasData := make([]float64, outCh)
+	weightsData := make([]float32, outCh*inCh*kSize*kSize)
+	biasData := make([]float32, outCh)
 
 	// Xavier初始化
-	xavierScale := 1.0 / float64(inCh*kSize*kSize)
+	xavierScale := 1.0 / float32(inCh*kSize*kSize)
 	for i := range weightsData {
-		weightsData[i] = rand.Float64() * xavierScale
+		weightsData[i] = float32(rand.Float32()) * xavierScale
 	}
 
 	return &ConvLayer{
@@ -82,8 +82,8 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 		Padding:     pad,
 		Weights:     tensor.NewTensor(weightsData, []int{outCh, inCh * kSize * kSize}),
 		Bias:        tensor.NewTensor(biasData, []int{outCh, 1}),
-		GradWeights: tensor.NewTensor(make([]float64, outCh*inCh*kSize*kSize), []int{outCh, inCh * kSize * kSize}),
-		GradBias:    tensor.NewTensor(make([]float64, outCh), []int{outCh, 1}),
+		GradWeights: tensor.NewTensor(make([]float32, outCh*inCh*kSize*kSize), []int{outCh, inCh * kSize * kSize}),
+		GradBias:    tensor.NewTensor(make([]float32, outCh), []int{outCh, 1}),
 	}
 }
 
@@ -147,7 +147,7 @@ func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
 	return gradInput
 }
 
-func (c *ConvLayer) BackwardWithLR(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+func (c *ConvLayer) BackwardWithLR(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	// 先计算梯度
 	gradInput := c.Backward(gradOutput)
 
@@ -157,7 +157,7 @@ func (c *ConvLayer) BackwardWithLR(gradOutput *tensor.Tensor, learningRate float
 	return gradInput
 }
 
-func (c *ConvLayer) UpdateParameters(learningRate float64) {
+func (c *ConvLayer) UpdateParameters(learningRate float32) {
 	// 更新权重
 	c.Weights = c.Weights.Sub(c.GradWeights.MulScalar(learningRate))
 
@@ -167,11 +167,11 @@ func (c *ConvLayer) UpdateParameters(learningRate float64) {
 
 func (c *ConvLayer) ZeroGrad() {
 	c.GradWeights = tensor.NewTensor(
-		make([]float64, c.OutChannels*c.InChannels*c.KernelSize*c.KernelSize),
+		make([]float32, c.OutChannels*c.InChannels*c.KernelSize*c.KernelSize),
 		[]int{c.OutChannels, c.InChannels * c.KernelSize * c.KernelSize},
 	)
 	c.GradBias = tensor.NewTensor(
-		make([]float64, c.OutChannels),
+		make([]float32, c.OutChannels),
 		[]int{c.OutChannels, 1},
 	)
 }

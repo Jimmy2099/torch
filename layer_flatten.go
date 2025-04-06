@@ -9,14 +9,14 @@ type FlattenLayer struct {
 
 func (r *FlattenLayer) GetWeights() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }
 
 func (r *FlattenLayer) GetBias() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }

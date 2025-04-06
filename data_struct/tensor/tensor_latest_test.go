@@ -1,7 +1,7 @@
 package tensor
 
 import (
-	"math"
+	math "github.com/chewxy/math32"
 	"reflect"
 	"slices"
 	"testing"
@@ -9,13 +9,13 @@ import (
 
 func TestTensor_TransposeByDim(t *testing.T) {
 	// 创建测试张量 shape: [2, 3]
-	td := NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{2, 3})
+	td := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 
 	// 转置行列
 	tT := td.TransposeByDim(0, 1)
 
 	// 验证结果
-	expected := NewTensor([]float64{1, 4, 2, 5, 3, 6}, []int{3, 2})
+	expected := NewTensor([]float32{1, 4, 2, 5, 3, 6}, []int{3, 2})
 	if !tT.Equal(expected) {
 		panic("Transpose failed")
 	}
@@ -24,9 +24,9 @@ func TestTensor_TransposeByDim(t *testing.T) {
 // 辅助函数：创建指定形状并填充连续数据的张量
 func createTensor(shape []int) *Tensor {
 	size := product(shape)
-	data := make([]float64, size)
+	data := make([]float32, size)
 	for i := range data {
-		data[i] = float64(i)
+		data[i] = float32(i)
 	}
 	return &Tensor{Data: data, Shape: shape}
 }
@@ -36,7 +36,7 @@ func TestSplitLastDim(t *testing.T) {
 		tensor := createTensor([]int{2, 4}) // 数据: [0,1,2,3,4,5,6,7]
 		split := tensor.SplitLastDim(2, 0)
 		expected := &Tensor{
-			Data:  []float64{0, 1, 4, 5},
+			Data:  []float32{0, 1, 4, 5},
 			Shape: []int{2, 2},
 		}
 		if !split.Equal(expected) {
@@ -49,7 +49,7 @@ func TestSplitLastDim(t *testing.T) {
 		split := tensor.SplitLastDim(3, 1)
 		// 预期形状 [2,3]，实际数据应为 [3,4,0,8,9,0]
 		expected := &Tensor{
-			Data:  []float64{3, 4, 0, 8, 9, 0},
+			Data:  []float32{3, 4, 0, 8, 9, 0},
 			Shape: []int{2, 3},
 		}
 		if !split.Equal(expected) {
@@ -83,7 +83,7 @@ func TestSlice(t *testing.T) {
 		sliced := tensor.Slice(1, 3, 1)
 		expected := &Tensor{
 			Shape: []int{3, 2, 5},
-			Data:  make([]float64, 3*2*5),
+			Data:  make([]float32, 3*2*5),
 		}
 		// 填充预期数据（手动计算切片区域）
 		for i := 0; i < 3; i++ {
@@ -99,7 +99,7 @@ func TestSlice(t *testing.T) {
 		sliced := tensor.Slice(0, 2, 1)
 		expected := &Tensor{
 			Shape: []int{2, 2},
-			Data:  []float64{0, 1, 3, 4},
+			Data:  []float32{0, 1, 3, 4},
 		}
 
 		if !sliced.Equal(expected) {
@@ -125,7 +125,7 @@ func TestConcat(t *testing.T) {
 		concatenated := t1.Concat(t2, 0)
 		expected := &Tensor{
 			Shape: []int{5, 3},
-			Data:  make([]float64, 5*3),
+			Data:  make([]float32, 5*3),
 		}
 		copy(expected.Data[:6], t1.Data)
 		copy(expected.Data[6:], t2.Data)
@@ -151,7 +151,7 @@ func TestConcat(t *testing.T) {
 		concatenated := t1.Concat(t2, 1)
 		expected := &Tensor{
 			Shape: []int{2, 5},
-			Data: []float64{
+			Data: []float32{
 				0, 1, 0, 1, 2,
 				2, 3, 3, 4, 5,
 			},
@@ -166,7 +166,7 @@ func TestConcat(t *testing.T) {
 func TestMaxByDim(t *testing.T) {
 	// 测试二维张量
 	t.Run("2D矩阵列最大值", func(t *testing.T) {
-		data := []float64{
+		data := []float32{
 			1, 5, 3,
 			4, 2, 6,
 		}
@@ -178,7 +178,7 @@ func TestMaxByDim(t *testing.T) {
 		if !shapeEqual(max1.Shape, expectedShape) {
 			t.Errorf("形状错误，期望%v，得到%v", expectedShape, max1.Shape)
 		}
-		expectedData := []float64{5, 6}
+		expectedData := []float32{5, 6}
 		if !sliceEqual(max1.Data, expectedData, 1e-6) {
 			t.Errorf("数据错误，期望%v，得到%v", expectedData, max1.Data)
 		}
@@ -189,7 +189,7 @@ func TestMaxByDim(t *testing.T) {
 		if !shapeEqual(max0.Shape, expectedShape) {
 			t.Errorf("形状错误，期望%v，得到%v", expectedShape, max0.Shape)
 		}
-		expectedData = []float64{4, 5, 6}
+		expectedData = []float32{4, 5, 6}
 		if !sliceEqual(max0.Data, expectedData, 1e-6) {
 			t.Errorf("数据错误，期望%v，得到%v", expectedData, max0.Data)
 		}
@@ -197,7 +197,7 @@ func TestMaxByDim(t *testing.T) {
 
 	// 测试三维张量
 	t.Run("3D张量深度最大值", func(t *testing.T) {
-		data := []float64{
+		data := []float32{
 			1, 2, 3, 4,
 			5, 6, 7, 8,
 			9, 10, 11, 12,
@@ -205,7 +205,7 @@ func TestMaxByDim(t *testing.T) {
 		input := NewTensor(data, []int{3, 1, 4})
 
 		max2 := input.MaxByDim(2, true)
-		expected := []float64{4, 8, 12}
+		expected := []float32{4, 8, 12}
 		if !sliceEqual(max2.Data, expected, 1e-6) {
 			t.Errorf("3D张量最大值错误，期望%v，得到%v", expected, max2.Data)
 		}
@@ -248,12 +248,12 @@ func TestGetIndices(t *testing.T) {
 
 func TestGetBroadcastedValue(t *testing.T) {
 	// 创建形状为[3,1]的掩码
-	maskData := []float64{1, 0, 1}
+	maskData := []float32{1, 0, 1}
 	mask := NewTensor(maskData, []int{3, 1})
 
 	tests := []struct {
 		indices  []int
-		expected float64
+		expected float32
 	}{
 		{[]int{0, 0}, 1},
 		{[]int{1, 1}, 0}, // 广播到第二维的0
@@ -270,7 +270,7 @@ func TestGetBroadcastedValue(t *testing.T) {
 }
 
 func TestSumByDim2(t *testing.T) {
-	data := []float64{
+	data := []float32{
 		1, 2,
 		3, 4,
 		5, 6,
@@ -279,26 +279,26 @@ func TestSumByDim2(t *testing.T) {
 
 	// 测试dim=0求和
 	sum0 := input.SumByDim2(0, true)
-	expected := []float64{9, 12} // (1+3+5), (2+4+6)
+	expected := []float32{9, 12} // (1+3+5), (2+4+6)
 	if !sliceEqual(sum0.Data, expected, 1e-6) {
 		t.Errorf("dim0求和错误，期望%v，得到%v", expected, sum0.Data)
 	}
 
 	// 测试dim=1不保持维度
 	sum1 := input.SumByDim2(1, false)
-	expected = []float64{3, 7, 11} // 各行求和
+	expected = []float32{3, 7, 11} // 各行求和
 	if !sliceEqual(sum1.Data, expected, 1e-6) {
 		t.Errorf("dim1求和错误，期望%v，得到%v", expected, sum1.Data)
 	}
 }
 
 func TestMaskedFill(t *testing.T) {
-	data := []float64{1, 2, 3, 4}
+	data := []float32{1, 2, 3, 4}
 	input := NewTensor(data, []int{2, 2})
-	mask := NewTensor([]float64{1, 0, 0, 1}, []int{2, 2})
+	mask := NewTensor([]float32{1, 0, 0, 1}, []int{2, 2})
 
 	filled := input.MaskedFill(mask, -math.Inf(1))
-	expected := []float64{
+	expected := []float32{
 		math.Inf(-1), 2,
 		3, math.Inf(-1),
 	}
@@ -315,7 +315,7 @@ func TestMaskedFill(t *testing.T) {
 }
 
 func TestSoftmaxByDim(t *testing.T) {
-	data := []float64{1, 2, 3, 4}
+	data := []float32{1, 2, 3, 4}
 	input := NewTensor(data, []int{2, 2})
 
 	// 测试dim=1
@@ -337,7 +337,7 @@ func TestSoftmaxByDim(t *testing.T) {
 	}
 }
 
-func sliceEqual(a, b []float64, tolerance float64) bool {
+func sliceEqual(a, b []float32, tolerance float32) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -361,11 +361,11 @@ func intSliceEqual(a, b []int) bool {
 	return true
 }
 
-func isInf(f float64) bool {
+func isInf(f float32) bool {
 	return math.IsInf(f, 1) || math.IsInf(f, -1)
 }
 
-func sameInf(a, b float64) bool {
+func sameInf(a, b float32) bool {
 	return math.IsInf(a, 1) && math.IsInf(b, 1) ||
 		math.IsInf(a, -1) && math.IsInf(b, -1)
 }
@@ -389,7 +389,7 @@ func TestTensor_ShapeCopy(t *testing.T) {
 	t.Run("Nil Shape", func(t *testing.T) {
 		// 直接构造而不是使用NewTensor来测试nil情况
 		tsr := &Tensor{
-			Data:  []float64{1, 2, 3},
+			Data:  []float32{1, 2, 3},
 			Shape: nil,
 		}
 		copyShape := tsr.ShapeCopy()
@@ -399,26 +399,26 @@ func TestTensor_ShapeCopy(t *testing.T) {
 	})
 
 	t.Run("Empty Shape", func(t *testing.T) {
-		tsr := NewTensor([]float64{}, []int{})
+		tsr := NewTensor([]float32{}, []int{})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{})
 	})
 
 	t.Run("Standard 2D Shape", func(t *testing.T) {
-		tsr := NewTensor([]float64{1, 2, 3, 4}, []int{2, 2})
+		tsr := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{2, 2})
 	})
 
 	t.Run("High Dimension Shape", func(t *testing.T) {
-		tsr := NewTensor(make([]float64, 24), []int{2, 3, 4})
+		tsr := NewTensor(make([]float32, 24), []int{2, 3, 4})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{2, 3, 4})
 	})
 
 	t.Run("Deep Copy Verification", func(t *testing.T) {
 		originalShape := []int{3, 4, 5}
-		tsr := NewTensor(make([]float64, 60), originalShape)
+		tsr := NewTensor(make([]float32, 60), originalShape)
 		copyShape := tsr.ShapeCopy()
 
 		// 修改复制后的shape
@@ -430,13 +430,13 @@ func TestTensor_ShapeCopy(t *testing.T) {
 	})
 
 	t.Run("Zero Value Dimensions", func(t *testing.T) {
-		tsr := NewTensor([]float64{}, []int{0})
+		tsr := NewTensor([]float32{}, []int{0})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{0})
 	})
 
 	t.Run("Complex Shape with Zeros", func(t *testing.T) {
-		tsr := NewTensor(make([]float64, 0), []int{0, 2, 0})
+		tsr := NewTensor(make([]float32, 0), []int{0, 2, 0})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{0, 2, 0})
 	})
@@ -444,10 +444,10 @@ func TestTensor_ShapeCopy(t *testing.T) {
 
 func Test2DMatrixMultiplication(t *testing.T) {
 	// 输入形状自动转换为[1,2,2]
-	a := NewTensor([]float64{1, 2, 3, 4}, []int{2, 2})
-	b := NewTensor([]float64{5, 6, 7, 8}, []int{2, 2})
+	a := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
+	b := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 
-	expected := []float64{
+	expected := []float32{
 		1*5 + 2*7, 1*6 + 2*8,
 		3*5 + 4*7, 3*6 + 4*8,
 	}
@@ -474,13 +474,13 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "2D dim0 repeats2",
 			input: NewTensor(
-				[]float64{1, 2, 3, 4, 5, 6},
+				[]float32{1, 2, 3, 4, 5, 6},
 				[]int{2, 3},
 			),
 			dim:     0,
 			repeats: 2,
 			expected: NewTensor(
-				[]float64{
+				[]float32{
 					1, 2, 3,
 					1, 2, 3,
 					4, 5, 6,
@@ -492,13 +492,13 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "2D dim1 repeats3",
 			input: NewTensor(
-				[]float64{1, 2, 3, 4},
+				[]float32{1, 2, 3, 4},
 				[]int{2, 2},
 			),
 			dim:     1,
 			repeats: 3,
 			expected: NewTensor(
-				[]float64{
+				[]float32{
 					1, 1, 1, 2, 2, 2,
 					3, 3, 3, 4, 4, 4,
 				},
@@ -508,13 +508,13 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "2D dim1 repeats1 (no change)",
 			input: NewTensor(
-				[]float64{1, 2, 3, 4},
+				[]float32{1, 2, 3, 4},
 				[]int{2, 2},
 			),
 			dim:     1,
 			repeats: 1,
 			expected: NewTensor(
-				[]float64{1, 2, 3, 4},
+				[]float32{1, 2, 3, 4},
 				[]int{2, 2},
 			),
 		},
@@ -523,7 +523,7 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "4D dim1 repeats2 channels",
 			input: NewTensor(
-				[]float64{
+				[]float32{
 					1, 2, 3, 4, // 通道1 (2x2)
 					5, 6, 7, 8, // 通道2
 				},
@@ -532,7 +532,7 @@ func TestRepeatInterleave(t *testing.T) {
 			dim:     1,
 			repeats: 2,
 			expected: NewTensor(
-				[]float64{
+				[]float32{
 					1, 2, 3, 4, // 通道1 重复
 					1, 2, 3, 4, // 重复副本
 					5, 6, 7, 8, // 通道2 重复
@@ -544,7 +544,7 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "4D dim0 repeats3 batch",
 			input: NewTensor(
-				[]float64{
+				[]float32{
 					1, 1, 1, 1, // 批次1
 					2, 2, 2, 2, // 批次2
 				},
@@ -553,7 +553,7 @@ func TestRepeatInterleave(t *testing.T) {
 			dim:     0,
 			repeats: 3,
 			expected: NewTensor(
-				[]float64{
+				[]float32{
 					1, 1, 1, 1,
 					1, 1, 1, 1,
 					1, 1, 1, 1,
@@ -567,7 +567,7 @@ func TestRepeatInterleave(t *testing.T) {
 		{
 			name: "4D multi-batch channels repeat",
 			input: NewTensor(
-				[]float64{
+				[]float32{
 					// Batch 1
 					1, 1, 2, 2, // 通道1 (2x2)
 					3, 3, 4, 4, // 通道2
@@ -580,7 +580,7 @@ func TestRepeatInterleave(t *testing.T) {
 			dim:     1,
 			repeats: 2,
 			expected: NewTensor(
-				[]float64{
+				[]float32{
 					// Batch1
 					1, 1, 2, 2, // 通道1 ×2
 					1, 1, 2, 2,
@@ -615,20 +615,20 @@ func TestGetValue(t *testing.T) {
 		name      string
 		tensor    *Tensor
 		indices   []int
-		expected  float64
+		expected  float32
 		wantPanic bool
 	}{
 		// 一维张量
 		{
 			name:      "1D valid index",
-			tensor:    NewTensor([]float64{1, 2, 3, 4}, []int{4}),
+			tensor:    NewTensor([]float32{1, 2, 3, 4}, []int{4}),
 			indices:   []int{2},
 			expected:  3,
 			wantPanic: false,
 		},
 		{
 			name:      "1D index out of range",
-			tensor:    NewTensor([]float64{1, 2}, []int{2}),
+			tensor:    NewTensor([]float32{1, 2}, []int{2}),
 			indices:   []int{2},
 			wantPanic: true,
 		},
@@ -636,14 +636,14 @@ func TestGetValue(t *testing.T) {
 		// 二维张量
 		{
 			name:      "2D valid index",
-			tensor:    NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{2, 3}),
+			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3}),
 			indices:   []int{1, 2}, // 第二行第三列
 			expected:  6,
 			wantPanic: false,
 		},
 		{
 			name:      "2D negative index",
-			tensor:    NewTensor([]float64{1, 2, 3}, []int{3, 1}),
+			tensor:    NewTensor([]float32{1, 2, 3}, []int{3, 1}),
 			indices:   []int{-1, 0},
 			wantPanic: true,
 		},
@@ -651,7 +651,7 @@ func TestGetValue(t *testing.T) {
 		// 三维张量
 		{
 			name:      "3D valid index",
-			tensor:    NewTensor([]float64{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2}),
+			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2}),
 			indices:   []int{1, 0, 1},
 			expected:  6, // 正确值
 			wantPanic: false,
@@ -680,33 +680,33 @@ func TestMaskedFill1(t *testing.T) {
 		name     string
 		input    *Tensor
 		mask     *Tensor
-		value    float64
-		expected []float64
+		value    float32
+		expected []float32
 	}{
 		// 基础测试：无需广播
 		{
 			name:     "No broadcast - exact shape match",
-			input:    NewTensor([]float64{1, 2, 3, 4}, []int{2, 2}),
-			mask:     NewTensor([]float64{0, 1, 1, 0}, []int{2, 2}),
+			input:    NewTensor([]float32{1, 2, 3, 4}, []int{2, 2}),
+			mask:     NewTensor([]float32{0, 1, 1, 0}, []int{2, 2}),
 			value:    -99,
-			expected: []float64{1, -99, -99, 4},
+			expected: []float32{1, -99, -99, 4},
 		},
 
 		//// 广播测试：mask维度少于输入张量
 		//{
 		//	name: "Broadcast mask with fewer dimensions",
-		//	input: NewTensor([]float64{
+		//	input: NewTensor([]float32{
 		//		1, 2, 3,
 		//		4, 5, 6,
 		//		7, 8, 9,
 		//		10, 11, 12,
 		//	}, []int{2, 2, 3}), // 形状：2层, 2行, 3列
-		//	mask: NewTensor([]float64{
+		//	mask: NewTensor([]float32{
 		//		0, 1, // 最后一个维度为1的mask [2,1]
 		//		1, 0,
 		//	}, []int{2, 2}), // 广播至 [2,2,3]
 		//	value: -99,
-		//	expected: []float64{
+		//	expected: []float32{
 		//		1, -99, -99, // 第一层第一行：mask[0,0]=0 → 不填充
 		//		4, 5, 6, // 第一层第二行：mask[0,1]=1 → 全填充
 		//
@@ -718,10 +718,10 @@ func TestMaskedFill1(t *testing.T) {
 		// 广播测试：mask维度为1的维度
 		{
 			name:  "Broadcast with size-1 dimensions",
-			input: NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{3, 2}),
-			mask:  NewTensor([]float64{0, 1}, []int{1, 2}), // 广播至 [3,2]
+			input: NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
+			mask:  NewTensor([]float32{0, 1}, []int{1, 2}), // 广播至 [3,2]
 			value: -99,
-			expected: []float64{
+			expected: []float32{
 				1, -99, // 第一行应用 mask [0,1]
 				3, -99, // 第二行相同
 				5, -99, // 第三行相同
@@ -731,10 +731,10 @@ func TestMaskedFill1(t *testing.T) {
 		// 边缘情况：全填充
 		{
 			name:     "Full masking",
-			input:    NewTensor([]float64{1, 2, 3}, []int{3}),
-			mask:     NewTensor([]float64{1, 1, 1}, []int{3}),
+			input:    NewTensor([]float32{1, 2, 3}, []int{3}),
+			mask:     NewTensor([]float32{1, 1, 1}, []int{3}),
 			value:    0,
-			expected: []float64{0, 0, 0},
+			expected: []float32{0, 0, 0},
 		},
 	}
 

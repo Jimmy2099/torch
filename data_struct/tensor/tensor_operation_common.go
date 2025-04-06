@@ -2,14 +2,14 @@ package tensor
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 	"math/rand"
 	"time"
 )
 
 // Copy 创建张量的深拷贝
 func Copy(t *Tensor) *Tensor {
-	data := make([]float64, len(t.Data))
+	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
 	return NewTensor(data, append([]int{}, t.Shape...))
 }
@@ -20,7 +20,7 @@ func (t *Tensor) Size() int {
 }
 
 // At 获取指定位置的元素（适用于任意维度）
-func (t *Tensor) At(indices ...int) float64 {
+func (t *Tensor) At(indices ...int) float32 {
 	if len(indices) != len(t.Shape) {
 		panic("number of indices must match tensor rank")
 	}
@@ -44,7 +44,7 @@ func Ones(shape []int) *Tensor {
 	for _, dim := range shape {
 		size *= dim
 	}
-	data := make([]float64, size)
+	data := make([]float32, size)
 	for i := range data {
 		data[i] = 1.0
 	}
@@ -52,15 +52,15 @@ func Ones(shape []int) *Tensor {
 }
 
 // Clamp 方法将每个元素限制在 [min, max] 范围内
-func (t *Tensor) Clamp(min, max float64) *Tensor {
-	clampedData := make([]float64, len(t.Data))
+func (t *Tensor) Clamp(min, max float32) *Tensor {
+	clampedData := make([]float32, len(t.Data))
 	for i, val := range t.Data {
 		if val < min {
 			clampedData[i] = min
 		} else if val > max {
 			clampedData[i] = max
 		} else {
-			clampedData[i] = val
+			clampedData[i] = float32(val)
 		}
 	}
 	return &Tensor{Data: clampedData, Shape: t.Shape}
@@ -76,16 +76,16 @@ func RandomNormal(shape []int) *Tensor {
 		size *= dim
 	}
 
-	data := make([]float64, size)
+	data := make([]float32, size)
 	for i := range data {
-		data[i] = rand.NormFloat64() // 标准正态分布：均值0，标准差1
+		data[i] = float32(rand.NormFloat64()) // 标准正态分布：均值0，标准差1
 	}
 
 	return &Tensor{Data: data, Shape: shape}
 }
 
 // Random generates a tensor with random values in the range [min, max].
-func Random(shape []int, min, max float64) *Tensor {
+func Random(shape []int, min, max float32) *Tensor {
 	if min > max {
 		panic("min cannot be greater than max")
 	}
@@ -98,9 +98,9 @@ func Random(shape []int, min, max float64) *Tensor {
 		size *= dim
 	}
 
-	data := make([]float64, size)
+	data := make([]float32, size)
 	for i := range data {
-		data[i] = min + rand.Float64()*(max-min) // Scale to [min, max]
+		data[i] = min + float32(rand.Float32())*(max-min) // Scale to [min, max]
 	}
 
 	return &Tensor{Data: data, Shape: shape}
@@ -112,7 +112,7 @@ func Zeros(shape []int) *Tensor {
 	for _, dim := range shape {
 		size *= dim
 	}
-	data := make([]float64, size)
+	data := make([]float32, size)
 	return &Tensor{Data: data, Shape: shape}
 }
 
@@ -130,8 +130,8 @@ func ZerosLike(t *Tensor) *Tensor {
 }
 
 // AddScalar 张量每个元素加标量
-func (t *Tensor) AddScalar(scalar float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) AddScalar(scalar float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = v + scalar
 	}
@@ -139,8 +139,8 @@ func (t *Tensor) AddScalar(scalar float64) *Tensor {
 }
 
 // MulScalar 张量每个元素乘标量
-func (t *Tensor) MulScalar(scalar float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) MulScalar(scalar float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = v * scalar
 	}
@@ -149,7 +149,7 @@ func (t *Tensor) MulScalar(scalar float64) *Tensor {
 
 // Sqrt 张量每个元素开平方
 func (t *Tensor) Sqrt() *Tensor {
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = math.Sqrt(v)
 	}
@@ -157,8 +157,8 @@ func (t *Tensor) Sqrt() *Tensor {
 }
 
 // Pow 张量每个元素幂运算
-func (t *Tensor) Pow(exponent float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) Pow(exponent float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = math.Pow(v, exponent)
 	}
@@ -193,7 +193,7 @@ func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 	}
 
 	// 初始化结果数据
-	resultData := make([]float64, product(newShape))
+	resultData := make([]float32, product(newShape))
 
 	// 遍历原始数据
 	for i := 0; i < len(t.Data); i++ {
@@ -243,8 +243,8 @@ func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 }
 
 // DivScalar 张量每个元素除标量
-func (t *Tensor) DivScalar(scalar float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) DivScalar(scalar float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = v / scalar
 	}
@@ -253,15 +253,15 @@ func (t *Tensor) DivScalar(scalar float64) *Tensor {
 
 // Sum 不带参数的求和
 func (t *Tensor) Sum111() *Tensor {
-	sum := 0.0
+	var sum float32
 	for _, v := range t.Data {
 		sum += v
 	}
-	return &Tensor{Data: []float64{sum}, Shape: []int{1}}
+	return &Tensor{Data: []float32{sum}, Shape: []int{1}}
 }
 
 // Get 根据索引获取张量中的值
-func (t *Tensor) Get(indices []int) float64 {
+func (t *Tensor) Get(indices []int) float32 {
 	idx := 0
 	stride := 1
 	for i := len(t.Shape) - 1; i >= 0; i-- {
@@ -272,7 +272,7 @@ func (t *Tensor) Get(indices []int) float64 {
 }
 
 // Set 根据索引设置张量中的值
-func (t *Tensor) Set1(indices []int, value float64) {
+func (t *Tensor) Set1(indices []int, value float32) {
 	idx := 0
 	stride := 1
 	for i := len(t.Shape) - 1; i >= 0; i-- {
@@ -283,7 +283,7 @@ func (t *Tensor) Set1(indices []int, value float64) {
 }
 
 // Max 返回张量中的最大值
-func (t *Tensor) Max1() float64 {
+func (t *Tensor) Max1() float32 {
 	if len(t.Data) == 0 {
 		return 0
 	}
@@ -301,7 +301,7 @@ func (t *Tensor) Sub1(other *Tensor) *Tensor {
 	if !shapeEqual(t.Shape, other.Shape) {
 		panic("shape mismatch in tensor subtraction")
 	}
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] - other.Data[i]
 	}
@@ -309,8 +309,8 @@ func (t *Tensor) Sub1(other *Tensor) *Tensor {
 }
 
 // Sum 计算张量所有元素的和
-func (t *Tensor) Sum1() float64 {
-	sum := 0.0
+func (t *Tensor) Sum1() float32 {
+	var sum float32
 	for _, v := range t.Data {
 		sum += v
 	}
@@ -322,7 +322,7 @@ func (t *Tensor) Div1(other *Tensor) *Tensor {
 	if !shapeEqual(t.Shape, other.Shape) {
 		panic("shape mismatch in tensor division")
 	}
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] / other.Data[i]
 	}
@@ -334,7 +334,7 @@ func (t *Tensor) Multiply1(other *Tensor) *Tensor {
 	if !shapeEqual(t.Shape, other.Shape) {
 		panic("shape mismatch in tensor multiplication")
 	}
-	result := make([]float64, len(t.Data))
+	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] * other.Data[i]
 	}
@@ -342,8 +342,8 @@ func (t *Tensor) Multiply1(other *Tensor) *Tensor {
 }
 
 // Apply 对张量应用函数
-func (t *Tensor) Apply1(f func(float64) float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) Apply1(f func(float32) float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = f(v)
 	}
@@ -352,7 +352,7 @@ func (t *Tensor) Apply1(f func(float64) float64) *Tensor {
 
 // Clone 克隆张量
 func (t *Tensor) Clone1() *Tensor {
-	data := make([]float64, len(t.Data))
+	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
 	return NewTensor(data, t.Shape)
 }
@@ -371,8 +371,8 @@ func ShapeEqual(shape1, shape2 []int) bool {
 }
 
 // SubScalar 张量减去标量
-func (t *Tensor) SubScalar(scalar float64) *Tensor {
-	result := make([]float64, len(t.Data))
+func (t *Tensor) SubScalar(scalar float32) *Tensor {
+	result := make([]float32, len(t.Data))
 	for i, v := range t.Data {
 		result[i] = v - scalar
 	}

@@ -86,7 +86,7 @@ torch.set_default_dtype(torch.float%d)
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        tensor = tensor.detach().numpy().astype(np.float64)
+        tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
 
@@ -233,7 +233,7 @@ torch.set_default_dtype(%s)
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        tensor = tensor.detach().numpy().astype(np.float64)
+        tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
 
@@ -320,7 +320,7 @@ torch.set_default_dtype(%s)
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
         f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
-        tensor = tensor.detach().numpy().astype(np.float64)
+        tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
 

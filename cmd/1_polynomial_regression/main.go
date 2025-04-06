@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 	"math/rand"
 	"time"
 )
@@ -57,7 +57,7 @@ func (nn *NeuralNetwork) Forward(x *tensor.Tensor) *tensor.Tensor {
 	return output
 }
 
-func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float64) {
+func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float32) {
 	lastLayer := nn.Layers[len(nn.Layers)-1].(*torch.LinearLayer)
 	output := lastLayer.Output
 
@@ -68,7 +68,7 @@ func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float64) {
 
 	// 计算梯度 (output - targets) * 2/batch_size
 	gradOutput := output.Sub(targets)
-	gradOutput = gradOutput.MulScalar(2.0 / float64(targets.Shape[0]))
+	gradOutput = gradOutput.MulScalar(2.0 / float32(targets.Shape[0]))
 
 	// 反向传播
 	for i := len(nn.Layers) - 1; i >= 0; i-- {
@@ -80,20 +80,20 @@ func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float64) {
 func polynomialFeatures(X *tensor.Tensor, degree int) *tensor.Tensor {
 	numSamples, numFeatures := X.Shape[0], X.Shape[1]
 	newFeatures := numFeatures * degree
-	features := make([]float64, numSamples*newFeatures)
+	features := make([]float32, numSamples*newFeatures)
 
 	for s := 0; s < numSamples; s++ {
 		for f := 0; f < numFeatures; f++ {
 			val := X.Data[s*numFeatures+f]
 			for d := 1; d <= degree; d++ {
-				features[s*newFeatures+f*degree+(d-1)] = math.Pow(val, float64(d))
+				features[s*newFeatures+f*degree+(d-1)] = math.Pow(val, float32(d))
 			}
 		}
 	}
 	return tensor.NewTensor(features, []int{numSamples, newFeatures})
 }
 
-func targetFunc(x1, x2 float64) float64 {
+func targetFunc(x1, x2 float32) float32 {
 	return 3 + 2*x1 + 1.5*x2 + 0.5*x1*x1 - 0.8*x2*x2 + 0.3*x1*x1*x1
 }
 
@@ -101,14 +101,14 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	// 生成训练数据 (样本数, 特征数) = (10, 2)
-	X_data := make([]float64, 10*2)
+	X_data := make([]float32, 10*2)
 	for i := range X_data {
-		X_data[i] = rand.Float64()
+		X_data[i] = float32(rand.Float32())
 	}
 	X_train := tensor.NewTensor(X_data, []int{10, 2}) // [样本数, 特征数]
 
 	// 生成目标值 (样本数, 1)
-	y_data := make([]float64, 10)
+	y_data := make([]float32, 10)
 	for j := 0; j < 10; j++ {
 		x1 := X_train.Data[j*2]
 		x2 := X_train.Data[j*2+1]
@@ -134,13 +134,13 @@ func main() {
 	// 训练配置
 	trainer := torch.NewBasicTrainer(torch.MSE)
 	epochs := 500
-	learningRate := 0.01
+	learningRate := float32(0.0)
 
 	// 开始训练
-	trainer.Train(model, X_train_poly, y_train, epochs, learningRate)
+	trainer.Train(model, X_train_poly, y_train, epochs, float32(learningRate))
 
 	// 测试预测
-	test_data := []float64{0.2, 0.3}
+	test_data := []float32{0.2, 0.3}
 	test_sample := tensor.NewTensor(test_data, []int{1, 2}) // [1样本, 2特征]
 	test_poly := polynomialFeatures(test_sample, degree)    // [1, 6]
 	prediction := model.Forward(test_poly)                  // [1, 1]

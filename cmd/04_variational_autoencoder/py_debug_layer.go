@@ -231,7 +231,7 @@ func (v *VAE) PyDecode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
 
 		{
-			x = x.Mul(tensor.NewTensor([]float64{0.5}, []int{1})).Add(tensor.NewTensor([]float64{0.5}, []int{1}))
+			x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))
 			x = x.Clamp(0, 1)
 		}
 

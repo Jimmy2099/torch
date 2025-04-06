@@ -2,7 +2,10 @@ module github.com/Jimmy2099/torch
 
 go 1.23.7
 
-require github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
+require (
+	github.com/chewxy/math32 v1.11.1
+	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
+)
 
 require (
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect

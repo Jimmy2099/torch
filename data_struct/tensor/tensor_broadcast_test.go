@@ -8,7 +8,7 @@ import (
 )
 
 // --- Assume Tensor struct and basic helpers exist ---
-// type Tensor struct { Data []float64; Shape []int }
+// type Tensor struct { Data []float32; Shape []int }
 // func checkPanic(t *testing.T, f func()) { ... }
 
 // --- Helper function needed by getBroadcastedShape ---

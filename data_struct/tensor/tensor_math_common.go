@@ -2,7 +2,7 @@ package tensor
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Flatten returns a 1D tensor with all elements
@@ -11,7 +11,7 @@ func (t *Tensor) Flatten() *Tensor {
 }
 
 // Set sets the element at the given indices
-func (t *Tensor) Set(value float64, indices ...int) {
+func (t *Tensor) Set(value float32, indices ...int) {
 	pos := 0
 	stride := 1
 	for i := len(indices) - 1; i >= 0; i-- {
@@ -58,7 +58,7 @@ func Multiply(a, b *Tensor) *Tensor {
 		totalElements *= outShape[i]
 	}
 
-	resultData := make([]float64, totalElements)
+	resultData := make([]float32, totalElements)
 
 	// Iterate through all possible indices except the last two
 	indices := make([]int, len(outShape)-2)
@@ -76,7 +76,7 @@ func Multiply(a, b *Tensor) *Tensor {
 		// Perform matrix multiplication on the last two dimensions
 		for i := 0; i < aRows; i++ {
 			for j := 0; j < bCols; j++ {
-				sum := 0.0
+				var sum float32
 				for k := 0; k < aCols; k++ {
 					aPos := aOffset + i*aCols + k
 					bPos := bOffset + k*bCols + j
@@ -115,7 +115,7 @@ func Add(a, b *Tensor) *Tensor {
 		panic(fmt.Sprintf("Tensor shapes don't match for addition: %v + %v", a.Shape, b.Shape))
 	}
 
-	resultData := make([]float64, len(a.Data))
+	resultData := make([]float32, len(a.Data))
 	for i := range a.Data {
 		resultData[i] = a.Data[i] + b.Data[i]
 	}
@@ -129,7 +129,7 @@ func Subtract(a, b *Tensor) *Tensor {
 		panic(fmt.Sprintf("Tensor shapes don't match for subtraction: %v - %v", a.Shape, b.Shape))
 	}
 
-	resultData := make([]float64, len(a.Data))
+	resultData := make([]float32, len(a.Data))
 	for i := range a.Data {
 		resultData[i] = a.Data[i] - b.Data[i]
 	}
@@ -143,7 +143,7 @@ func HadamardProduct(a, b *Tensor) *Tensor {
 		panic(fmt.Sprintf("Tensor shapes don't match for Hadamard product: %v * %v", a.Shape, b.Shape))
 	}
 
-	resultData := make([]float64, len(a.Data))
+	resultData := make([]float32, len(a.Data))
 	for i := range a.Data {
 		resultData[i] = a.Data[i] * b.Data[i]
 	}
@@ -178,7 +178,7 @@ func Transpose(t *Tensor, dims ...int) *Tensor {
 	}
 
 	// Create mapping from old indices to new indices
-	resultData := make([]float64, len(t.Data))
+	resultData := make([]float32, len(t.Data))
 
 	oldIndices := make([]int, len(t.Shape))
 	for {
@@ -220,8 +220,8 @@ func Transpose(t *Tensor, dims ...int) *Tensor {
 }
 
 // Apply applies a function to each element of the tensor
-func (t *Tensor) Apply(fn func(float64) float64) *Tensor {
-	resultData := make([]float64, len(t.Data))
+func (t *Tensor) Apply(fn func(float32) float32) *Tensor {
+	resultData := make([]float32, len(t.Data))
 	for i, val := range t.Data {
 		resultData[i] = fn(val)
 	}
@@ -229,35 +229,35 @@ func (t *Tensor) Apply(fn func(float64) float64) *Tensor {
 }
 
 // Sum returns the sum of all elements in the tensor
-func (t *Tensor) Sum() float64 {
-	sum := 0.0
+func (t *Tensor) Sum() float32 {
+	var sum float32
 	for _, val := range t.Data {
-		sum += val
+		sum += float32(val)
 	}
 	return sum
 }
 
 // Mean returns the mean of all elements in the tensor
-func (t *Tensor) Mean() float64 {
-	return t.Sum() / float64(len(t.Data))
+func (t *Tensor) Mean() float32 {
+	return t.Sum() / float32(len(t.Data))
 }
 
 // Max returns the maximum value in the tensor
-func (t *Tensor) Max() float64 {
+func (t *Tensor) Max() float32 {
 	maxVal := math.Inf(-1)
 	for _, val := range t.Data {
 		if val > maxVal {
-			maxVal = val
+			maxVal = float32(val)
 		}
 	}
 	return maxVal
 }
 
-func (t *Tensor) Min() float64 {
+func (t *Tensor) Min() float32 {
 	maxVal := math.Inf(1)
 	for _, val := range t.Data {
 		if val < maxVal {
-			maxVal = val
+			maxVal = float32(val)
 		}
 	}
 	return maxVal
@@ -265,14 +265,14 @@ func (t *Tensor) Min() float64 {
 
 // Copy returns a deep copy of the tensor
 func (t *Tensor) Copy() *Tensor {
-	data := make([]float64, len(t.Data))
+	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
 	return NewTensor(data, t.Shape)
 }
 
 // ReLU applies the rectified linear unit activation function
 func (t *Tensor) ReLU() *Tensor {
-	return t.Apply(func(x float64) float64 {
+	return t.Apply(func(x float32) float32 {
 		return math.Max(0, x)
 	})
 }
@@ -291,7 +291,7 @@ func (t *Tensor) Softmax() *Tensor {
 	}
 
 	// Create result tensor
-	result := NewTensor(make([]float64, len(t.Data)), t.Shape)
+	result := NewTensor(make([]float32, len(t.Data)), t.Shape)
 
 	// Apply softmax to each row
 	for i := 0; i < otherDims; i++ {
@@ -300,13 +300,13 @@ func (t *Tensor) Softmax() *Tensor {
 		for j := 0; j < lastDim; j++ {
 			val := t.Data[i*lastDim+j]
 			if val > maxVal {
-				maxVal = val
+				maxVal = float32(val)
 			}
 		}
 
 		// Compute exponentials and sum
-		sum := 0.0
-		exps := make([]float64, lastDim)
+		var sum float32
+		exps := make([]float32, lastDim)
 		for j := 0; j < lastDim; j++ {
 			exps[j] = math.Exp(t.Data[i*lastDim+j] - maxVal)
 			sum += exps[j]
@@ -336,7 +336,7 @@ func (t *Tensor) ArgMax() *Tensor {
 	// Create result tensor with one less dimension
 	resultShape := make([]int, len(t.Shape)-1)
 	copy(resultShape, t.Shape[:len(t.Shape)-1])
-	result := NewTensor(make([]float64, otherDims), resultShape)
+	result := NewTensor(make([]float32, otherDims), resultShape)
 
 	for i := 0; i < otherDims; i++ {
 		maxIdx := 0
@@ -347,7 +347,7 @@ func (t *Tensor) ArgMax() *Tensor {
 				maxIdx = j
 			}
 		}
-		result.Data[i] = float64(maxIdx)
+		result.Data[i] = float32(maxIdx)
 	}
 
 	return result
@@ -378,8 +378,8 @@ func (t *Tensor) MaxPool(poolSize, stride int) (*Tensor, *Tensor) {
 	}
 
 	// Create result and argmax tensors
-	resultData := make([]float64, totalElements)
-	argmaxData := make([]float64, totalElements)
+	resultData := make([]float32, totalElements)
+	argmaxData := make([]float32, totalElements)
 
 	// Iterate through all dimensions except the last two
 	indices := make([]int, len(t.Shape)-2)
@@ -430,7 +430,7 @@ func (t *Tensor) MaxPool(poolSize, stride int) (*Tensor, *Tensor) {
 				}
 
 				resultData[resultPos] = maxVal
-				argmaxData[resultPos] = float64(maxIdx)
+				argmaxData[resultPos] = float32(maxIdx)
 			}
 		}
 

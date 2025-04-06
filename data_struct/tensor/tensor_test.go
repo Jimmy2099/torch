@@ -12,37 +12,37 @@ func TestNewTensor2(t *testing.T) {
 	// Define test cases
 	testCases := []struct {
 		name           string    // Name of the test case
-		inputData      []float64 // Input data for NewTensor
+		inputData      []float32 // Input data for NewTensor
 		inputShape     []int     // Input shape for NewTensor
 		expectedTensor *Tensor   // The expected Tensor struct
 		expectPanic    bool      // Whether NewTensor is expected to panic (it shouldn't here)
 	}{
 		{
 			name:       "Simple 1D Vector",
-			inputData:  []float64{1.0, 2.0, 3.0},
+			inputData:  []float32{1.0, 2.0, 3.0},
 			inputShape: []int{3},
 			expectedTensor: &Tensor{
-				Data:  []float64{1.0, 2.0, 3.0},
+				Data:  []float32{1.0, 2.0, 3.0},
 				Shape: []int{3},
 			},
 			expectPanic: false,
 		},
 		{
 			name:       "Simple 2D Matrix",
-			inputData:  []float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+			inputData:  []float32{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
 			inputShape: []int{2, 3}, // 2 rows, 3 columns
 			expectedTensor: &Tensor{
-				Data:  []float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+				Data:  []float32{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
 				Shape: []int{2, 3},
 			},
 			expectPanic: false,
 		},
 		{
 			name:       "Empty Data and Shape",
-			inputData:  []float64{}, // Empty slice
+			inputData:  []float32{}, // Empty slice
 			inputShape: []int{},     // Empty slice
 			expectedTensor: &Tensor{
-				Data:  []float64{},
+				Data:  []float32{},
 				Shape: []int{},
 			},
 			expectPanic: false,
@@ -59,20 +59,20 @@ func TestNewTensor2(t *testing.T) {
 		},
 		{
 			name:       "Shape with Zero Dimension", // Data length doesn't necessarily match shape product here
-			inputData:  []float64{},
+			inputData:  []float32{},
 			inputShape: []int{2, 0, 3},
 			expectedTensor: &Tensor{
-				Data:  []float64{},
+				Data:  []float32{},
 				Shape: []int{2, 0, 3},
 			},
 			expectPanic: false,
 		},
 		{
 			name:       "High Dimensional Tensor (3D)",
-			inputData:  []float64{1, 2, 3, 4, 5, 6, 7, 8},
+			inputData:  []float32{1, 2, 3, 4, 5, 6, 7, 8},
 			inputShape: []int{2, 2, 2},
 			expectedTensor: &Tensor{
-				Data:  []float64{1, 2, 3, 4, 5, 6, 7, 8},
+				Data:  []float32{1, 2, 3, 4, 5, 6, 7, 8},
 				Shape: []int{2, 2, 2},
 			},
 			expectPanic: false,

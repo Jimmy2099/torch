@@ -17,13 +17,13 @@ func TestNewTensorWithShape(t *testing.T) {
 		name      string
 		shape     []int
 		wantShape []int
-		wantData  []float64
+		wantData  []float32
 	}{
-		{"Matrix", []int{2, 3}, []int{2, 3}, []float64{0, 0, 0, 0, 0, 0}},
-		{"Vector", []int{4}, []int{4}, []float64{0, 0, 0, 0}},
-		{"Scalar", []int{1}, []int{1}, []float64{0}},
-		{"Empty Shape", []int{}, []int{}, []float64{}}, // Implementation creates size 0 data for []
-		{"Zero Dim", []int{2, 0, 3}, []int{2, 0, 3}, []float64{}},
+		{"Matrix", []int{2, 3}, []int{2, 3}, []float32{0, 0, 0, 0, 0, 0}},
+		{"Vector", []int{4}, []int{4}, []float32{0, 0, 0, 0}},
+		{"Scalar", []int{1}, []int{1}, []float32{0}},
+		{"Empty Shape", []int{}, []int{}, []float32{}}, // Implementation creates size 0 data for []
+		{"Zero Dim", []int{2, 0, 3}, []int{2, 0, 3}, []float32{}},
 	}
 
 	for _, tt := range tests {
@@ -137,7 +137,7 @@ func TestNewRandomTensor(t *testing.T) {
 			// Check bounds for non-empty tensors
 			if expectedSize > 0 {
 				for i, val := range tensor.Data {
-					if val < -1.0 || val >= 1.0 { // Range is [-1, 1) due to rand.Float64()
+					if val < -1.0 || val >= 1.0 { // Range is [-1, 1) due to rand.Float32()
 						t.Errorf("NewRandomTensor(%v) data[%d] = %v, out of range [-1.0, 1.0)", tt.shape, i, val)
 					}
 				}
@@ -169,61 +169,61 @@ func TestNewRandomTensor(t *testing.T) {
 func TestNewTensorFromSlice(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     [][]float64
+		input     [][]float32
 		wantShape []int
-		wantData  []float64
+		wantData  []float32
 		wantErr   bool // Expect panic
 	}{
 		{
 			name:      "Standard Matrix",
-			input:     [][]float64{{1, 2, 3}, {4, 5, 6}},
+			input:     [][]float32{{1, 2, 3}, {4, 5, 6}},
 			wantShape: []int{2, 3},
-			wantData:  []float64{1, 2, 3, 4, 5, 6},
+			wantData:  []float32{1, 2, 3, 4, 5, 6},
 			wantErr:   false,
 		},
 		{
 			name:      "Single Row",
-			input:     [][]float64{{7, 8}},
+			input:     [][]float32{{7, 8}},
 			wantShape: []int{1, 2},
-			wantData:  []float64{7, 8},
+			wantData:  []float32{7, 8},
 			wantErr:   false,
 		},
 		{
 			name:      "Single Column",
-			input:     [][]float64{{9}, {10}},
+			input:     [][]float32{{9}, {10}},
 			wantShape: []int{2, 1},
-			wantData:  []float64{9, 10},
+			wantData:  []float32{9, 10},
 			wantErr:   false,
 		},
 		{
 			name:      "Empty Outer Slice",
-			input:     [][]float64{},
+			input:     [][]float32{},
 			wantShape: []int{0, 0}, // Implementation detail: returns [0, 0] shape
-			wantData:  []float64{},
+			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:      "Empty Inner Slices",
-			input:     [][]float64{{}, {}}, // Rows=2, Cols=0 based on first row
+			input:     [][]float32{{}, {}}, // Rows=2, Cols=0 based on first row
 			wantShape: []int{2, 0},
-			wantData:  []float64{},
+			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:      "Single Empty Inner Slice",
-			input:     [][]float64{{}}, // Rows=1, Cols=0
+			input:     [][]float32{{}}, // Rows=1, Cols=0
 			wantShape: []int{1, 0},
-			wantData:  []float64{},
+			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:    "Jagged Slice",
-			input:   [][]float64{{1, 2}, {3}}, // Different lengths
+			input:   [][]float32{{1, 2}, {3}}, // Different lengths
 			wantErr: true,
 		},
 		{
 			name:    "Jagged Slice with Empty",
-			input:   [][]float64{{1, 2}, {}}, // Different lengths
+			input:   [][]float32{{1, 2}, {}}, // Different lengths
 			wantErr: true,
 		},
 	}
@@ -244,7 +244,7 @@ func TestNewTensorFromSlice(t *testing.T) {
 }
 
 func TestTensor_Reshape(t *testing.T) {
-	originalData := []float64{1, 2, 3, 4, 5, 6}
+	originalData := []float32{1, 2, 3, 4, 5, 6}
 
 	tests := []struct {
 		name       string
@@ -283,12 +283,12 @@ func TestTensor_Reshape(t *testing.T) {
 				startSize = 0
 			}
 			// Create data only if size > 0
-			var currentData []float64
+			var currentData []float32
 			if startSize > 0 {
-				currentData = make([]float64, startSize)
+				currentData = make([]float32, startSize)
 				copy(currentData, originalData[:startSize]) // Use appropriate amount of data
 			} else {
-				currentData = []float64{}
+				currentData = []float32{}
 			}
 
 			tensor := NewTensor(currentData, tt.startShape)
@@ -330,7 +330,7 @@ func TestTensor_Reshape(t *testing.T) {
 	}
 	// Test case for Reshape([1]) to []int{} - Requires size calculation for []int{}
 	t.Run("Reshape 1 to Empty", func(t *testing.T) {
-		tensor1 := NewTensor([]float64{5.0}, []int{1})
+		tensor1 := NewTensor([]float32{5.0}, []int{1})
 		// Determine expected size of target shape based on *tensor's* Size() method,
 		// as Reshape uses t.Size() for comparison.
 		tempTargetTensor := &Tensor{Shape: []int{}} // Don't need data
@@ -388,17 +388,17 @@ func TestTensor_Squeeze(t *testing.T) {
 					startSize = 0
 				}
 			}
-			var startData []float64
+			var startData []float32
 			if startSize > 0 {
-				startData = make([]float64, startSize)
+				startData = make([]float32, startSize)
 				startData[0] = 1
 			} else {
-				startData = []float64{}
+				startData = []float32{}
 			}
 
 			tensor := &Tensor{Data: startData, Shape: tt.startShape} // Create directly to handle nil shape
 			originalTensorPtr := tensor
-			var originalDataPtr *float64
+			var originalDataPtr *float32
 
 			if len(startData) > 0 {
 				originalDataPtr = &startData[0]
@@ -475,17 +475,17 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 				}
 			}
 
-			var startData []float64
+			var startData []float32
 			if startSize > 0 {
-				startData = make([]float64, startSize)
+				startData = make([]float32, startSize)
 				startData[0] = 1
 			} else {
-				startData = []float64{}
+				startData = []float32{}
 			}
 
 			tensor := &Tensor{Data: startData, Shape: tt.startShape}
 			originalTensorPtr := tensor
-			var originalDataPtr *float64
+			var originalDataPtr *float32
 			if len(startData) > 0 {
 				originalDataPtr = &startData[0]
 			}

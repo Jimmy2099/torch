@@ -3,7 +3,7 @@ package layer
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 	"math/rand"
 )
 
@@ -35,17 +35,17 @@ func (ct *ConvTranspose2dLayer) GetBias() *tensor.Tensor {
 // NewConvTranspose2dLayer creates a new ConvTranspose2dLayer.
 func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSizeCols, strideRows, strideCols, paddingRows, paddingCols, outputPaddingRows, outputPaddingCols int) *ConvTranspose2dLayer {
 	// 修正权重形状为 [in_channels, out_channels, kernel_rows, kernel_cols]
-	weightsData := make([]float64, inChannels*outChannels*kernelSizeRows*kernelSizeCols)
+	weightsData := make([]float32, inChannels*outChannels*kernelSizeRows*kernelSizeCols)
 
 	// 修复2: 使用PyTorch一致的Kaiming初始化
 	fanIn := inChannels * kernelSizeRows * kernelSizeCols
-	variance := 2.0 / float64(fanIn)
+	variance := 2.0 / float32(fanIn)
 	for i := range weightsData {
 		weightsData[i] = randn() * math.Sqrt(variance)
 	}
 
 	weights := tensor.NewTensor(weightsData, []int{inChannels, outChannels, kernelSizeRows, kernelSizeCols})
-	bias := tensor.NewTensor(make([]float64, outChannels), []int{outChannels})
+	bias := tensor.NewTensor(make([]float32, outChannels), []int{outChannels})
 
 	return &ConvTranspose2dLayer{
 		Weights:          weights,
@@ -65,16 +65,16 @@ func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSize
 }
 
 // randn generates a random number with standard normal distribution.
-func randn() float64 {
+func randn() float32 {
 	const (
 		twoPi = 2 * math.Pi
 	)
 	var (
-		u1, u2, r float64
+		u1, u2, r float32
 	)
 	for {
-		u1 = rand.Float64()
-		u2 = rand.Float64()
+		u1 = rand.Float32()
+		u2 = rand.Float32()
 		r = math.Sqrt(-2 * math.Log(u1) * math.Cos(twoPi*u2))
 		if !math.IsNaN(r) {
 			break
@@ -109,7 +109,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 
 	// 初始化输出张量
 	outputShape := []int{batchSize, ct.OutChannels, outputHeight, outputWidth}
-	outputData := make([]float64, product(outputShape))
+	outputData := make([]float32, product(outputShape))
 	output := tensor.NewTensor(outputData, outputShape)
 
 	// 核心计算逻辑
@@ -117,7 +117,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 		for outC := 0; outC < ct.OutChannels; outC++ {
 			for i := 0; i < outputHeight; i++ {
 				for j := 0; j < outputWidth; j++ {
-					sum := 0.0
+					var sum float32
 
 					// 遍历卷积核
 					for kRow := 0; kRow < ct.KernelSizeRow; kRow++ {
@@ -183,7 +183,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 	return output
 }
 
-func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	if ct.inputCache == nil {
 		panic("需要先执行前向传播")
 	}
@@ -201,12 +201,12 @@ func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate
 
 	// 初始化梯度张量
 	gradInputShape := inputTensor.Shape
-	gradInputData := make([]float64, product(gradInputShape))
+	gradInputData := make([]float32, product(gradInputShape))
 	gradInput := tensor.NewTensor(gradInputData, gradInputShape)
 
 	// 梯度缓冲区
-	gradWeightsData := make([]float64, len(ct.Weights.Data))
-	gradBiasData := make([]float64, len(ct.Bias.Data))
+	gradWeightsData := make([]float32, len(ct.Weights.Data))
+	gradBiasData := make([]float32, len(ct.Bias.Data))
 
 	// 核心反向计算
 	for b := 0; b < batchSize; b++ {
@@ -299,9 +299,9 @@ func (ct *ConvTranspose2dLayer) Parameters() []*tensor.Tensor {
 }
 
 // SetWeights sets the weights of the layer.
-func (ct *ConvTranspose2dLayer) SetWeights(data [][]float64) {
+func (ct *ConvTranspose2dLayer) SetWeights(data [][]float32) {
 	// Convert the 2D slice to a 1D slice
-	flattenedData := make([]float64, 0)
+	flattenedData := make([]float32, 0)
 	for _, row := range data {
 		flattenedData = append(flattenedData, row...)
 	}
@@ -311,19 +311,19 @@ func (ct *ConvTranspose2dLayer) SetWeights(data [][]float64) {
 }
 
 // SetBias sets the bias of the layer.
-func (ct *ConvTranspose2dLayer) SetBias(data [][]float64) {
+func (ct *ConvTranspose2dLayer) SetBias(data [][]float32) {
 	// Convert the 2D slice to a 1D slice
-	flattenedData := make([]float64, 0)
+	flattenedData := make([]float32, 0)
 	for _, row := range data {
 		flattenedData = append(flattenedData, row...)
 	}
 	ct.Bias = tensor.NewTensor(flattenedData, ct.Bias.Shape)
 }
 
-func (l *ConvTranspose2dLayer) SetWeightsAndShape(data []float64, shape []int) {
+func (l *ConvTranspose2dLayer) SetWeightsAndShape(data []float32, shape []int) {
 	l.Weights = tensor.NewTensor(data, shape)
 }
 
-func (l *ConvTranspose2dLayer) SetBiasAndShape(data []float64, shape []int) {
+func (l *ConvTranspose2dLayer) SetBiasAndShape(data []float32, shape []int) {
 	l.Bias = tensor.NewTensor(data, shape)
 }

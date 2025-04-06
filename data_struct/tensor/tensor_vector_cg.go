@@ -2,24 +2,24 @@ package tensor
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
-func NewVec3(x, y, z float64) *Tensor {
-	return NewTensor([]float64{x, y, z}, []int{3})
+func NewVec3(x, y, z float32) *Tensor {
+	return NewTensor([]float32{x, y, z}, []int{3})
 }
 
 //tensor vector computer graphic
 
-func (m *Tensor) X() float64 {
+func (m *Tensor) X() float32 {
 	return m.Data[0]
 }
 
-func (m *Tensor) Y() float64 {
+func (m *Tensor) Y() float32 {
 	return m.Data[1]
 }
 
-func (m *Tensor) Z() float64 {
+func (m *Tensor) Z() float32 {
 	return m.Data[2]
 }
 
@@ -53,7 +53,7 @@ func (t *Tensor) checkVector() {
 }
 
 // 矩阵行列式（仅限4x4）
-func (t *Tensor) Determinant() float64 {
+func (t *Tensor) Determinant() float32 {
 	t.checkSquareMatrix()
 	if t.Shape[0] != 4 {
 		panic("Determinant currently only supported for 4x4 matrices")
@@ -82,7 +82,7 @@ func (t *Tensor) Inverse() *Tensor {
 	}
 
 	m := t.Data
-	inv := make([]float64, 16)
+	inv := make([]float32, 16)
 	det := t.Determinant()
 
 	inv[0] = (m[5]*m[10]*m[15] - m[5]*m[11]*m[14] + m[7]*m[9]*m[14] - m[6]*m[9]*m[15] + m[6]*m[11]*m[13] - m[7]*m[10]*m[13]) / det
@@ -93,7 +93,7 @@ func (t *Tensor) Inverse() *Tensor {
 }
 
 func Identity() *Tensor {
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
@@ -106,14 +106,14 @@ func TranslateMatrix(v *Tensor) *Tensor {
 		panic("Translation vector must be 3D")
 	}
 
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		1, 0, 0, v.Data[0],
 		0, 1, 0, v.Data[1],
 		0, 0, 1, v.Data[2],
 		0, 0, 0, 1}, []int{4, 4})
 }
 
-func Rotate(axis *Tensor, angle float64) *Tensor {
+func Rotate(axis *Tensor, angle float32) *Tensor {
 	axis = axis.Normalize()
 	s := math.Sin(angle)
 	c := math.Cos(angle)
@@ -123,16 +123,16 @@ func Rotate(axis *Tensor, angle float64) *Tensor {
 	y := axis.Data[1]
 	z := axis.Data[2]
 
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		m*x*x + c, m*x*y + z*s, m*x*z - y*s, 0,
 		m*x*y - z*s, m*y*y + c, m*y*z + x*s, 0,
 		m*x*z + y*s, m*y*z - x*s, m*z*z + c, 0,
 		0, 0, 0, 1}, []int{4, 4})
 }
 
-func Perspective(fovy, aspect, near, far float64) *Tensor {
+func Perspective(fovy, aspect, near, far float32) *Tensor {
 	f := 1.0 / math.Tan(fovy/2)
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		f / aspect, 0, 0, 0,
 		0, f, 0, 0,
 		0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
@@ -144,14 +144,14 @@ func LookAt(eye, center, up *Tensor) *Tensor {
 	x := up.Cross(z).Normalize()
 	y := z.Cross(x)
 
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		x.Data[0], x.Data[1], x.Data[2], -x.Dot(eye),
 		y.Data[0], y.Data[1], y.Data[2], -y.Dot(eye),
 		z.Data[0], z.Data[1], z.Data[2], -z.Dot(eye),
 		0, 0, 0, 1}, []int{4, 4})
 }
 
-func (t *Tensor) Dot(other *Tensor) float64 {
+func (t *Tensor) Dot(other *Tensor) float32 {
 	if !t.IsVector() || !other.IsVector() {
 		panic("Dot product requires vectors")
 	}
@@ -159,7 +159,7 @@ func (t *Tensor) Dot(other *Tensor) float64 {
 		panic("Vectors must have same length")
 	}
 
-	sum := 0.0
+	var sum float32
 	for i := range t.Data {
 		sum += t.Data[i] * other.Data[i]
 	}
@@ -173,7 +173,7 @@ func (t *Tensor) Cross(other *Tensor) *Tensor {
 
 	a := t.Data
 	b := other.Data
-	return NewTensor([]float64{
+	return NewTensor([]float32{
 		a[1]*b[2] - a[2]*b[1],
 		a[2]*b[0] - a[0]*b[2],
 		a[0]*b[1] - a[1]*b[0]}, []int{3})
@@ -184,13 +184,13 @@ func (t *Tensor) Normalize() *Tensor {
 		panic("Normalization requires vector")
 	}
 
-	length := 0.0
+	var length float32
 	for _, v := range t.Data {
 		length += v * v
 	}
 	length = math.Sqrt(length)
 
-	data := make([]float64, len(t.Data))
+	data := make([]float32, len(t.Data))
 	for i := range data {
 		data[i] = t.Data[i] / length
 	}
@@ -205,7 +205,7 @@ func (t *Tensor) Homogeneous() *Tensor {
 }
 
 // 生成旋转矩阵
-func RotateTensor(axis *Tensor, angle float64) *Tensor {
+func RotateTensor(axis *Tensor, angle float32) *Tensor {
 	// 验证输入参数
 	if !axis.IsVector() || len(axis.Data) != 3 {
 		panic("Rotate requires 3D vector axis")
@@ -223,7 +223,7 @@ func RotateTensor(axis *Tensor, angle float64) *Tensor {
 	m := 1 - c
 
 	// 构建4x4旋转矩阵
-	data := []float64{
+	data := []float32{
 		m*x*x + c, m*x*y + z*s, m*x*z - y*s, 0,
 		m*x*y - z*s, m*y*y + c, m*y*z + x*s, 0,
 		m*x*z + y*s, m*y*z - x*s, m*z*z + c, 0,
@@ -249,12 +249,12 @@ func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
 	k := a.Shape[1] // 公共维度
 
 	// 初始化结果矩阵数据
-	result := make([]float64, m*n)
+	result := make([]float32, m*n)
 
 	// 执行矩阵乘法
 	for i := 0; i < m; i++ {
 		for j := 0; j < n; j++ {
-			sum := 0.0
+			var sum float32
 			for p := 0; p < k; p++ {
 				sum += a.Data[i*k+p] * b.Data[p*n+j]
 			}
@@ -266,13 +266,13 @@ func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
 }
 
 // 链式旋转方法（类似原Rotate方法）
-func (a *Tensor) Rotate(axis *Tensor, angle float64) *Tensor {
+func (a *Tensor) Rotate(axis *Tensor, angle float32) *Tensor {
 	rotation := RotateTensor(axis, angle)
 	return rotation.MatMulMatrix(a)
 }
 
 // Viewport 创建视口变换矩阵
-func Viewport(x, y, w, h float64) *Tensor {
+func Viewport(x, y, w, h float32) *Tensor {
 	// 计算视口边界
 	l := x
 	b := y
@@ -280,7 +280,7 @@ func Viewport(x, y, w, h float64) *Tensor {
 	t := y + h
 
 	// 构建4x4视口变换矩阵（行主序）
-	data := []float64{
+	data := []float32{
 		(r - l) / 2, 0, 0, (r + l) / 2,
 		0, (t - b) / 2, 0, (t + b) / 2,
 		0, 0, 0.5, 0.5,
@@ -302,13 +302,13 @@ func (m *Tensor) MulPosition(v *Tensor) *Tensor {
 	}
 
 	// 转换为齐次坐标 [x, y, z, 1]
-	homoData := make([]float64, 4)
+	homoData := make([]float32, 4)
 	copy(homoData, v.Data)
 	homoData[3] = 1.0
 	homogeneous := NewTensor(homoData, []int{4})
 
 	// 执行矩阵变换（优化后的直接计算）
-	result := make([]float64, 4)
+	result := make([]float32, 4)
 	mData := m.Data
 	vData := homogeneous.Data
 

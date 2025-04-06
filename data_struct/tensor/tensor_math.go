@@ -16,7 +16,7 @@ func (t *Tensor) Sub(other *Tensor) *Tensor {
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
-				Data:  make([]float64, 0),
+				Data:  make([]float32, 0),
 			}
 		}
 		// 检查是否可广播
@@ -61,7 +61,7 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
-				Data:  make([]float64, 0),
+				Data:  make([]float32, 0),
 			}
 		}
 		// 检查是否可广播
@@ -101,7 +101,7 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
-				Data:  make([]float64, 0),
+				Data:  make([]float32, 0),
 			}
 		}
 		// 检查是否可广播
@@ -139,7 +139,7 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
-				Data:  make([]float64, 0),
+				Data:  make([]float32, 0),
 			}
 		}
 		// 检查是否可广播
@@ -203,7 +203,7 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		}
 		return &Tensor{
 			Shape: resultShape,
-			Data:  make([]float64, 0),
+			Data:  make([]float32, 0),
 		}
 	}
 
@@ -297,8 +297,8 @@ func getBroadcastedIndices(bcIndices, origShape, bcShape []int) []int {
 	return indices
 }
 
-func matrixMultiply(a, b []float64, m, n, p int) []float64 {
-	result := make([]float64, m*p)
+func matrixMultiply(a, b []float32, m, n, p int) []float32 {
+	result := make([]float32, m*p)
 	for i := 0; i < m; i++ {
 		for k := 0; k < n; k++ { // 先遍历k，优化内存访问
 			aVal := a[i*n+k]

@@ -32,7 +32,7 @@ func TestGetTensorTestResult(t *testing.T) {
 		in2 := tensor.Ones([]int{3, 2})
 		script := `out = in1 @ in2`
 		result := GetTensorTestResult(script, in1, in2)
-		expectedData := []float64{3, 3, 3, 3}
+		expectedData := []float32{3, 3, 3, 3}
 		expected := tensor.NewTensor(expectedData, []int{2, 2})
 		if !result.Equal(expected) {
 			t.Errorf("Matrix multiplication failed:\nExpected:\n%v\nGot:\n%v", expected, result)
@@ -40,10 +40,10 @@ func TestGetTensorTestResult(t *testing.T) {
 	})
 
 	t.Run("Broadcasting", func(t *testing.T) {
-		scalar := tensor.NewTensor([]float64{2}, []int{1})
+		scalar := tensor.NewTensor([]float32{2}, []int{1})
 		script := `out = in1 * in2`
 		result := GetTensorTestResult(script, baseTensor, scalar)
-		expectedData := []float64{2, 2, 2, 2}
+		expectedData := []float32{2, 2, 2, 2}
 		expected := tensor.NewTensor(expectedData, []int{2, 2})
 		if !result.Equal(expected) {
 			t.Errorf("Broadcast multiplication failed:\nExpected:\n%v\nGot:\n%v", expected, result)
@@ -64,11 +64,11 @@ func TestGetTensorTestResult(t *testing.T) {
 	})
 
 	t.Run("Negative number operations", func(t *testing.T) {
-		in1 := tensor.NewTensor([]float64{-1, 2, -3, 4}, []int{2, 2})
-		in2 := tensor.NewTensor([]float64{2, 3, 4, -5}, []int{2, 2})
+		in1 := tensor.NewTensor([]float32{-1, 2, -3, 4}, []int{2, 2})
+		in2 := tensor.NewTensor([]float32{2, 3, 4, -5}, []int{2, 2})
 		script := `out = in1 * in2`
 		result := GetTensorTestResult(script, in1, in2)
-		expectedData := []float64{-2, 6, -12, -20}
+		expectedData := []float32{-2, 6, -12, -20}
 		expected := tensor.NewTensor(expectedData, []int{2, 2})
 		if !result.Equal(expected) {
 			t.Errorf("Negative number multiplication failed:\nExpected:\n%v\nGot:\n%v", expected, result)
@@ -86,10 +86,10 @@ func TestGetTensorTestResult(t *testing.T) {
 	})
 
 	t.Run("High-dimensional broadcasting", func(t *testing.T) {
-		in1 := tensor.NewTensor([]float64{1, 2, 3, 4, 5, 6}, []int{3, 1, 2})
-		in2 := tensor.NewTensor([]float64{10, 20}, []int{2})
+		in1 := tensor.NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 1, 2})
+		in2 := tensor.NewTensor([]float32{10, 20}, []int{2})
 		script := `out = in1 + in2`
-		expectedData := []float64{11, 22, 13, 24, 15, 26}
+		expectedData := []float32{11, 22, 13, 24, 15, 26}
 		expected := tensor.NewTensor(expectedData, []int{3, 1, 2})
 		result := GetTensorTestResult(script, in1, in2)
 		if !result.Equal(expected) {

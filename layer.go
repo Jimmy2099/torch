@@ -7,14 +7,14 @@ import (
 // Layer interface for neural network layers
 type Layer interface {
 	Forward(input *tensor.Tensor) *tensor.Tensor
-	Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor
+	Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor
 	ZeroGrad()
 	Parameters() []*tensor.Tensor
 }
 
 type LayerLoader interface {
-	SetWeightsAndShape(data []float64, shape []int)
-	SetBiasAndShape(data []float64, shape []int)
+	SetWeightsAndShape(data []float32, shape []int)
+	SetBiasAndShape(data []float32, shape []int)
 }
 
 type LayerForTesting interface {
@@ -39,13 +39,13 @@ type LayerForTesting interface {
 //// DropoutLayer Dropout层接口
 //type DropoutLayer interface {
 //	Layer
-//	SetDropoutRate(rate float64)
+//	SetDropoutRate(rate float32)
 //}
 //
 //// BatchNormLayer 批归一化层接口
 //type BatchNormLayer interface {
 //	Layer
-//	SetMomentum(momentum float64)
+//	SetMomentum(momentum float32)
 //}
 //
 //// ConvLayer 卷积层接口

@@ -6,7 +6,7 @@ import (
 )
 
 // 读取图像文件
-func loadImages(filename string) ([][]float64, error) {
+func loadImages(filename string) ([][]float32, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -20,20 +20,20 @@ func loadImages(filename string) ([][]float64, error) {
 	binary.Read(file, binary.BigEndian, &cols)
 
 	imageSize := int(rows * cols)
-	data := make([][]float64, num)
+	data := make([][]float32, num)
 	for i := 0; i < int(num); i++ {
-		data[i] = make([]float64, imageSize)
+		data[i] = make([]float32, imageSize)
 		for j := 0; j < imageSize; j++ {
 			var pixel uint8
 			binary.Read(file, binary.BigEndian, &pixel)
-			data[i][j] = float64(pixel) / 255.0 // 归一化
+			data[i][j] = float32(pixel) / 255.0 // 归一化
 		}
 	}
 	return data, nil
 }
 
 // 读取标签文件
-func loadLabels(filename string) ([][]float64, error) {
+func loadLabels(filename string) ([][]float32, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -44,11 +44,11 @@ func loadLabels(filename string) ([][]float64, error) {
 	binary.Read(file, binary.BigEndian, &magic)
 	binary.Read(file, binary.BigEndian, &num)
 
-	data := make([][]float64, num)
+	data := make([][]float32, num)
 	for i := 0; i < int(num); i++ {
 		var label uint8
 		binary.Read(file, binary.BigEndian, &label)
-		oneHot := make([]float64, 10)
+		oneHot := make([]float32, 10)
 		oneHot[label] = 1.0 // 转换为 One-hot 编码
 		data[i] = oneHot
 	}

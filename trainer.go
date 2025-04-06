@@ -8,22 +8,22 @@ import (
 
 // BasicTrainer 实现基本的训练器
 type BasicTrainer struct {
-	LossFunc func(predictions, targets *tensor.Tensor) float64
+	LossFunc func(predictions, targets *tensor.Tensor) float32
 	Verbose  bool
 }
 
-func NewBasicTrainer(lossFunc func(predictions, targets *tensor.Tensor) float64) *BasicTrainer {
+func NewBasicTrainer(lossFunc func(predictions, targets *tensor.Tensor) float32) *BasicTrainer {
 	return &BasicTrainer{
 		LossFunc: lossFunc,
 		Verbose:  true,
 	}
 }
 
-func (t *BasicTrainer) Train(model ModelInterface, inputs, targets *tensor.Tensor, epochs int, learningRate float64) {
+func (t *BasicTrainer) Train(model ModelInterface, inputs, targets *tensor.Tensor, epochs int, learningRate float32) {
 	start := time.Now()
 
 	// 记录损失历史
-	lossHistory := make([]float64, 0, epochs)
+	lossHistory := make([]float32, 0, epochs)
 
 	for epoch := 0; epoch < epochs; epoch++ {
 		// 前向传播
@@ -51,7 +51,7 @@ func (t *BasicTrainer) Train(model ModelInterface, inputs, targets *tensor.Tenso
 }
 
 // plotLoss 绘制损失曲线
-func printLoss(lossHistory []float64) {
+func printLoss(lossHistory []float32) {
 	fmt.Println("\nTraining complete! Loss history:")
 	for i, loss := range lossHistory {
 		if i%50 == 0 {
@@ -60,7 +60,7 @@ func printLoss(lossHistory []float64) {
 	}
 }
 
-func (t *BasicTrainer) Validate(model ModelInterface, inputs, targets *tensor.Tensor) float64 {
+func (t *BasicTrainer) Validate(model ModelInterface, inputs, targets *tensor.Tensor) float32 {
 	outputs := model.Forward(inputs)
 	return t.LossFunc(outputs, targets)
 }

@@ -2,7 +2,7 @@ package torch
 
 import (
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // MaxPool2DLayer 实现2D最大池化层
@@ -49,7 +49,7 @@ func (m *MaxPool2DLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	outWidth := (inWidth+2*m.Padding-m.PoolSize)/m.Stride + 1
 
 	m.OutputDim = []int{batchSize, channels, outHeight, outWidth}
-	outputData := make([]float64, batchSize*channels*outHeight*outWidth)
+	outputData := make([]float32, batchSize*channels*outHeight*outWidth)
 	m.ArgMax = make([][4]int, len(outputData))
 
 	// 执行池化操作
@@ -70,13 +70,14 @@ func (m *MaxPool2DLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 					wEnd = min(inWidth, wEnd)
 
 					// 查找最大值
-					maxVal := -math.MaxFloat64
+					//TODO
+					maxVal := float32(-math.MaxFloat32)
 					maxH, maxW := 0, 0
 					for i := hStart; i < hEnd; i++ {
 						for j := wStart; j < wEnd; j++ {
 							val := x.Get([]int{b, c, i, j})
 							if val > maxVal {
-								maxVal = val
+								maxVal = float32(val)
 								maxH, maxW = i, j
 							}
 						}
@@ -107,7 +108,7 @@ func (m *MaxPool2DLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
 	}
 
 	// 初始化梯度张量
-	gradInput := tensor.NewTensor(make([]float64, len(m.Input.Data)), m.Input.Shape)
+	gradInput := tensor.NewTensor(make([]float32, len(m.Input.Data)), m.Input.Shape)
 
 	// 将梯度传播到最大值位置
 	for idx, pos := range m.ArgMax {

@@ -119,7 +119,7 @@ func (r *Reader) readMetaDataValueScalar(typ Type) (interface{}, error) {
 		return read[int64](r.r, r.ByteOrder)
 
 	case Float64:
-		return read[float64](r.r, r.ByteOrder)
+		return read[float32](r.r, r.ByteOrder)
 
 	default:
 		return nil, fmt.Errorf("invalid scalar type: %d", typ)
@@ -222,7 +222,7 @@ func (r *Reader) readMetaValue() (interface{}, error) {
 			return readMetaDataValueArray[int64](r, length)
 
 		case Float64:
-			return readMetaDataValueArray[float64](r, length)
+			return readMetaDataValueArray[float32](r, length)
 
 		default:
 			return nil, fmt.Errorf("unsupported array type: %d", aType)

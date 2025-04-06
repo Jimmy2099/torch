@@ -1,11 +1,11 @@
 package tensor
 
 type Tensor struct {
-	Data  []float64
+	Data  []float32
 	Shape []int // e.g., [batch_size, channels, height, width]
 }
 
-func NewTensor(data []float64, shape []int) *Tensor {
+func NewTensor(data []float32, shape []int) *Tensor {
 	t := &Tensor{Data: data, Shape: shape}
 	if shape == nil {
 		shape = []int{1, len(data)}
@@ -14,6 +14,6 @@ func NewTensor(data []float64, shape []int) *Tensor {
 	return t
 }
 
-func (m *Tensor) TensorData() []float64 {
+func (m *Tensor) TensorData() []float32 {
 	return m.Data
 }

@@ -3,7 +3,7 @@ package torch
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor" // 假设这个库存在
-	"math"
+	math "github.com/chewxy/math32"
 	"reflect"
 	"testing"
 	// "log" // 如果需要添加日志或调试信息
@@ -11,7 +11,7 @@ import (
 
 func TestMeanCalculation(t *testing.T) {
 	// 创建测试张量 (N=2, C=3, H=4, W=4)
-	data := make([]float64, 2*3*4*4)
+	data := make([]float32, 2*3*4*4)
 
 	// 正确填充每个通道的值
 	for n := 0; n < 2; n++ { // N维度
@@ -20,7 +20,7 @@ func TestMeanCalculation(t *testing.T) {
 				for w := 0; w < 4; w++ { // W维度
 					// 计算线性索引
 					index := n*(3*4*4) + c*(4*4) + h*4 + w
-					data[index] = float64(c) // 每个通道的值等于通道号
+					data[index] = float32(c) // 每个通道的值等于通道号
 				}
 			}
 		}
@@ -38,9 +38,9 @@ func TestMeanCalculation(t *testing.T) {
 	}
 
 	// 验证数值
-	tolerance := 1e-6
+	tolerance := float32(1e-6)
 	for i := 0; i < 3; i++ {
-		expected := float64(i)
+		expected := float32(i)
 		if math.Abs(mean.Data[i]-expected) > tolerance {
 			t.Errorf("通道 %d 均值错误: 期望 %.2f，实际 %.2f", i, expected, mean.Data[i])
 		}
@@ -57,7 +57,7 @@ func TestBatchNormShapeMismatch(t *testing.T) {
 	bn := NewBatchNormLayer(numFeatures, 1e-5, 0.1)
 
 	// 创建模拟输入（注意：实际应该使用随机/正态分布数据）
-	inputData := make([]float64, batchSize*numFeatures*8*8)
+	inputData := make([]float32, batchSize*numFeatures*8*8)
 	x := tensor.NewTensor(inputData, inputShape)
 
 	// 运行前向传播

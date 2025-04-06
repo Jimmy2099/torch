@@ -51,7 +51,7 @@ func (m *Matrix) Reshape(rows, cols int) *Matrix {
 	result := NewMatrix(rows, cols)
 
 	// Flatten the original matrix
-	flatData := make([]float64, 0, m.Rows*m.Cols)
+	flatData := make([]float32, 0, m.Rows*m.Cols)
 	for i := 0; i < m.Rows; i++ {
 		flatData = append(flatData, m.Data[i]...)
 	}
@@ -73,7 +73,7 @@ func (m *Matrix) Size() int {
 }
 
 // At 获取指定位置的元素
-func (m *Matrix) At(row, col int) float64 {
+func (m *Matrix) At(row, col int) float32 {
 	if row < 0 || row >= m.Rows || col < 0 || col >= m.Cols {
 		panic("matrix: index out of range")
 	}

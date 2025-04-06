@@ -30,11 +30,11 @@ type Render struct {
 	camera     *tensor.Tensor
 	lookAt     *tensor.Tensor
 	up         *tensor.Tensor
-	fovy       float64
-	near       float64
-	far        float64
-	scale      float64
-	ZBuffer    [][]float64
+	fovy       float32
+	near       float32
+	far        float32
+	scale      float32
+	ZBuffer    [][]float32
 }
 
 func (m *Render) Init() {
@@ -52,9 +52,9 @@ func (m *Render) Init() {
 		m.up = tensor.NewVec3(0, 1, 0)
 	}
 	{
-		m.ZBuffer = make([][]float64, m.width)
+		m.ZBuffer = make([][]float32, m.width)
 		for i := range m.ZBuffer {
-			m.ZBuffer[i] = make([]float64, m.height)
+			m.ZBuffer[i] = make([]float32, m.height)
 			for j := range m.ZBuffer[i] {
 				m.ZBuffer[i][j] = 1
 			}
@@ -102,14 +102,14 @@ func main() {
 	}
 	//	model := glm.Identity()
 	model := tensor.Identity()
-	projection := tensor.Perspective(m.fovy, float64(m.width)/float64(m.height), m.near, m.far)
-	viewport := tensor.Viewport(0, 0, float64(1), float64(1))
+	projection := tensor.Perspective(m.fovy, float32(m.width)/float32(m.height), m.near, m.far)
+	viewport := tensor.Viewport(0, 0, float32(1), float32(1))
 	view := tensor.LookAt(m.camera, m.lookAt, m.up)
 	var matrix *tensor.Tensor
 	go func() {
 		for {
 			view = tensor.LookAt(m.camera, m.lookAt, m.up)
-			//model = model.Rotate(tensor.NewTensor([]float64{1, 0, 0}, []int{3}), glm.Radians(5))
+			//model = model.Rotate(tensor.NewTensor([]float32{1, 0, 0}, []int{3}), glm.Radians(5))
 			matrix = projection.MatMulMatrix(view).MatMulMatrix(viewport).MatMulMatrix(model)
 			data4 := Camera(matrix, data3)
 			//Multithreading Optimize
@@ -158,13 +158,13 @@ func (m *Render) Draw() {
 	png.Encode(f, imaging.FlipV(m.frameBuff))
 }
 
-func NewVec3(x, y, z float64) *tensor.Tensor {
+func NewVec3(x, y, z float32) *tensor.Tensor {
 	return tensor.NewVec3(x, y, z)
 }
 
 func (r *Render) drawLine(v0, v1 *tensor.Tensor) []*tensor.Tensor {
 	var result []*tensor.Tensor
-	for t := 0.0; t < 1.0; t += 0.01 {
+	for t := float32(0.0); t < 1.0; t += 0.01 {
 		x := v0.X() + (v1.X()-v0.X())*t
 		y := v0.Y() + (v1.Y()-v0.Y())*t
 		z := v0.Z() + (v1.Z()-v0.Z())*t
@@ -174,7 +174,7 @@ func (r *Render) drawLine(v0, v1 *tensor.Tensor) []*tensor.Tensor {
 }
 
 func (m *Render) drawLineWithoutZBuff(v0 *tensor.Tensor, v1 *tensor.Tensor) (result []*tensor.Tensor) {
-	for t := float64(0); t < 1; t += 0.01 {
+	for t := float32(0); t < 1; t += 0.01 {
 		x := v0.X() + (v1.X()-v0.X())*t
 		y := v0.Y() + (v1.Y()-v0.Y())*t
 		result = append(result, NewVec3(x, y, 0))
@@ -199,8 +199,8 @@ func Camera(matrix *tensor.Tensor, v []*tensor.Tensor) (result []*tensor.Tensor)
 
 func (m *Render) Scaling(v []*tensor.Tensor) (result []*tensor.Tensor) {
 	for i := 0; i < len(v); i++ {
-		result = append(result, NewVec3(float64(m.width)*((v[i].X()-0.5)/m.scale+0.5),
-			float64(m.height)*((v[i].Y()-0.5)/m.scale+0.5), v[i].Z()))
+		result = append(result, NewVec3(float32(m.width)*((v[i].X()-0.5)/m.scale+0.5),
+			float32(m.height)*((v[i].Y()-0.5)/m.scale+0.5), v[i].Z()))
 	}
 	return
 }

@@ -4,7 +4,7 @@ package layer
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // TanhLayer implements the hyperbolic tangent activation function.
@@ -15,14 +15,14 @@ type TanhLayer struct {
 
 func (r *TanhLayer) GetWeights() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }
 
 func (r *TanhLayer) GetBias() *tensor.Tensor {
 	return &tensor.Tensor{
-		Data:  make([]float64, 0),
+		Data:  make([]float32, 0),
 		Shape: make([]int, 0),
 	}
 }
@@ -36,7 +36,7 @@ func NewTanhLayer() *TanhLayer {
 // input: Input tensor
 // Returns: Output tensor with Tanh applied
 func (t *TanhLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
-	outputData := make([]float64, len(input.Data))
+	outputData := make([]float32, len(input.Data))
 	for i, val := range input.Data {
 		outputData[i] = math.Tanh(val)
 	}
@@ -53,7 +53,7 @@ func (t *TanhLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 // gradOutput: Gradient of the loss with respect to the output of this layer.
 // learningRate: Not used by activation layers.
 // Returns: Gradient of the loss with respect to the input of this layer.
-func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	if t.outputCache == nil {
 		panic("Backward called before Forward or output cache is nil for TanhLayer")
 	}
@@ -61,7 +61,7 @@ func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *t
 		panic(fmt.Sprintf("Shapes of gradOutput %v and cached output %v do not match in TanhLayer Backward", gradOutput.Shape, t.outputCache.Shape))
 	}
 
-	gradInputData := make([]float64, len(gradOutput.Data))
+	gradInputData := make([]float32, len(gradOutput.Data))
 	for i := range gradOutput.Data {
 		// Derivative of tanh(x) is 1 - tanh(x)^2
 		tanhOutput := t.outputCache.Data[i]
@@ -83,11 +83,11 @@ func (t *TanhLayer) Parameters() []*tensor.Tensor {
 }
 
 // SetWeights does nothing for TanhLayer.
-func (t *TanhLayer) SetWeights(data [][]float64) {
+func (t *TanhLayer) SetWeights(data [][]float32) {
 	// No weights to set
 }
 
 // SetBias does nothing for TanhLayer.
-func (t *TanhLayer) SetBias(data [][]float64) {
+func (t *TanhLayer) SetBias(data [][]float32) {
 	// No bias to set
 }

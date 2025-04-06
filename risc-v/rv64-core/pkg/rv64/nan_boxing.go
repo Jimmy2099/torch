@@ -1,7 +1,7 @@
 package rv64
 
 import (
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // NaN Boxing of Narrower Values
@@ -25,11 +25,11 @@ import (
 // values to integer (e.g., FCVT.X.S) will check for legal NaN-boxing and treat the input as the n-bit canonical NaN
 // if not a legal n-bit value.
 
-func NaNBoxing(f float32) float64 {
+func NaNBoxing(f float32) float32 {
 	return math.Float64frombits(0xffffffff00000000 | uint64(math.Float32bits(f)))
 }
 
-func NaNGnixob(f float64) float32 {
+func NaNGnixob(f float32) float32 {
 	u := math.Float64bits(f)
 	// The n least-significant bits of the input are used as the input value, otherwise the input value is treated as
 	// an n-bit canonical NaN.

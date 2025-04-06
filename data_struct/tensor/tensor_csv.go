@@ -70,7 +70,7 @@ func (t *Tensor) SaveToCSV(filename string) error {
 		}
 
 		for j, val := range t.Data[start:end] {
-			record[j] = strconv.FormatFloat(val, 'f', -1, 64)
+			record[j] = strconv.FormatFloat(float64(val), 'f', -1, 64)
 		}
 
 		if err := writer.Write(record); err != nil {
@@ -162,10 +162,10 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 
 		rowData := t.Data[startIndex:endIndex]
 
-		// Convert float64 slice to string slice for csv writing
+		// Convert float32 slice to string slice for csv writing
 		for j, val := range rowData {
 			// 'f' format, -1 precision (use necessary digits), 64-bit float
-			record[j] = strconv.FormatFloat(val, 'f', -1, 64)
+			record[j] = strconv.FormatFloat(float64(val), 'f', -1, 64)
 		}
 
 		// Write the record (row) to the CSV file
@@ -264,18 +264,18 @@ func splitCSVLine(line string) []string {
 func loadFromRecords(records [][]string, shape []int) (*Tensor, error) {
 	// --- Handle Empty File ---
 	if len(records) == 0 {
-		return NewTensor([]float64{}, shape), nil
+		return NewTensor([]float32{}, shape), nil
 	}
 
 	// --- 数据解析 ---
-	var data []float64
+	var data []float32
 	for i, record := range records {
 		for j, valStr := range record {
 			val, err := strconv.ParseFloat(valStr, 64)
 			if err != nil {
 				return nil, fmt.Errorf("invalid data value '%s' at row %d, col %d", valStr, i, j)
 			}
-			data = append(data, val)
+			data = append(data, float32(val))
 		}
 	}
 

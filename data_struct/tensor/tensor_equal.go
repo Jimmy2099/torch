@@ -2,8 +2,8 @@ package tensor
 
 import (
 	"fmt"
+	math "github.com/chewxy/math32"
 	"log"
-	"math"
 )
 
 func (t *Tensor) EqualFloat5(other *Tensor) bool {
@@ -129,7 +129,7 @@ func shapeEqual(shape1, shape2 []int) bool {
 }
 
 // 可选：带容差的比较方法
-func (t *Tensor) EqualWithTolerance(other *Tensor, epsilon float64) bool {
+func (t *Tensor) EqualWithTolerance(other *Tensor, epsilon float32) bool {
 	if t == nil || other == nil {
 		return t == nil && other == nil
 	}

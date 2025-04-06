@@ -2,7 +2,7 @@ package torch
 
 import (
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Sigmoid layer struct
@@ -15,12 +15,12 @@ func NewSigmoidLayer() *SigmoidLayer {
 }
 
 // Sigmoid 激活函数
-func Sigmoid(x float64) float64 {
+func Sigmoid(x float32) float32 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
 // Sigmoid 导数
-func SigmoidDerivative(x float64) float64 {
+func SigmoidDerivative(x float32) float32 {
 	s := Sigmoid(x)
 	return s * (1.0 - s)
 }
@@ -31,7 +31,7 @@ func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 	shape := input.Shape
 
 	// 创建一个与输入张量形状相同的输出张量，初始值为全零
-	outputData := make([]float64, len(input.Data)) // 创建一个和输入相同大小的数据切片
+	outputData := make([]float32, len(input.Data)) // 创建一个和输入相同大小的数据切片
 	for i := 0; i < len(input.Data); i++ {
 		outputData[i] = Sigmoid(input.Data[i]) // 应用 Sigmoid 激活
 	}
@@ -41,12 +41,12 @@ func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 }
 
 // Backward 方法：计算 Sigmoid 层的梯度
-func (s *SigmoidLayer) Backward(gradOutput *tensor.Tensor, learningRate float64) *tensor.Tensor {
+func (s *SigmoidLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	// 获取梯度输出的形状
 	shape := gradOutput.Shape
 
 	// 创建一个新的张量用于存储反向传播的梯度
-	gradInputData := make([]float64, len(gradOutput.Data))
+	gradInputData := make([]float32, len(gradOutput.Data))
 	for i := 0; i < len(gradOutput.Data); i++ {
 		gradInputData[i] = gradOutput.Data[i] * SigmoidDerivative(gradOutput.Data[i]) // 根据 Sigmoid 导数计算梯度
 	}

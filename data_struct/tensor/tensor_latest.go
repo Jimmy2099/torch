@@ -2,7 +2,7 @@ package tensor
 
 import (
 	"fmt"
-	"math"
+	math "github.com/chewxy/math32"
 )
 
 // Transpose 交换两个维度的位置，返回新的张量
@@ -24,7 +24,7 @@ func (t *Tensor) TransposeByDim(dim1, dim2 int) *Tensor {
 	newStrides := computeStrides(newShape)
 
 	// 创建新数据数组
-	newData := make([]float64, len(t.Data))
+	newData := make([]float32, len(t.Data))
 	for i := range newData {
 		// 将线性索引转换为多维索引
 		indices := make([]int, len(t.Shape))
@@ -72,7 +72,7 @@ func (t *Tensor) SplitLastDim(splitPoint, part int) *Tensor {
 		end = lastDim
 	}
 
-	data := make([]float64, product(newShape))
+	data := make([]float32, product(newShape))
 	stride := product(t.Shape[len(t.Shape)-1:])
 
 	fmt.Println(stride)
@@ -121,7 +121,7 @@ func (t *Tensor) Slice(start, end, dim int) *Tensor {
 
 	// 计算新张量数据
 	newSize := product(newShape)
-	newData := make([]float64, newSize)
+	newData := make([]float32, newSize)
 
 	// 预计算维度元数据
 	sliceDimSize := t.Shape[dim]
@@ -182,7 +182,7 @@ func (t *Tensor) Concat(other *Tensor, dim int) *Tensor {
 	newStrides := computeStrides(newShape)
 
 	// 创建结果张量
-	newData := make([]float64, product(newShape))
+	newData := make([]float32, product(newShape))
 
 	// 遍历所有元素
 	for pos := 0; pos < len(newData); pos++ {
@@ -253,7 +253,7 @@ func (t *Tensor) MaxByDim(dim int, keepdim bool) *Tensor {
 	}
 
 	// 初始化结果数据
-	result := make([]float64, totalSlices*elementSize)
+	result := make([]float32, totalSlices*elementSize)
 
 	// 遍历每个切片
 	for sliceIdx := 0; sliceIdx < totalSlices; sliceIdx++ {
@@ -299,7 +299,7 @@ func (t *Tensor) getIndices(flatIndex int) []int {
 }
 
 // 2. 实现广播值获取方法
-func (t *Tensor) getBroadcastedValue(indices []int) float64 {
+func (t *Tensor) getBroadcastedValue(indices []int) float32 {
 	mappedIndices := make([]int, len(t.Shape))
 
 	// 按维度顺序处理广播
@@ -352,12 +352,12 @@ func (t *Tensor) SumByDim2(dim int, keepdim bool) *Tensor {
 		totalSlices *= t.Shape[i]
 	}
 
-	result := make([]float64, totalSlices*elementSize)
+	result := make([]float32, totalSlices*elementSize)
 
 	for sliceIdx := 0; sliceIdx < totalSlices; sliceIdx++ {
 		start := sliceIdx * t.Shape[dim] * elementSize
 		for pos := 0; pos < elementSize; pos++ {
-			var sum float64
+			var sum float32
 			for d := 0; d < t.Shape[dim]; d++ {
 				idx := start + d*elementSize + pos
 				sum += t.Data[idx]
@@ -373,12 +373,12 @@ func (t *Tensor) SumByDim2(dim int, keepdim bool) *Tensor {
 }
 
 // MaskedFill 根据bool类型的mask张量填充指定值
-func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
+func (t *Tensor) MaskedFill(mask *Tensor, value float32) *Tensor {
 	if !canBroadcast(t.Shape, mask.Shape) {
 		panic("mask shape is not broadcastable")
 	}
 
-	outData := make([]float64, len(t.Data))
+	outData := make([]float32, len(t.Data))
 	copy(outData, t.Data)
 
 	// 遍历所有元素
@@ -413,7 +413,7 @@ func (t *Tensor) MaskedFill(mask *Tensor, value float64) *Tensor {
 }
 
 // 辅助函数：根据索引获取张量中的值
-func (t *Tensor) GetValue(indices []int) float64 {
+func (t *Tensor) GetValue(indices []int) float32 {
 	if len(indices) != len(t.Shape) {
 		panic("indices length does not match tensor dimensions")
 	}
@@ -437,7 +437,7 @@ func (t *Tensor) SoftmaxByDim(dim int) *Tensor {
 	// 创建临时张量进行稳定化计算
 	shifted := t.Sub(expandedMax)
 
-	expData := shifted.Apply(func(x float64) float64 {
+	expData := shifted.Apply(func(x float32) float32 {
 		return math.Exp(x)
 	})
 
@@ -466,14 +466,14 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 		panic("RepeatInterleave currently only supports 2D or 4D tensors")
 	}
 
-	var newData []float64
+	var newData []float32
 	var newShape []int
 
 	if len(t.Shape) == 2 {
 		rows, cols := t.Shape[0], t.Shape[1]
 		switch dim {
 		case 0:
-			newData = make([]float64, rows*repeats*cols)
+			newData = make([]float32, rows*repeats*cols)
 			newShape = []int{rows * repeats, cols}
 			for i := 0; i < rows; i++ {
 				for r := 0; r < repeats; r++ {
@@ -482,7 +482,7 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 				}
 			}
 		case 1:
-			newData = make([]float64, rows*cols*repeats)
+			newData = make([]float32, rows*cols*repeats)
 			newShape = []int{rows, cols * repeats}
 			for i := 0; i < rows; i++ {
 				for j := 0; j < cols; j++ {
@@ -499,7 +499,7 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 		elementSize := height * width
 		switch dim {
 		case 0:
-			newData = make([]float64, batch*repeats*channels*elementSize)
+			newData = make([]float32, batch*repeats*channels*elementSize)
 			newShape = []int{batch * repeats, channels, height, width}
 			for i := 0; i < batch; i++ {
 				for r := 0; r < repeats; r++ {
@@ -508,7 +508,7 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 				}
 			}
 		case 1:
-			newData = make([]float64, batch*channels*repeats*elementSize)
+			newData = make([]float32, batch*channels*repeats*elementSize)
 			newShape = []int{batch, channels * repeats, height, width}
 			for b := 0; b < batch; b++ {
 				for c := 0; c < channels; c++ {
