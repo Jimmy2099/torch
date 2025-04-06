@@ -1,6 +1,6 @@
 package codec
 
-// This file is added by the Torch library author, and the license is also under the Torch library license.
+// This file is added by the torch library author, and the license is also under the torch library license.
 
 import (
 	"github.com/dlclark/regexp2"
