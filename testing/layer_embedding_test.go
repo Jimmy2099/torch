@@ -264,7 +264,7 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			weightsData := make([]float32, tc.vocabSize*tc.embDim)
 			scale := math.Sqrt(2.0 / float32(tc.embDim))
 			for i := range weightsData {
-				weightsData[i] = rand.NormFloat64() * scale
+				weightsData[i] = float32(rand.NormFloat64()) * scale
 			}
 			emb.SetWeightsAndShape(weightsData, []int{tc.vocabSize, tc.embDim})
 

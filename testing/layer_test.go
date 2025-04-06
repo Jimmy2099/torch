@@ -320,8 +320,8 @@ func TestGetLayerTestResult(t *testing.T) {
 	// 批量归一化层测试
 	t.Run("batchnorm2d layer", func(t *testing.T) {
 		numFeatures := 64
-		eps := 1e-5
-		momentum := 0.1
+		eps := float32(1e-5)
+		momentum := float32(0.1)
 
 		script := fmt.Sprintf(
 			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float32)`,

@@ -1,6 +1,6 @@
 package rv64
 
-import math "github.com/chewxy/math32"
+import "math"
 
 func InstructionPart(i uint64, f uint64, e uint64) uint64 {
 	s := i

@@ -184,7 +184,7 @@ func TestZerosLike(t *testing.T) {
 
 func TestTensor_AddScalar(t *testing.T) {
 	original := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	scalar := 5.0
+	scalar := float32(5.0)
 	result := original.AddScalar(scalar)
 	wantData := []float32{6, 7, 8, 9}
 	wantTensor := NewTensor(wantData, []int{2, 2})
@@ -202,7 +202,7 @@ func TestTensor_AddScalar(t *testing.T) {
 
 func TestTensor_MulScalar(t *testing.T) {
 	original := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	scalar := 3.0
+	scalar := float32(3.0)
 	result := original.MulScalar(scalar)
 	wantData := []float32{3, 6, 9, 12}
 	wantTensor := NewTensor(wantData, []int{2, 2})
@@ -277,7 +277,7 @@ func TestTensor_Sqrt(t *testing.T) {
 
 func TestTensor_Pow(t *testing.T) {
 	original := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	exponent := 3.0
+	exponent := float32(3.0)
 	result := original.Pow(exponent)
 	wantData := []float32{1, 8, 27, 64}
 	wantTensor := NewTensor(wantData, []int{2, 2})
@@ -475,7 +475,7 @@ func TestTensor_Add(t *testing.T) {
 
 func TestTensor_DivScalar(t *testing.T) {
 	original := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
-	scalar := 5.0
+	scalar := float32(5.0)
 	result := original.DivScalar(scalar)
 	wantData := []float32{2, 4, 6, 8}
 	wantTensor := NewTensor(wantData, []int{2, 2})
@@ -512,7 +512,7 @@ func TestTensor_DivScalar(t *testing.T) {
 func TestTensor_Sum111(t *testing.T) {
 	tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 	result := tensor.Sum111()
-	wantSum := 1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 // 21.0
+	wantSum := float32(1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) // 21.0
 	wantTensor := NewTensor([]float32{wantSum}, []int{1})
 
 	if !tensorsEqual(result, wantTensor, epsilon) {
@@ -576,7 +576,7 @@ func TestTensor_Get(t *testing.T) {
 func TestTensor_Set1(t *testing.T) {
 	tensor := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	indices := []int{1, 0} // Corresponds to element '3'
-	value := 99.0
+	value := float32(99.0)
 
 	tensor.Set1(indices, value)
 
@@ -925,7 +925,7 @@ func TestShapeEqual(t *testing.T) {
 
 func TestTensor_SubScalar(t *testing.T) {
 	original := NewTensor([]float32{10, 20, 30, 0}, []int{2, 2})
-	scalar := 5.0
+	scalar := float32(5.0)
 	result := original.SubScalar(scalar)
 	wantData := []float32{5, 15, 25, -5}
 	wantTensor := NewTensor(wantData, []int{2, 2})

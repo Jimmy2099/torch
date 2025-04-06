@@ -2,7 +2,7 @@ package rv64
 
 import (
 	"fmt"
-	math "github.com/chewxy/math32"
+	"math"
 	"math/big"
 )
 
@@ -1299,7 +1299,7 @@ func (_ *isaF) fsubs(c *CPU, i uint64) (uint64, error) {
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
 	c.ClrFloatFlag()
-	if (math.Signbit(float32(a)) == math.Signbit(float32(b))) && math.IsInf(float32(a), 0) && math.IsInf(float32(b), 0) {
+	if (math.Signbit(float64(a)) == math.Signbit(float64(b))) && math.IsInf(float64(a), 0) && math.IsInf(float64(b), 0) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(NaN32))
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
@@ -1322,7 +1322,7 @@ func (_ *isaF) fmuls(c *CPU, i uint64) (uint64, error) {
 	c.ClrFloatFlag()
 	d := a * b
 	c.SetRegisterFloatAsFloat32(rd, d)
-	if d/a != b || d/b != a || float32(a)*float32(b) != float32(d) {
+	if d/a != b || d/b != a || float64(a)*float64(b) != float64(d) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1343,7 +1343,7 @@ func (_ *isaF) fdivs(c *CPU, i uint64) (uint64, error) {
 	}
 	d := a / b
 	c.SetRegisterFloatAsFloat32(rd, d)
-	if a/d != b || b*d != a || float32(b)*float32(d) != float32(a) {
+	if a/d != b || b*d != a || float64(b)*float64(d) != float64(a) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1361,9 +1361,9 @@ func (_ *isaF) fsqrts(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	d := float32(math.Sqrt(float32(a)))
+	d := float32(math.Sqrt(float64(a)))
 	c.SetRegisterFloatAsFloat32(rd, d)
-	if a/d != d || d*d != a || float32(d)*float32(d) != float32(a) {
+	if a/d != d || d*d != a || float64(d)*float64(d) != float64(a) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1375,7 +1375,7 @@ func (_ *isaF) fsgnjs(c *CPU, i uint64) (uint64, error) {
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fsgnj.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
-	if math.Signbit(float32(b)) {
+	if math.Signbit(float64(b)) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)|0x80000000))
 	} else {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)&0x7fffffff))
@@ -1389,7 +1389,7 @@ func (_ *isaF) fsgnjns(c *CPU, i uint64) (uint64, error) {
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fsgnjn.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
-	if math.Signbit(float32(b)) {
+	if math.Signbit(float64(b)) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)&0x7fffffff))
 	} else {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)|0x80000000))
@@ -1403,7 +1403,7 @@ func (_ *isaF) fsgnjxs(c *CPU, i uint64) (uint64, error) {
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fsgnjx.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
-	if math.Signbit(float32(a)) != math.Signbit(float32(b)) {
+	if math.Signbit(float64(a)) != math.Signbit(float64(b)) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)|0x80000000))
 	} else {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(math.Float32bits(a)&0x7fffffff))
@@ -1418,12 +1418,12 @@ func (_ *isaF) fmins(c *CPU, i uint64) (uint64, error) {
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
 	c.ClrFloatFlag()
-	if math.IsNaN(float32(a)) && math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(a)) && math.IsNaN(float64(b)) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(NaN32))
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if math.IsNaN(float32(a)) {
+	if math.IsNaN(float64(a)) {
 		c.SetRegisterFloatAsFloat32(rd, b)
 		if IsSNaN32(a) {
 			c.SetFloatFlag(FFlagsNV, 1)
@@ -1431,7 +1431,7 @@ func (_ *isaF) fmins(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(b)) {
 		c.SetRegisterFloatAsFloat32(rd, a)
 		if IsSNaN32(b) {
 			c.SetFloatFlag(FFlagsNV, 1)
@@ -1439,7 +1439,7 @@ func (_ *isaF) fmins(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if (math.Signbit(float32(a)) && !math.Signbit(float32(b))) || a < b {
+	if (math.Signbit(float64(a)) && !math.Signbit(float64(b))) || a < b {
 		c.SetRegisterFloatAsFloat32(rd, a)
 	} else {
 		c.SetRegisterFloatAsFloat32(rd, b)
@@ -1454,12 +1454,12 @@ func (_ *isaF) fmaxs(c *CPU, i uint64) (uint64, error) {
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
 	c.ClrFloatFlag()
-	if math.IsNaN(float32(a)) && math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(a)) && math.IsNaN(float64(b)) {
 		c.SetRegisterFloat(rd, 0xffffffff00000000|uint64(NaN32))
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if math.IsNaN(float32(a)) {
+	if math.IsNaN(float64(a)) {
 		c.SetRegisterFloatAsFloat32(rd, b)
 		if IsSNaN32(a) {
 			c.SetFloatFlag(FFlagsNV, 1)
@@ -1467,7 +1467,7 @@ func (_ *isaF) fmaxs(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(b)) {
 		c.SetRegisterFloatAsFloat32(rd, a)
 		if IsSNaN32(b) {
 			c.SetFloatFlag(FFlagsNV, 1)
@@ -1475,7 +1475,7 @@ func (_ *isaF) fmaxs(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if (!math.Signbit(float32(a)) && math.Signbit(float32(b))) || a > b {
+	if (!math.Signbit(float64(a)) && math.Signbit(float64(b))) || a > b {
 		c.SetRegisterFloatAsFloat32(rd, a)
 	} else {
 		c.SetRegisterFloatAsFloat32(rd, b)
@@ -1488,7 +1488,7 @@ func (_ *isaF) fcvtws(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.w.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	d := c.GetRegisterFloatAsFloat32(rs1)
-	if math.IsNaN(float32(d)) {
+	if math.IsNaN(float64(d)) {
 		c.SetRegister(rd, 0x7fffffff)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
@@ -1506,7 +1506,7 @@ func (_ *isaF) fcvtws(c *CPU, i uint64) (uint64, error) {
 		return 1, nil
 	}
 	c.SetRegister(rd, SignExtend(uint64(int32(d)), 31))
-	if math.Ceil(float32(d)) != float32(d) {
+	if math.Ceil(float64(d)) != float64(d) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1517,7 +1517,7 @@ func (_ *isaF) fcvtwus(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.wu.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	d := c.GetRegisterFloatAsFloat32(rs1)
-	if math.IsNaN(float32(d)) {
+	if math.IsNaN(float64(d)) {
 		c.SetRegister(rd, 0xffffffffffffffff)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
@@ -1535,7 +1535,7 @@ func (_ *isaF) fcvtwus(c *CPU, i uint64) (uint64, error) {
 		return 1, nil
 	}
 	c.SetRegister(rd, SignExtend(uint64(uint32(d)), 31))
-	if math.Ceil(float32(d)) != float32(d) {
+	if math.Ceil(float64(d)) != float64(d) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1576,7 +1576,7 @@ func (_ *isaF) flts(c *CPU, i uint64) (uint64, error) {
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
 	var cond bool
-	if math.IsNaN(float32(a)) || math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(a)) || math.IsNaN(float64(b)) {
 		c.SetFloatFlag(FFlagsNV, 1)
 	} else {
 		cond = a < b
@@ -1596,7 +1596,7 @@ func (_ *isaF) fles(c *CPU, i uint64) (uint64, error) {
 	a := c.GetRegisterFloatAsFloat32(rs1)
 	b := c.GetRegisterFloatAsFloat32(rs2)
 	var cond bool
-	if math.IsNaN(float32(a)) || math.IsNaN(float32(b)) {
+	if math.IsNaN(float64(a)) || math.IsNaN(float64(b)) {
 		c.SetFloatFlag(FFlagsNV, 1)
 	} else {
 		cond = a <= b
@@ -1647,7 +1647,7 @@ func (_ *isaF) fcvtls(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.l.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	d := c.GetRegisterFloatAsFloat32(rs1)
-	if math.IsNaN(float32(d)) {
+	if math.IsNaN(float64(d)) {
 		c.SetRegister(rd, 0x7fffffffffffffff)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
@@ -1665,7 +1665,7 @@ func (_ *isaF) fcvtls(c *CPU, i uint64) (uint64, error) {
 		return 1, nil
 	}
 	c.SetRegister(rd, uint64(int64(d)))
-	if math.Ceil(float32(d)) != float32(d) {
+	if math.Ceil(float64(d)) != float64(d) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -1676,7 +1676,7 @@ func (_ *isaF) fcvtlus(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.lu.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	d := c.GetRegisterFloatAsFloat32(rs1)
-	if math.IsNaN(float32(d)) {
+	if math.IsNaN(float64(d)) {
 		c.SetRegister(rd, 0xffffffffffffffff)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
@@ -1694,7 +1694,7 @@ func (_ *isaF) fcvtlus(c *CPU, i uint64) (uint64, error) {
 		return 1, nil
 	}
 	c.SetRegister(rd, uint64(d))
-	if math.Ceil(float32(d)) != float32(d) {
+	if math.Ceil(float64(d)) != float64(d) {
 		c.SetFloatFlag(FFlagsNX, 1)
 	}
 	c.SetPC(c.GetPC() + 4)
@@ -2028,10 +2028,10 @@ func (_ *isaD) fcvtds(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.d.s", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
 	d := c.GetRegisterFloatAsFloat32(rs1)
-	if math.IsNaN(float32(d)) {
+	if math.IsNaN(float64(d)) {
 		c.SetRegisterFloat(rd, NaN64)
 	} else {
-		c.SetRegisterFloatAsFloat64(rd, float32(d))
+		c.SetRegisterFloatAsFloat64(rd, float64(d))
 	}
 	c.SetPC(c.GetPC() + 4)
 	return 1, nil
@@ -2115,13 +2115,13 @@ func (_ *isaD) fcvtwd(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d > float32(math.MaxInt32) {
+	if d > float64(math.MaxInt32) {
 		c.SetRegister(rd, SignExtend(0x7fffffff, 31))
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d < float32(math.MinInt32) {
+	if d < float64(math.MinInt32) {
 		c.SetRegister(rd, SignExtend(0x80000000, 31))
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
@@ -2144,13 +2144,13 @@ func (_ *isaD) fcvtwud(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d > float32(math.MaxUint32) {
+	if d > float64(math.MaxUint32) {
 		c.SetRegister(rd, SignExtend(0xffffffff, 31))
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d <= float32(-1) {
+	if d <= float64(-1) {
 		c.SetRegister(rd, SignExtend(0x00000000, 31))
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
@@ -2167,7 +2167,7 @@ func (_ *isaD) fcvtwud(c *CPU, i uint64) (uint64, error) {
 func (_ *isaD) fcvtdw(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.d.w", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
-	c.SetRegisterFloatAsFloat64(rd, float32(int32(c.GetRegister(rs1))))
+	c.SetRegisterFloatAsFloat64(rd, float64(int32(c.GetRegister(rs1))))
 	c.SetPC(c.GetPC() + 4)
 	return 1, nil
 }
@@ -2175,7 +2175,7 @@ func (_ *isaD) fcvtdw(c *CPU, i uint64) (uint64, error) {
 func (_ *isaD) fcvtdwu(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.d.wu", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
-	c.SetRegisterFloatAsFloat64(rd, float32(uint32(c.GetRegister(rs1))))
+	c.SetRegisterFloatAsFloat64(rd, float64(uint32(c.GetRegister(rs1))))
 	c.SetPC(c.GetPC() + 4)
 	return 1, nil
 }
@@ -2189,13 +2189,13 @@ func (_ *isaD) fcvtld(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d > float32(math.MaxInt64) {
+	if d > float64(math.MaxInt64) {
 		c.SetRegister(rd, 0x7fffffffffffffff)
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d < float32(math.MinInt64) {
+	if d < float64(math.MinInt64) {
 		c.SetRegister(rd, 0x8000000000000000)
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
@@ -2218,13 +2218,13 @@ func (_ *isaD) fcvtlud(c *CPU, i uint64) (uint64, error) {
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d > float32(math.MaxUint64) {
+	if d > float64(math.MaxUint64) {
 		c.SetRegister(rd, 0xffffffffffffffff)
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
 		return 1, nil
 	}
-	if d <= float32(-1) {
+	if d <= float64(-1) {
 		c.SetRegister(rd, 0x0000000000000000)
 		c.SetFloatFlag(FFlagsNV, 1)
 		c.SetPC(c.GetPC() + 4)
@@ -2249,7 +2249,7 @@ func (_ *isaD) fmvxd(c *CPU, i uint64) (uint64, error) {
 func (_ *isaD) fcvtdl(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.d.l", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
-	c.SetRegisterFloatAsFloat64(rd, float32(int64(c.GetRegister(rs1))))
+	c.SetRegisterFloatAsFloat64(rd, float64(int64(c.GetRegister(rs1))))
 	c.SetPC(c.GetPC() + 4)
 	return 1, nil
 }
@@ -2257,7 +2257,7 @@ func (_ *isaD) fcvtdl(c *CPU, i uint64) (uint64, error) {
 func (_ *isaD) fcvtdlu(c *CPU, i uint64) (uint64, error) {
 	rd, rs1, rs2 := RType(i)
 	Debugln(fmt.Sprintf("%#08x % 10s  rd: %s rs1: %s rs2: %s", c.GetPC(), "fcvt.d.lu", c.LogF(rd), c.LogF(rs1), c.LogF(rs2)))
-	c.SetRegisterFloatAsFloat64(rd, float32(uint64(c.GetRegister(rs1))))
+	c.SetRegisterFloatAsFloat64(rd, float64(uint64(c.GetRegister(rs1))))
 	c.SetPC(c.GetPC() + 4)
 	return 1, nil
 }
@@ -2824,11 +2824,11 @@ func (_ *isaPrivileged) sfencevm(c *CPU, _ uint64) (uint64, error) {
 }
 
 func IsQNaN32(f float32) bool {
-	return math.IsNaN(float32(f)) && math.Float32bits(f)&0x00400000 != 0x00
+	return math.IsNaN(float64(f)) && math.Float32bits(f)&0x00400000 != 0x00
 }
 
 func IsSNaN32(f float32) bool {
-	return math.IsNaN(float32(f)) && math.Float32bits(f)&0x00400000 == 0x00
+	return math.IsNaN(float64(f)) && math.Float32bits(f)&0x00400000 == 0x00
 }
 
 func IsSubmoduleFloat32(f float32) bool {
@@ -2836,15 +2836,15 @@ func IsSubmoduleFloat32(f float32) bool {
 	return b&0x7f800000 == 0 && b&0x000fffff != 0
 }
 
-func IsQNaN64(f float32) bool {
+func IsQNaN64(f float64) bool {
 	return math.IsNaN(f) && math.Float64bits(f)&0x0008000000000000 != 0x00
 }
 
-func IsSNaN64(f float32) bool {
+func IsSNaN64(f float64) bool {
 	return math.IsNaN(f) && math.Float64bits(f)&0x0008000000000000 == 0x00
 }
 
-func IsSubmoduleFloat64(f float32) bool {
+func IsSubmoduleFloat64(f float64) bool {
 	b := math.Float64bits(f)
 	return b&0x7ff0000000000000 == 0 && b&0x000fffffffffffff != 0
 }
@@ -2879,7 +2879,7 @@ func FClassS(f float32) uint64 {
 	}
 }
 
-func FClassD(f float32) uint64 {
+func FClassD(f float64) uint64 {
 	s := math.Signbit(f)
 	if IsSNaN64(f) {
 		return 0b01_00000000
