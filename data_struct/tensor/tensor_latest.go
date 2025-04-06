@@ -526,3 +526,22 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 	}
 	return NewTensor(newData, newShape)
 }
+
+// RoundTo 将张量元素四舍五入到指定小数位数，返回新张量
+// decimals: 要保留的小数位数（支持0到8位，负数视为0）
+func (t *Tensor) RoundTo(decimals int) *Tensor {
+	if decimals < 0 { // 处理负数位数的输入
+		decimals = 0
+	} else if decimals > 8 { // Go的float32精度极限约为6-7位，这里限制到8位
+		decimals = 8
+	}
+
+	scale := math.Pow10(decimals)
+	newData := make([]float32, len(t.Data))
+	for i, v := range t.Data {
+		scaledValue := float32(v) * scale
+		rounded := math.Round(scaledValue)
+		newData[i] = float32(rounded / scale)
+	}
+	return NewTensor(newData, t.Shape)
+}

@@ -747,3 +747,59 @@ func TestMaskedFill1(t *testing.T) {
 		})
 	}
 }
+
+// 0 = {float32} 0.0055236816
+// 2 = {float32} -0.0107421875
+// 1 = {float32} 0.018798828
+// 4 = {float32} 0.0005874634
+// 3 = {float32} 0.0095825195
+// [ 0.00552368  0.01879883 -0.01074219  0.00958252  0.00058746]
+func TestTensorRoundTo(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []float32
+		decimals int // 要保留的小数位数
+		expected []float32
+	}{
+		{
+			name:     "保留0位小数（整数）",
+			input:    []float32{3.1415, -2.7182, 9.9999},
+			decimals: 0,
+			expected: []float32{3, -3, 10},
+		},
+		{
+			name:     "保留3位小数",
+			input:    []float32{1.2345678, 5.4321098, -0.0004999},
+			decimals: 3,
+			expected: []float32{1.235, 5.432, -0.000}, // 注意负数的进位方向
+		},
+		{
+			name:     "保留8位小数（极限精度）",
+			input:    []float32{0.123456789, 0.000000001},
+			decimals: 8,
+			expected: []float32{0.12345679, 0.00000000}, // float32精度限制
+		},
+		{
+			name:     "非法小数位数（自动修正为0）",
+			input:    []float32{2.5},
+			decimals: -2,
+			expected: []float32{3},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tensor := NewTensor(tt.input, []int{len(tt.input)})
+			rounded := tensor.RoundTo(tt.decimals)
+
+			// 精度允许误差范围（因float32精度限制）
+			const epsilon = 1e-7
+			for i, v := range rounded.Data {
+				if diff := math.Abs(float32(v - tt.expected[i])); diff > epsilon {
+					t.Errorf("索引 %d: 输入 %.8f → 期望 %.8f, 实际 %.8f (误差 %.8f)",
+						i, tt.input[i], tt.expected[i], v, diff)
+				}
+			}
+		})
+	}
+}
