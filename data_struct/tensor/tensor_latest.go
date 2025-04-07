@@ -117,7 +117,8 @@ func (t *Tensor) Slice(start, end, dim int) *Tensor {
 
 	// 计算原张量的步幅
 	strides := computeStrides(t.Shape)
-	fmt.Println(strides)
+	_ = strides
+	//fmt.Println(strides)
 
 	// 计算新张量数据
 	newSize := product(newShape)
