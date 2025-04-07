@@ -74,8 +74,8 @@ func (t *Tensor) SplitLastDim(splitPoint, part int) *Tensor {
 
 	data := make([]float32, product(newShape))
 	stride := product(t.Shape[len(t.Shape)-1:])
-
-	fmt.Println(stride)
+	_ = stride
+	//fmt.Println(stride)
 
 	for i := 0; i < product(t.Shape[:len(t.Shape)-1]); i++ {
 		srcStart := i*lastDim + start
