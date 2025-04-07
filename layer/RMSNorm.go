@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	math "github.com/chewxy/math32"
+	"runtime"
+	"sync"
 )
 
 // RMSNorm implements Root Mean Square Layer Normalization.
@@ -39,7 +41,7 @@ func NewRMSNorm(features int, eps float32) *RMSNorm {
 }
 
 // Forward performs the RMSNorm forward pass.
-func (r *RMSNorm) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
+func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor {
 	if len(inputTensor.Shape) == 1 {
 		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
 	}
@@ -85,6 +87,85 @@ func (r *RMSNorm) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
 			output.Data[i] = (inputTensor.Data[i] / rms) * r.Weights.Data[featureIdx]
 		}
 	}
+
+	return output
+}
+
+var numCPU = runtime.NumCPU()
+
+func (r *RMSNorm) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
+	if len(inputTensor.Shape) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	}
+
+	// 输入验证保持不变
+	if len(inputTensor.Shape) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	}
+
+	features := inputTensor.Shape[len(inputTensor.Shape)-1]
+	if features != r.Weights.Shape[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	}
+
+	r.inputCache = inputTensor
+
+	outputShape := inputTensor.Shape
+	outputData := make([]float32, len(inputTensor.Data))
+	output := tensor.NewTensor(outputData, outputShape)
+
+	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	featureSize := features
+
+	// 并发控制参数
+
+	chunkSize := (batchSize + numCPU - 1) / numCPU // 计算每个分块的大小
+	var wg sync.WaitGroup
+
+	// 使用带缓冲的channel控制并发数
+	sem := make(chan struct{}, numCPU*2) // 2倍核心数的缓冲区
+
+	for chunkStart := 0; chunkStart < batchSize; chunkStart += chunkSize {
+		wg.Add(1)
+		sem <- struct{}{} // 获取信号量
+
+		go func(start, end int) {
+			defer func() {
+				<-sem // 释放信号量
+				wg.Done()
+			}()
+
+			if end > batchSize {
+				end = batchSize
+			}
+
+			for b := start; b < end; b++ {
+				startIdx := b * featureSize
+				endIdx := startIdx + featureSize
+
+				// 计算当前样本的sumSq
+				sumSq := float32(0.0)
+				for i := startIdx; i < endIdx; i++ {
+					val := inputTensor.Data[i]
+					sumSq += val * val
+				}
+
+				// 计算RMS
+				meanSq := sumSq / float32(featureSize)
+				rms := math.Sqrt(meanSq + r.eps)
+				invRms := 1.0 / rms
+
+				// 处理特征维度
+				for i := startIdx; i < endIdx; i++ {
+					featureIdx := i % featureSize
+					output.Data[i] = inputTensor.Data[i] * invRms * r.Weights.Data[featureIdx]
+				}
+			}
+		}(chunkStart, chunkStart+chunkSize)
+	}
+
+	wg.Wait()
+	close(sem)
 
 	return output
 }

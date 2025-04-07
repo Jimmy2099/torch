@@ -8,3 +8,5 @@ require (
 )
 
 require github.com/dlclark/regexp2 v1.11.5
+
+replace github.com/chewxy/math32 v1.11.1 => ./pkg/math32

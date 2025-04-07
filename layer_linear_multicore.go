@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+//cpu calculation TODO
+//Single Instruction Multiple Data SIMD TODO
+
 type CalcStruct struct {
 	Data        *tensor.Tensor
 	StartAndEnd []uint64

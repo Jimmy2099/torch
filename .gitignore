@@ -10,3 +10,4 @@ __pycache__
 restricted
 *.ini
 *.gob
+*.exe
