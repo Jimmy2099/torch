@@ -9,3 +9,4 @@ etc/
 __pycache__
 restricted
 *.ini
+*.gob
