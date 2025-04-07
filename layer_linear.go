@@ -5,6 +5,7 @@ import (
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	math "github.com/chewxy/math32"
 	"math/rand"
+	"sync"
 )
 
 // TODO add bias=False
@@ -199,7 +200,7 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 	return tensor.NewTensor(gradInput, []int{batchSize, l.InputDim})
 }
 
-func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	// 保存原始形状并检查最后一维
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
@@ -241,4 +242,62 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	l.Output = output
 
 	return output
+}
+
+func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+	workers := 15
+	originalShape := x.ShapeCopy()
+	if len(originalShape) == 0 {
+		panic("输入张量形状不能为空")
+	}
+	inputDim := originalShape[len(originalShape)-1]
+	if inputDim != l.InputDim {
+		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+	}
+
+	// 展平前部维度
+	flattenedBatch := 1
+	for _, dim := range originalShape[:len(originalShape)-1] {
+		flattenedBatch *= dim
+	}
+	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
+
+	l.Input = reshapedX.Clone()
+	batchSize := reshapedX.Shape[0]
+	outputData := make([]float32, batchSize*l.OutputDim)
+
+	var wg sync.WaitGroup
+	chunkSize := (batchSize + workers - 1) / workers
+
+	for w := 0; w < workers; w++ {
+		start := w * chunkSize
+		end := start + chunkSize
+		if end > batchSize {
+			end = batchSize
+		}
+		if start >= end {
+			break
+		}
+
+		wg.Add(1)
+		go func(s, e int) {
+			defer wg.Done()
+			for b := s; b < e; b++ {
+				for out := 0; out < l.OutputDim; out++ {
+					sum := l.Bias.Data[out]
+					ptr := out * l.InputDim
+					for in := 0; in < l.InputDim; in++ {
+						sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[ptr+in]
+					}
+					outputData[b*l.OutputDim+out] = sum
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
+
+	newShape := make([]int, len(originalShape))
+	copy(newShape, originalShape)
+	newShape[len(newShape)-1] = l.OutputDim
+	return tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
 }

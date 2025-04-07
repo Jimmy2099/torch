@@ -61,14 +61,14 @@ func (m *LayerLinearMC) monitorPerformance() {
 	}
 }
 
-func init() {
-	x := NewLayerLinearMC(10, 10)
-	for {
-		x.calcChannel <- &CalcStruct{Data: tensor.Ones([]int{10, 10}), StartAndEnd: []uint64{0, 100}}
-	}
-	//x.CreateCalculationTask()
-	fmt.Println(x)
-}
+//func init() {
+//	x := NewLayerLinearMC(10, 10)
+//	for {
+//		x.calcChannel <- &CalcStruct{Data: tensor.Ones([]int{10, 10}), StartAndEnd: []uint64{0, 100}}
+//	}
+//	//x.CreateCalculationTask()
+//	fmt.Println(x)
+//}
 
 func (m *LayerLinearMC) CreateCalculationTask() {
 	for i := 0; i < 15; i++ {
