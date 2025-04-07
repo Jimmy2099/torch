@@ -11,6 +11,10 @@ import (
 	"testing"
 )
 
+func TestWeightLayout(t *testing.T) {
+
+}
+
 func TestGetLayerTestResult(t *testing.T) {
 
 	t.Run("linear layer", func(t *testing.T) {

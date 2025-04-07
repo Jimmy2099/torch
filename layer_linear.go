@@ -3,8 +3,7 @@ package torch
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
-	math "github.com/chewxy/math32"
-	"math/rand"
+	"github.com/viterin/vek/vek32"
 	"sync"
 )
 
@@ -13,17 +12,18 @@ import (
 
 // LinearLayer 实现全连接线性层
 type LinearLayer struct {
-	InputDim    int
-	OutputDim   int
-	Weights     *tensor.Tensor
-	Bias        *tensor.Tensor
-	Input       *tensor.Tensor
-	Output      *tensor.Tensor
-	GradInput   *tensor.Tensor
-	WeightDecay float32        // L2正则化系数
-	Momentum    float32        // 动量系数
-	VWeights    *tensor.Tensor // 权重动量
-	VBias       *tensor.Tensor // 偏置动量
+	InputDim          int
+	OutputDim         int
+	Weights           *tensor.Tensor
+	Bias              *tensor.Tensor
+	Input             *tensor.Tensor
+	Output            *tensor.Tensor
+	GradInput         *tensor.Tensor
+	WeightDecay       float32        // L2正则化系数
+	Momentum          float32        // 动量系数
+	VWeights          *tensor.Tensor // 权重动量
+	VBias             *tensor.Tensor // 偏置动量
+	WeightsTransposed bool
 }
 
 func (l *LinearLayer) GetWeights() *tensor.Tensor {
@@ -81,21 +81,22 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 	weightsData := make([]float32, outputDim*inputDim)
 	biasData := make([]float32, outputDim)
 
-	// Xavier初始化
-	xavierScale := math.Sqrt(2.0 / float32(inputDim))
-	for i := range weightsData {
-		weightsData[i] = float32(rand.NormFloat64()) * xavierScale
-	}
+	//// Xavier初始化
+	//xavierScale := math.Sqrt(2.0 / float32(inputDim))
+	//for i := range weightsData {
+	//	weightsData[i] = float32(rand.NormFloat64()) * xavierScale
+	//}
 
 	return &LinearLayer{
-		InputDim:    inputDim,
-		OutputDim:   outputDim,
-		Weights:     tensor.NewTensor(weightsData, []int{outputDim, inputDim}),
-		Bias:        tensor.NewTensor(biasData, []int{outputDim, 1}),
-		VWeights:    tensor.NewTensor(make([]float32, outputDim*inputDim), []int{outputDim, inputDim}),
-		VBias:       tensor.NewTensor(make([]float32, outputDim), []int{outputDim, 1}),
-		WeightDecay: 0.001,
-		Momentum:    0.9,
+		InputDim:          inputDim,
+		OutputDim:         outputDim,
+		Weights:           tensor.NewTensor(weightsData, []int{outputDim, inputDim}),
+		Bias:              tensor.NewTensor(biasData, []int{outputDim, 1}),
+		VWeights:          tensor.NewTensor(make([]float32, outputDim*inputDim), []int{outputDim, inputDim}),
+		VBias:             tensor.NewTensor(make([]float32, outputDim), []int{outputDim, 1}),
+		WeightDecay:       0.001,
+		Momentum:          0.9,
+		WeightsTransposed: false,
 	}
 }
 
@@ -129,13 +130,14 @@ func (l *LinearLayer) ZeroGrad() {
 
 // XavierInit Xavier初始化
 func (l *LinearLayer) XavierInit() {
-	fanIn := float32(l.InputDim)
-	scale := math.Sqrt(2.0 / fanIn)
-	for i := 0; i < l.Weights.Shape[0]; i++ {
-		for j := 0; j < l.Weights.Shape[1]; j++ {
-			l.Weights.Data[i*l.Weights.Shape[1]+j] = float32(rand.NormFloat64()) * scale
-		}
-	}
+	return
+	//fanIn := float32(l.InputDim)
+	//scale := math.Sqrt(2.0 / fanIn)
+	//for i := 0; i < l.Weights.Shape[0]; i++ {
+	//	for j := 0; j < l.Weights.Shape[1]; j++ {
+	//		l.Weights.Data[i*l.Weights.Shape[1]+j] = float32(rand.NormFloat64()) * scale
+	//	}
+	//}
 }
 
 // NumParams 返回参数数量
@@ -244,7 +246,7 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	return output
 }
 
-func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	workers := 15
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
@@ -300,4 +302,65 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	return tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
+}
+
+func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+	return l.ForwardSIMD(x)
+}
+
+func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
+	// ===== 1. 输入形状验证与展平 =====
+	originalShape := x.ShapeCopy()
+	if len(originalShape) == 0 {
+		panic("输入张量形状不能为空")
+	}
+	inputDim := originalShape[len(originalShape)-1]
+	if inputDim != l.InputDim {
+		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+	}
+
+	// 展平前部维度
+	flattenedBatch := 1
+	for _, dim := range originalShape[:len(originalShape)-1] {
+		flattenedBatch *= dim
+	}
+	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
+
+	// ===== 2. 核心计算优化 =====
+	l.Input = reshapedX.Clone()
+	batchSize := reshapedX.Shape[0]
+
+	// 2.1 转置权重矩阵为 [input_dim, output_dim]
+	if l.WeightsTransposed == false {
+		l.Weights = l.Weights.Transpose()
+		l.WeightsTransposed = true
+	}
+
+	// 2.2 SIMD矩阵乘法
+	matmulResult := vek32.MatMul(
+		l.Input.Data,   // [batch, input_dim]
+		l.Weights.Data, // [input_dim, output_dim]
+		l.InputDim,     // 公共维度（input_dim）
+	)
+
+	// 2.3 偏置广播（手动实现）
+	broadcastBias := make([]float32, batchSize*l.OutputDim)
+	for b := 0; b < batchSize; b++ {
+		copy(
+			broadcastBias[b*l.OutputDim:(b+1)*l.OutputDim],
+			l.Bias.Data,
+		)
+	}
+
+	// 2.4 SIMD向量加法
+	outputData := vek32.Add(matmulResult, broadcastBias)
+
+	// ===== 3. 恢复输出形状 =====
+	newShape := make([]int, len(originalShape))
+	copy(newShape, originalShape)
+	newShape[len(newShape)-1] = l.OutputDim
+	output := tensor.NewTensor(outputData, newShape)
+	l.Output = output
+
+	return output
 }
