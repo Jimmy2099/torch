@@ -36,7 +36,7 @@ func formatDuration(d time.Duration) string {
 }
 
 func TimeMeasure(start time.Time) string {
-	time.Sleep(350*time.Millisecond + 458*time.Microsecond)
+	//time.Sleep(350*time.Millisecond + 458*time.Microsecond)
 	elapsed := time.Since(start)
 	return fmt.Sprintf("Execution time: %s \n", formatDuration(elapsed))
 }
