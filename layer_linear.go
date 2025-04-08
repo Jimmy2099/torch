@@ -128,18 +128,6 @@ func (l *LinearLayer) ZeroGrad() {
 	l.VBias = tensor.NewTensor(make([]float32, l.OutputDim), []int{l.OutputDim, 1})
 }
 
-// XavierInit Xavier初始化
-func (l *LinearLayer) XavierInit() {
-	return
-	//fanIn := float32(l.InputDim)
-	//scale := math.Sqrt(2.0 / fanIn)
-	//for i := 0; i < l.Weights.Shape[0]; i++ {
-	//	for j := 0; j < l.Weights.Shape[1]; j++ {
-	//		l.Weights.Data[i*l.Weights.Shape[1]+j] = float32(rand.NormFloat64()) * scale
-	//	}
-	//}
-}
-
 // NumParams 返回参数数量
 func (l *LinearLayer) NumParams() int {
 	return l.Weights.Shape[0]*l.Weights.Shape[1] + l.Bias.Shape[0]
@@ -200,6 +188,10 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 	}
 
 	return tensor.NewTensor(gradInput, []int{batchSize, l.InputDim})
+}
+
+func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+	return l.ForwardSIMD(x)
 }
 
 func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
@@ -302,10 +294,6 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	return tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
-}
-
-func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	return l.ForwardSIMD(x)
 }
 
 func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
