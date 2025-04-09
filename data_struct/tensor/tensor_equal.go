@@ -1,9 +1,9 @@
 package tensor
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
 	math "github.com/chewxy/math32"
-	"log"
 )
 
 func (t *Tensor) EqualFloat5(other *Tensor) bool {

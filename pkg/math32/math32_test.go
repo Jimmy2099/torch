@@ -4,7 +4,7 @@
 package math32
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"os"
 	"os/exec"
 	"testing"

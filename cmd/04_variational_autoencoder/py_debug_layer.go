@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/testing"
 )
 

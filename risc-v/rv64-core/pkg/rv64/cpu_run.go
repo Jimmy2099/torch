@@ -1,7 +1,7 @@
 package rv64
 
 import (
-	"log"
+	"github.com/Jimmy2099/torch/pkg/log"
 )
 
 func (c *CPU) Run() uint8 {

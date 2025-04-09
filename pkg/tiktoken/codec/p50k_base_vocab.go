@@ -6417,7 +6417,7 @@ func p50kBaseVocabInit() {
 		" Fort":                            6401,
 		" considering":                     6402,
 		" university":                      6403,
-		"log":                              6404,
+		"github.com/Jimmy2099/torch/pkg/log":                              6404,
 		" married":                         6405,
 		" illust":                          6406,
 		" True":                            6407,

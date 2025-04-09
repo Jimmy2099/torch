@@ -1,7 +1,7 @@
 package gguf
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
 // GGML is used to represent the encoding of tensor data.

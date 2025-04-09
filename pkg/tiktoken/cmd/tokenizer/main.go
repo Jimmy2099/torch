@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"log"
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
 	"os"
 	"strconv"
 	"strings"

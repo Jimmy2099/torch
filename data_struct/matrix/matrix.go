@@ -1,10 +1,9 @@
 package matrix
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"math/rand"
 )
-
 type Matrix struct {
 	Rows, Cols int
 	Data       [][]float32

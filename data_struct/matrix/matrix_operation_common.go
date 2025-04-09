@@ -1,7 +1,7 @@
 package matrix
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
 // Copy creates a deep copy of a matrix

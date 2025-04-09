@@ -1,6 +1,6 @@
 package tensor
 
-import "log"
+import "github.com/Jimmy2099/torch/pkg/log"
 
 // Sub 张量减法
 func (t *Tensor) Sub_bak(other *Tensor) *Tensor {

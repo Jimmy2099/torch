@@ -5,7 +5,7 @@
 package math32_test
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"testing"
 
 	. "github.com/chewxy/math32"

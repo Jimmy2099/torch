@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"os"
 	"sort"
 	"strings"

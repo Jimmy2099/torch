@@ -3,7 +3,7 @@ package tensor
 import (
 	"bufio"
 	"encoding/csv"
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"io"
 	"os"
 	"strconv"

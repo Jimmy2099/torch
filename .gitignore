@@ -11,3 +11,5 @@ restricted
 *.ini
 *.gob
 *.exe
+*.zip.*
+*.zip

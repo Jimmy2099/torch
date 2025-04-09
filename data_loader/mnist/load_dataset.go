@@ -2,7 +2,7 @@ package mnist
 
 import (
 	_ "embed"
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"io"
 	"os"
 	"os/exec"

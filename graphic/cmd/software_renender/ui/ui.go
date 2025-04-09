@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	imgui "github.com/gabstv/cimgui-go"
 	ebimgui "github.com/gabstv/ebiten-imgui/v3"
 	"github.com/gabstv/ebiten-imgui/v3/imcolor"
@@ -56,7 +56,7 @@ func (g *G) Update() error {
 		//mgr.Cache.RemoveTexture(imgui.TextureID(&myImageIDRef))
 	}()
 
-	imgui.Text("ภาษาไทย测试조선말")                        // To display these, you'll need to register a compatible font
+	imgui.Text("ภาษาไทย测试조선말")                      // To display these, you'll need to register a compatible font
 	imgui.Text("Hello, world!")                       // Display some text
 	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0) // Edit 1 float using a slider from 0.0f to 1.0f
 	imgui.ColorEdit3("clear color", &g.clearColor)    // Edit 3 floats representing a color

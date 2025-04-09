@@ -2,12 +2,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
 	"github.com/Jimmy2099/torch/layer"
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
 	"github.com/Jimmy2099/torch/testing"
-	"log"
 	"os"
 	"path/filepath"
 )

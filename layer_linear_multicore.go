@@ -1,8 +1,8 @@
 package torch
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"sync/atomic"
 	"time"
 )

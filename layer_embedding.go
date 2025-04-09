@@ -1,12 +1,11 @@
 package torch
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
 	"math/rand"
 )
-
 type Embedding struct {
 	Weights     *tensor.Tensor
 	GradWeights *tensor.Tensor // 独立维护梯度张量

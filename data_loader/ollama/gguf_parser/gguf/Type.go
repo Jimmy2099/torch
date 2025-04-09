@@ -1,7 +1,7 @@
 package gguf
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
 // Type is the type of a GGUF metadata value.

@@ -1,7 +1,7 @@
 package gguf
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
 // Metadata is a container for metadata in a GGUF file. Values are

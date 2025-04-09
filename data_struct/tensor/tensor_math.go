@@ -1,6 +1,6 @@
 package tensor
 
-import "fmt"
+import "github.com/Jimmy2099/torch/pkg/fmt"
 
 func (t *Tensor) Sub(other *Tensor) *Tensor {
 	if false {

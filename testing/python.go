@@ -1,9 +1,9 @@
 package testing
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 )

@@ -1,10 +1,10 @@
 package torch
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor" // 假设这个库存在
-	"log"
-	// "log" // 如果需要添加日志或调试信息
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
+	// "github.com/Jimmy2099/torch/pkg/log" // 如果需要添加日志或调试信息
 )
 
 func (l *BatchNormLayer) SetWeightsAndShape(data []float32, shape []int) {

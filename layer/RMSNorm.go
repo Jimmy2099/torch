@@ -1,9 +1,10 @@
 package layer
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
+	"github.com/viterin/vek/vek32"
 	"runtime"
 	"sync"
 )
@@ -38,136 +39,6 @@ func NewRMSNorm(features int, eps float32) *RMSNorm {
 		eps:        eps,
 		inputCache: nil,
 	}
-}
-
-// Forward performs the RMSNorm forward pass.
-func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
-	}
-	// Input validation
-	if len(inputTensor.Shape) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
-	}
-
-	features := inputTensor.Shape[len(inputTensor.Shape)-1]
-	if features != r.Weights.Shape[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
-	}
-
-	// Cache input for backward pass
-	r.inputCache = inputTensor
-
-	// Calculate output shape (same as input)
-	outputShape := inputTensor.Shape
-	outputData := make([]float32, len(inputTensor.Data))
-	output := tensor.NewTensor(outputData, outputShape)
-
-	// Calculate mean square for each feature vector
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
-	featureSize := features
-
-	for b := 0; b < batchSize; b++ {
-		start := b * featureSize
-		end := start + featureSize
-
-		// Calculate mean square
-		sumSq := float32(0.0)
-		for i := start; i < end; i++ {
-			sumSq += inputTensor.Data[i] * inputTensor.Data[i]
-		}
-		meanSq := sumSq / float32(featureSize)
-
-		// Calculate RMS
-		rms := math.Sqrt(meanSq + r.eps)
-
-		// Normalize and scale
-		for i := start; i < end; i++ {
-			featureIdx := i % featureSize
-			output.Data[i] = (inputTensor.Data[i] / rms) * r.Weights.Data[featureIdx]
-		}
-	}
-
-	return output
-}
-
-var numCPU = runtime.NumCPU()
-
-func (r *RMSNorm) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
-	}
-
-	// 输入验证保持不变
-	if len(inputTensor.Shape) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
-	}
-
-	features := inputTensor.Shape[len(inputTensor.Shape)-1]
-	if features != r.Weights.Shape[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
-	}
-
-	r.inputCache = inputTensor
-
-	outputShape := inputTensor.Shape
-	outputData := make([]float32, len(inputTensor.Data))
-	output := tensor.NewTensor(outputData, outputShape)
-
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
-	featureSize := features
-
-	// 并发控制参数
-
-	chunkSize := (batchSize + numCPU - 1) / numCPU // 计算每个分块的大小
-	var wg sync.WaitGroup
-
-	// 使用带缓冲的channel控制并发数
-	sem := make(chan struct{}, numCPU*2) // 2倍核心数的缓冲区
-
-	for chunkStart := 0; chunkStart < batchSize; chunkStart += chunkSize {
-		wg.Add(1)
-		sem <- struct{}{} // 获取信号量
-
-		go func(start, end int) {
-			defer func() {
-				<-sem // 释放信号量
-				wg.Done()
-			}()
-
-			if end > batchSize {
-				end = batchSize
-			}
-
-			for b := start; b < end; b++ {
-				startIdx := b * featureSize
-				endIdx := startIdx + featureSize
-
-				// 计算当前样本的sumSq
-				sumSq := float32(0.0)
-				for i := startIdx; i < endIdx; i++ {
-					val := inputTensor.Data[i]
-					sumSq += val * val
-				}
-
-				// 计算RMS
-				meanSq := sumSq / float32(featureSize)
-				rms := math.Sqrt(meanSq + r.eps)
-				invRms := 1.0 / rms
-
-				// 处理特征维度
-				for i := startIdx; i < endIdx; i++ {
-					featureIdx := i % featureSize
-					output.Data[i] = inputTensor.Data[i] * invRms * r.Weights.Data[featureIdx]
-				}
-			}
-		}(chunkStart, chunkStart+chunkSize)
-	}
-
-	wg.Wait()
-	close(sem)
-
-	return output
 }
 
 // Backward performs the RMSNorm backward pass.
@@ -247,4 +118,179 @@ func (r *RMSNorm) SetBias(data [][]float32) {
 }
 
 func (r *RMSNorm) SetBiasAndShape(data []float32, shape []int) {
+}
+
+var numCPU = runtime.NumCPU()
+
+// Forward performs the RMSNorm forward pass.
+func (r *RMSNorm) Forward(x *tensor.Tensor) *tensor.Tensor {
+	return r.ForwardSIMD(x)
+}
+
+func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor {
+	if len(inputTensor.Shape) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	}
+	// Input validation
+	if len(inputTensor.Shape) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	}
+
+	features := inputTensor.Shape[len(inputTensor.Shape)-1]
+	if features != r.Weights.Shape[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	}
+
+	// Cache input for backward pass
+	r.inputCache = inputTensor
+
+	// Calculate output shape (same as input)
+	outputShape := inputTensor.Shape
+	outputData := make([]float32, len(inputTensor.Data))
+	output := tensor.NewTensor(outputData, outputShape)
+
+	// Calculate mean square for each feature vector
+	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	featureSize := features
+
+	for b := 0; b < batchSize; b++ {
+		start := b * featureSize
+		end := start + featureSize
+
+		// Calculate mean square
+		sumSq := float32(0.0)
+		for i := start; i < end; i++ {
+			sumSq += inputTensor.Data[i] * inputTensor.Data[i]
+		}
+		meanSq := sumSq / float32(featureSize)
+
+		// Calculate RMS
+		rms := math.Sqrt(meanSq + r.eps)
+
+		// Normalize and scale
+		for i := start; i < end; i++ {
+			featureIdx := i % featureSize
+			output.Data[i] = (inputTensor.Data[i] / rms) * r.Weights.Data[featureIdx]
+		}
+	}
+
+	return output
+}
+
+func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor {
+	if len(inputTensor.Shape) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	}
+
+	// 输入验证保持不变
+	if len(inputTensor.Shape) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	}
+
+	features := inputTensor.Shape[len(inputTensor.Shape)-1]
+	if features != r.Weights.Shape[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	}
+
+	r.inputCache = inputTensor
+
+	outputShape := inputTensor.Shape
+	outputData := make([]float32, len(inputTensor.Data))
+	output := tensor.NewTensor(outputData, outputShape)
+
+	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	featureSize := features
+
+	// 并发控制参数
+
+	chunkSize := (batchSize + numCPU - 1) / numCPU // 计算每个分块的大小
+	var wg sync.WaitGroup
+
+	// 使用带缓冲的channel控制并发数
+	sem := make(chan struct{}, numCPU*2) // 2倍核心数的缓冲区
+
+	for chunkStart := 0; chunkStart < batchSize; chunkStart += chunkSize {
+		wg.Add(1)
+		sem <- struct{}{} // 获取信号量
+
+		go func(start, end int) {
+			defer func() {
+				<-sem // 释放信号量
+				wg.Done()
+			}()
+
+			if end > batchSize {
+				end = batchSize
+			}
+
+			for b := start; b < end; b++ {
+				startIdx := b * featureSize
+				endIdx := startIdx + featureSize
+
+				// 计算当前样本的sumSq
+				sumSq := float32(0.0)
+				for i := startIdx; i < endIdx; i++ {
+					val := inputTensor.Data[i]
+					sumSq += val * val
+				}
+
+				// 计算RMS
+				meanSq := sumSq / float32(featureSize)
+				rms := math.Sqrt(meanSq + r.eps)
+				invRms := 1.0 / rms
+
+				// 处理特征维度
+				for i := startIdx; i < endIdx; i++ {
+					featureIdx := i % featureSize
+					output.Data[i] = inputTensor.Data[i] * invRms * r.Weights.Data[featureIdx]
+				}
+			}
+		}(chunkStart, chunkStart+chunkSize)
+	}
+
+	wg.Wait()
+	close(sem)
+
+	return output
+}
+
+func (r *RMSNorm) ForwardSIMD(inputTensor *tensor.Tensor) *tensor.Tensor {
+	if len(inputTensor.Shape) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	}
+	if len(inputTensor.Shape) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	}
+
+	features := inputTensor.Shape[len(inputTensor.Shape)-1]
+	if features != r.Weights.Shape[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	}
+
+	r.inputCache = inputTensor
+	outputShape := inputTensor.Shape
+	outputData := make([]float32, len(inputTensor.Data))
+	output := tensor.NewTensor(outputData, outputShape)
+
+	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	featureSize := features
+
+	weightsData := r.Weights.Data // 预取权重数据指针
+
+	for b := 0; b < batchSize; b++ {
+		start := b * featureSize
+		end := start + featureSize
+		inputBatch := inputTensor.Data[start:end]
+		outputBatch := output.Data[start:end]
+
+		// 向量化计算平方和
+		sumSq := vek32.Dot(inputBatch, inputBatch)
+		rms := math.Sqrt(sumSq/float32(featureSize) + r.eps)
+
+		// 向量化归一化 + 缩放
+		vek32.DivNumber_Into(outputBatch, inputBatch, rms) // output = input / rms
+		vek32.Mul_Inplace(outputBatch, weightsData)        // output *= weights
+	}
+
+	return output
 }

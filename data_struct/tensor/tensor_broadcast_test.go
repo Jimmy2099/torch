@@ -3,8 +3,8 @@ package tensor
 import (
 	"reflect"
 	"testing"
-	// Assuming "fmt" might be needed if Tensor String() method exists for logging
-	// "fmt"
+	// Assuming "github.com/Jimmy2099/torch/pkg/fmt"" might be needed if Tensor String() method exists for logging
+	// "github.com/Jimmy2099/torch/pkg/fmt""
 )
 
 // --- Assume Tensor struct and basic helpers exist ---

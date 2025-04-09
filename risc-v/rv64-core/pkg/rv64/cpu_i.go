@@ -1,11 +1,10 @@
 package rv64
 
 import (
-	"fmt"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"math"
 	"math/big"
 )
-
 type isaI struct{}
 
 func (_ *isaI) lui(c *CPU, i uint64) (uint64, error) {

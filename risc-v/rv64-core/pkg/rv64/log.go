@@ -1,8 +1,8 @@
 package rv64
 
 import (
-	"fmt"
-	"log"
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/pkg/log"
 )
 
 func Println(v ...interface{}) {
