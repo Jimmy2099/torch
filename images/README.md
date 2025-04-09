@@ -1,11 +1,12 @@
 # Example
 
 ## llama3_1b cpu example base on this framework
-
-<div style="display: flex;">
-<img src="r_llama3_1b_01.png" alt="llama3_1b_cpu_01" style="width: 50%;">
-<img src="r_llama3_1b_02.png" alt="llama3_1b_cpu-02" style="width: 50%;">
-</div>
+<table>
+<tr>
+<td><img src="r_llama3_1b_01.png" alt="llama3_1b_cpu_01" width="1149"></td>
+<td><img src="r_llama3_1b_02.png" alt="llama3_1b_cpu-02" width="1207"></td>
+</tr>
+</table>
 
 [//]: # (![llama3_1b_cpu_01]&#40;r_llama3_1b_01.png&#41;)
 
