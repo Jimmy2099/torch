@@ -1,9 +1,16 @@
 # Torch - A Golang DeepLearning Inference Computing Library From Scratch
 
-![CNN From Scratch](images/02_cnn.png)
+#### llama3_1b cpu example base on this framework
+<div style="display: flex;">
+<img src="images/r_llama3_1b_01.png" alt="llama3_1b_cpu_01" style="width: 50%;">
+<img src="images/r_llama3_1b_02.png" alt="llama3_1b_cpu-02" style="width: 50%;">
+</div>
 
-#### With re-design build-in Graphic Renderer that compatible with Tensor data struct:
-![CNN From Scratch](images/graphic_01_software_renderer.png)
+#### CNN From Scratch example AND re-design build-in Graphic Renderer that compatible with Tensor data struct:
+<div style="display: flex;">
+<img src="images/02_cnn.png" alt="CNN From Scratch" style="width: 50%;">
+<img src="images/graphic_01_software_renderer.png" alt="graphic_01_software_renderer" style="width: 50%;">
+</div>
 
 #### More Examples:  [README.md](images/README.md)
 
