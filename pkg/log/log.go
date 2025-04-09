@@ -30,3 +30,7 @@ func Sprintf(format string, a ...any) string {
 func Fatalf(format string, v ...any) {
 	log.Fatalf(format, v...)
 }
+
+func Panicf(format string, v ...any) {
+	log.Panicf(format, v...)
+}

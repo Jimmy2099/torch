@@ -1,11 +1,12 @@
 package codec
 
 import (
-	"github.com/Jimmy2099/torch/pkg/fmt"
+	"fmt"
 	"math"
 
 	"github.com/dlclark/regexp2"
 )
+
 type Codec struct {
 	vocabulary        vocab
 	reverseVocabulary reverse

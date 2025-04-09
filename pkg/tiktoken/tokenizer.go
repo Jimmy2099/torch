@@ -54,7 +54,7 @@ package tokenizer
 //	package main
 //
 //	import (
-//		"github.com/Jimmy2099/torch/pkg/fmt""
+//		"fmt"
 //		"github.com/tiktoken-go/tokenizer"
 //	)
 //
