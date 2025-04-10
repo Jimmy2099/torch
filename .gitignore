@@ -13,3 +13,4 @@ restricted
 *.exe
 *.zip.*
 *.zip
+*_result.txt
