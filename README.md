@@ -1,6 +1,6 @@
 # Torch - A Golang DeepLearning Inference Computing Library From Scratch
 
-#### llama3_1b cpu example base on this framework
+#### llama3 1b cpu example built on top of this framework
 <table>
 <tr>
 <td><img src="images/r_llama3_1b_01.png" alt="llama3_1b_cpu_01" width="1149"></td>
