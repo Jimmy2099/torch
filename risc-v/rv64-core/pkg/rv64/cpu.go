@@ -2,9 +2,10 @@ package rv64
 
 import (
 	"encoding/binary"
-	"github.com/Jimmy2099/torch/pkg/fmt"
+	"fmt"
 	"math"
 )
+
 type CPU struct {
 	fasten Fasten
 	system System

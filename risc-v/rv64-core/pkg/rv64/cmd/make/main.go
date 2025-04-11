@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/Jimmy2099/torch/pkg/log"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"

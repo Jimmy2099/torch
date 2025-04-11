@@ -2,7 +2,7 @@ package rv64
 
 // import (
 // 	"encoding/binary"
-// 	"github.com/Jimmy2099/torch/pkg/log"
+// 	"log"
 // )
 
 // func ExecuterC(c *CPU, i uint64) (int, error) {
