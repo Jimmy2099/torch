@@ -9,8 +9,6 @@ import (
 
 // TODO add bias=False
 // Linear(in_features=2048, out_features=8192, bias=False)
-
-// LinearLayer 实现全连接线性层
 type LinearLayer struct {
 	InputDim          int
 	OutputDim         int
@@ -34,7 +32,6 @@ func (l *LinearLayer) GetBias() *tensor.Tensor {
 	return l.Bias
 }
 
-// SetWeights 设置权重
 func (l *LinearLayer) SetWeights(data []float32) {
 	if len(data) != l.OutputDim*l.InputDim {
 		panic("Weights data length mismatch")
@@ -47,7 +44,6 @@ func (l *LinearLayer) SetWeights(data []float32) {
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutputDim, l.InputDim})
 }
 
-// SetBias 设置偏置
 func (l *LinearLayer) SetBias(data []float32) {
 	if len(data) != l.OutputDim {
 		panic("bias data length mismatch")
@@ -70,12 +66,10 @@ func (l *LinearLayer) SetBiasAndShape(data []float32, shape []int) {
 	l.Bias.Reshape(shape)
 }
 
-// Parameters 返回所有可训练参数
 func (l *LinearLayer) Parameters() []*tensor.Tensor {
 	return []*tensor.Tensor{l.Weights, l.Bias}
 }
 
-// NewLinearLayer 创建新的线性层
 func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 	// 初始化权重和偏置
 	weightsData := make([]float32, outputDim*inputDim)
@@ -100,7 +94,6 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 	}
 }
 
-// updateParameters 参数更新逻辑
 func (l *LinearLayer) updateParameters(dWeights, dBias *tensor.Tensor, learningRate float32) {
 	// 更新权重
 	for i := 0; i < l.Weights.Shape[0]; i++ {
@@ -121,14 +114,12 @@ func (l *LinearLayer) updateParameters(dWeights, dBias *tensor.Tensor, learningR
 	}
 }
 
-// ZeroGrad 梯度清零
 func (l *LinearLayer) ZeroGrad() {
 	l.GradInput = nil
 	l.VWeights = tensor.NewTensor(make([]float32, l.OutputDim*l.InputDim), []int{l.OutputDim, l.InputDim})
 	l.VBias = tensor.NewTensor(make([]float32, l.OutputDim), []int{l.OutputDim, 1})
 }
 
-// NumParams 返回参数数量
 func (l *LinearLayer) NumParams() int {
 	return l.Weights.Shape[0]*l.Weights.Shape[1] + l.Bias.Shape[0]
 }
@@ -217,15 +208,113 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	batchSize := reshapedX.Shape[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
-	// 矩阵乘法
-	for b := 0; b < batchSize; b++ {
-		for out := 0; out < l.OutputDim; out++ {
-			sum := l.Bias.Data[out]
-			for in := 0; in < l.InputDim; in++ {
-				sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[out*l.InputDim+in]
-			}
-			outputData[b*l.OutputDim+out] = sum
+	//for b := 0; b < batchSize; b++ {
+	//	for out := 0; out < l.OutputDim; out++ {
+	//		sum := l.Bias.Data[out]
+	//		for in := 0; in < l.InputDim; in++ {
+	//			sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[out*l.InputDim+in]
+	//		}
+	//		outputData[b*l.OutputDim+out] = sum
+	//	}
+	//}
+
+	for i := 0; i < batchSize*l.OutputDim*l.InputDim; i++ {
+		b := i / (l.OutputDim * l.InputDim)
+		remainder := i % (l.OutputDim * l.InputDim)
+		out := remainder / l.InputDim
+		in := remainder % l.InputDim
+
+		inputIndex := b*l.InputDim + in
+		weightIndex := out*l.InputDim + in
+		outputIndex := b*l.OutputDim + out
+
+		if in == 0 {
+			outputData[outputIndex] = l.Bias.Data[out]
 		}
+		outputData[outputIndex] += l.Input.Data[inputIndex] * l.Weights.Data[weightIndex]
+	}
+
+	// 恢复原始形状
+	newShape := make([]int, len(originalShape))
+	copy(newShape, originalShape)
+	newShape[len(newShape)-1] = l.OutputDim
+	output := tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
+	l.Output = output
+
+	return output
+}
+
+func LinearCompute(Bias, Weights, OutputData []float32, inputLength int, inputFloat32 float32, startPos int) {
+	{
+		// 获取输出维度和输入维度
+		outputDim := len(Bias)
+		if outputDim == 0 {
+			return
+		}
+		inputDim := len(Weights) / outputDim
+		if inputDim == 0 {
+			return
+		}
+		batchSize := inputLength / inputDim
+
+		// 计算批次索引和输入维度索引
+		totalInputElements := batchSize * inputDim
+		adjustedPos := startPos
+		if adjustedPos < 0 {
+			adjustedPos += ((-adjustedPos-1)/totalInputElements + 1) * totalInputElements
+		}
+		inputIndex := adjustedPos % totalInputElements
+
+		b := inputIndex / inputDim
+		in := inputIndex % inputDim
+
+		// 遍历所有输出维度
+		for out := 0; out < outputDim; out++ {
+			outputIndex := b*outputDim + out
+			if outputIndex >= len(OutputData) {
+				continue
+			}
+
+			weightIndex := out*inputDim + in
+			if weightIndex >= len(Weights) {
+				continue
+			}
+
+			// 初始化偏置
+			if in == 0 {
+				OutputData[outputIndex] = Bias[out]
+			}
+			// 累加乘积
+			OutputData[outputIndex] += inputFloat32 * Weights[weightIndex]
+		}
+	}
+}
+
+func (l *LinearLayer) ForwardSignalThreadCompute(x *tensor.Tensor) *tensor.Tensor {
+	// 保存原始形状并检查最后一维
+	originalShape := x.ShapeCopy()
+	if len(originalShape) == 0 {
+		panic("输入张量形状不能为空")
+	}
+	inputDim := originalShape[len(originalShape)-1]
+	if inputDim != l.InputDim {
+		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+	}
+
+	// 展平前部维度
+	flattenedBatch := 1
+	for _, dim := range originalShape[:len(originalShape)-1] {
+		flattenedBatch *= dim
+	}
+	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
+
+	// 保存输入并执行计算
+	l.Input = reshapedX.Clone()
+	batchSize := reshapedX.Shape[0]
+	outputData := make([]float32, batchSize*l.OutputDim)
+
+	for i := 0; i < len(l.Input.Data); i++ {
+		LinearCompute(l.Bias.Data, l.Weights.Data, outputData, len(x.Data), l.Input.Data[i], i)
 	}
 
 	// 恢复原始形状
@@ -239,7 +328,6 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
-	workers := 15
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
 		panic("输入张量形状不能为空")
@@ -260,6 +348,7 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	batchSize := reshapedX.Shape[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
+	workers := 15
 	var wg sync.WaitGroup
 	chunkSize := (batchSize + workers - 1) / workers
 

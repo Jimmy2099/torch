@@ -14,6 +14,7 @@ require (
 	github.com/shogo82148/int128 v0.2.1
 	github.com/viterin/vek v0.4.2
 	github.com/x448/float16 v0.8.4
+	gpu_hardware v0.0.0
 )
 
 require (
@@ -22,4 +23,7 @@ require (
 	golang.org/x/sys v0.11.0 // indirect
 )
 
-replace github.com/chewxy/math32 v1.11.1 => ./thirdparty/math32
+replace (
+	github.com/chewxy/math32 v1.11.1 => ./thirdparty/math32
+	gpu_hardware v0.0.0 => ./restricted/pkg/gpu
+)
