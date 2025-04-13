@@ -35,11 +35,11 @@ func Errorf(format string, a ...any) (err error) {
 	return fmt.Errorf(format, a...)
 }
 
-func Println(a ...any) (n int, err error) {
+func Println(a ...any) {
 	if !EnableLog {
 		return
 	}
-	return fmt.Println(a...)
+	fmt.Println(a...)
 }
 
 func Printf(format string, a ...any) (n int, err error) {

@@ -3,10 +3,10 @@
 ### llama3 1b cpu example
 
 #### Run default example
-docker run jimmy2099/torch:llama3_1b-CPU-6
+docker run jimmy2099/torch:llama3_1b-CPU-7
 
 #### Manual execution example
-docker run --rm -it --entrypoint /bin/bash jimmy2099/torch:llama3_1b-CPU-6
+docker run --rm -it --entrypoint /bin/bash jimmy2099/torch:llama3_1b-CPU-7
 ./run.sh
 
 ##### System Requirements

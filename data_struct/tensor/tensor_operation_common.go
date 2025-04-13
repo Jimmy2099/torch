@@ -90,7 +90,6 @@ func Random(shape []int, min, max float32) *Tensor {
 		panic("min cannot be greater than max")
 	}
 
-	// Initialize the random seed only once (preferably outside this function in real applications)
 	rand.Seed(time.Now().UnixNano())
 
 	size := 1
@@ -100,7 +99,7 @@ func Random(shape []int, min, max float32) *Tensor {
 
 	data := make([]float32, size)
 	for i := range data {
-		data[i] = min + float32(rand.Float32())*(max-min) // Scale to [min, max]
+		data[i] = min + rand.Float32()*(max-min) // Scale to [min, max]
 	}
 
 	return &Tensor{Data: data, Shape: shape}

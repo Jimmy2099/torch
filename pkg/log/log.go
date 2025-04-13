@@ -5,11 +5,11 @@ import (
 	"log"
 )
 
-func Println(a ...any) (n int, err error) {
+func Println(a ...any) {
 	if !fmt.EnableLog {
 		return
 	}
-	return fmt.Println(a...)
+	fmt.Println(a...)
 }
 
 func Printf(format string, a ...any) (n int, err error) {
