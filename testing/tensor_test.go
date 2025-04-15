@@ -6,7 +6,6 @@ import (
 )
 
 func TestGetTensorTestResult(t *testing.T) {
-	// Shared base test tensor
 	baseTensor := tensor.Ones([]int{2, 2})
 
 	t.Run("Element-wise multiplication", func(t *testing.T) {

@@ -1,4 +1,3 @@
-// main.go (Relevant VAE initialization part)
 package main
 
 import (
@@ -63,7 +62,6 @@ func NewVAE() *VAE {
 	bnMomentum := float32(0.1)
 
 	vae := &VAE{
-		//	  (0): Conv2d(3, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
 		encoderConv0:  torch.NewConvLayer(3, 64, 5, 2, 2),
 		encoderConv1:  torch.NewBatchNormLayer(64, bnEps, bnMomentum),
 		encoderReLU2:  torch.NewReLULayer(),
@@ -83,17 +81,6 @@ func NewVAE() *VAE {
 
 		decoderFc: torch.NewLinearLayer(64, 8192),
 
-		////	  (0): ConvTranspose2d(512, 256, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		////	  (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		////	  (2): ReLU(inplace=True)
-		////	  (3): ConvTranspose2d(256, 128, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		////	  (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		////	  (5): ReLU(inplace=True)
-		////	  (6): ConvTranspose2d(128, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		////	  (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		////	  (8): ReLU(inplace=True)
-		////	  (9): ConvTranspose2d(64, 3, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		////	  (10): Tanh()
 		decoderConv0: layer.NewConvTranspose2dLayer(
 			512,  // 输入通道数 - 必须与前一层输出匹配
 			256,  // 输出通道数
@@ -133,9 +120,7 @@ func NewVAE() *VAE {
 	}
 	fmt.Println("Layers initialized.")
 
-	// --- Define the mapping --- Use correct PyTorch names ---
 	loadInfos := []layerLoadInfo{
-		// Encoder
 		{"encoder_conv.0.weight", vae.encoderConv0, []int{64, 3, 5, 5}, nil},
 		{"encoder_conv.0.bias", vae.encoderConv0, nil, []int{64}},
 		{"encoder_conv.1.weight", vae.encoderConv1, []int{64}, nil},
@@ -161,58 +146,27 @@ func NewVAE() *VAE {
 		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil}, // Optional
 		{"encoder_conv.10.bias", vae.encoderConv10, []int{512}, nil},   // Optional
 
-		// FC Layers
 		{"fc_mu.weight", vae.fcMu, []int{64, 8192}, nil},
 		{"fc_mu.bias", vae.fcMu, nil, []int{64}},
 		{"fc_logvar.weight", vae.fcLogVar, []int{64, 8192}, nil},
 		{"fc_logvar.bias", vae.fcLogVar, nil, []int{64}},
 
-		//	(decoder_conv): Sequential(
-		//	  (0): ConvTranspose2d(512, 256, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		//	  (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		//	  (2): ReLU(inplace=True)
-		//	  (3): ConvTranspose2d(256, 128, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		//	  (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		//	  (5): ReLU(inplace=True)
-		//	  (6): ConvTranspose2d(128, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		//	  (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-		//	  (8): ReLU(inplace=True)
-		//	  (9): ConvTranspose2d(64, 3, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-		//	  (10): Tanh()
-		//	)
 
-		// Decoder Fully Connected
-		// Layer: decoder_fc.weight, Shape: torch.Size([8192, 64]), dim: 2
-		// Layer: decoder_fc.bias, Shape: torch.Size([8192]), dim: 1
 		{"decoder_fc.weight", vae.decoderFc, []int{8192, 64}, nil},
 		{"decoder_fc.bias", vae.decoderFc, nil, []int{8192}},
 
-		// Layer: decoder_conv.0.weight, Shape: torch.Size([512, 256, 5, 5]), dim: 4
-		// Layer: decoder_conv.0.bias, Shape: torch.Size([256]), dim: 1
 		{"decoder_conv.0.weight", vae.decoderConv0, []int{512, 256, 5, 5}, nil},
 		{"decoder_conv.0.bias", vae.decoderConv0, nil, []int{256}},
-		// Layer: decoder_conv.1.weight, Shape: torch.Size([256]), dim: 1
-		// Layer: decoder_conv.1.bias, Shape: torch.Size([256]), dim: 1
 		{"decoder_conv.1.weight", vae.decoderConv1, []int{256}, nil},
 		{"decoder_conv.1.bias", vae.decoderConv1, nil, []int{256}},
-		// Layer: decoder_conv.3.weight, Shape: torch.Size([256, 128, 5, 5]), dim: 4
-		// Layer: decoder_conv.3.bias, Shape: torch.Size([128]), dim: 1
 		{"decoder_conv.3.weight", vae.decoderConv3, []int{256, 128, 5, 5}, nil},
 		{"decoder_conv.3.bias", vae.decoderConv3, nil, []int{128}},
-		// Layer: decoder_conv.4.weight, Shape: torch.Size([128]), dim: 1
-		// Layer: decoder_conv.4.bias, Shape: torch.Size([128]), dim: 1
 		{"decoder_conv.4.weight", vae.decoderConv4, []int{128}, nil},
 		{"decoder_conv.4.bias", vae.decoderConv4, nil, []int{128}},
-		// Layer: decoder_conv.6.weight, Shape: torch.Size([128, 64, 5, 5]), dim: 4
-		// Layer: decoder_conv.6.bias, Shape: torch.Size([64]), dim: 1
 		{"decoder_conv.6.weight", vae.decoderConv6, []int{128, 64, 5, 5}, nil},
 		{"decoder_conv.6.bias", vae.decoderConv6, nil, []int{64}},
-		// Layer: decoder_conv.7.weight, Shape: torch.Size([64]), dim: 1
-		// Layer: decoder_conv.7.bias, Shape: torch.Size([64]), dim: 1
 		{"decoder_conv.7.weight", vae.decoderConv7, []int{64}, nil},
 		{"decoder_conv.7.bias", vae.decoderConv7, nil, []int{64}},
-		// Layer: decoder_conv.9.weight, Shape: torch.Size([64, 3, 5, 5]), dim: 4
-		// Layer: decoder_conv.9.bias, Shape: torch.Size([3]), dim: 1
 		{"decoder_conv.9.weight", vae.decoderConv9, []int{64, 3, 5, 5}, nil},
 		{"decoder_conv.9.bias", vae.decoderConv9, nil, []int{3}},
 	}
@@ -256,8 +210,6 @@ func main() {
 	log.Println("VAE model created and loaded.")
 	x := tensor.RandomNormal([]int{64, 64})
 	x = vae.Decode(x)
-	//x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))
-	//x = x.Clamp(0, 1)
 	x.Reshape([]int{1, len(x.Data)})
 	x.SaveToCSV("./py/test.csv")
 }
@@ -266,7 +218,6 @@ func (v *VAE) Encode(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting VAE Forward Pass ===")
 	fmt.Printf("Input shape: %v\n", x.Shape)
 
-	// --- Encoder ---
 	fmt.Println("\nEncoder Conv 0:")
 	x = v.encoderConv0.Forward(x)
 	fmt.Printf("After enc_conv0: %v\n", x.Shape)
@@ -315,12 +266,10 @@ func (v *VAE) Encode(x *tensor.Tensor) *tensor.Tensor {
 	x = v.encoderReLU11.Forward(x)
 	fmt.Printf("After enc_relu11: %v\n", x.Shape)
 
-	// --- Flatten ---
 	fmt.Println("\nFlatten:")
 	flatFeatures := v.flatten.Forward(x)
 	fmt.Printf("After flatten: %v\n", flatFeatures.Shape)
 
-	// --- Latent Variables ---
 	fmt.Println("\nFC Mu:")
 	mu := v.fcMu.Forward(flatFeatures)
 	fmt.Printf("After fc_mu: %v\n", mu.Shape)
@@ -331,38 +280,15 @@ func (v *VAE) Encode(x *tensor.Tensor) *tensor.Tensor {
 	return x
 }
 
-// nn.BatchNorm2d(gf_dim * 4)
-// //	(decoder_conv): Sequential(
-// //	  (0): ConvTranspose2d(512, 256, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-// //	  (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-// //	  (2): ReLU(inplace=True)
-// //	  (3): ConvTranspose2d(256, 128, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-// //	  (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-// //	  (5): ReLU(inplace=True)
-// //	  (6): ConvTranspose2d(128, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-// //	  (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-// //	  (8): ReLU(inplace=True)
-// //	  (9): ConvTranspose2d(64, 3, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2), output_padding=(1, 1))
-// //	  (10): Tanh()
-// //	)
 
 func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 
-	//{
-	//	// debug
-	//	d, err := torch.LoadFlatDataFromCSV("./py/noise_1.csv")
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	x = tensor.NewTensor(d, []int{64, 64})
-	//}
 	{
 		fmt.Println("\nDecoder FC:")
 		x = v.decoderFc.Forward(x)
 		fmt.Printf("After decoder_fc: %v\n", x.Shape)
 		decoderReshapeChannels := 512
 		decoderReshapeSize := 4
-		// --- Reshape ---
 		fmt.Println("\nReshape for Decoder Conv:")
 		batchSize := x.Shape[0]
 		x = x.Reshape([]int{
@@ -374,61 +300,49 @@ func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 		fmt.Printf("After reshape: %v\n", x.Shape)
 	}
 
-	//Decode
 	{
 		fmt.Println("\nDecoder ConvT 0:")
 		x = v.decoderConv0.Forward(x)
-		//x = PyConvT(x, v.decoderConv0, 512, 256)
 		fmt.Printf("After dec_convT0: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 1:")
-		//x = PyBatchNorm2d(x, v.decoderConv1, 64*4)
 		x = v.decoderConv1.Forward(x)
 		fmt.Printf("After dec_bn1: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 2:")
 		x = v.decoderReLU2.Forward(x)
-		//x = PyReLU(x, v.decoderReLU2)
 		fmt.Printf("After dec_relu2: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 3:")
 		x = v.decoderConv3.Forward(x)
-		//x = PyConvT(x, v.decoderConv3, 128, 64)
 		fmt.Printf("After dec_convT3: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 4:")
-		//x = PyBatchNorm2d(x, v.decoderConv4, 64*2)
 		x = v.decoderConv4.Forward(x)
 		fmt.Printf("After dec_bn4: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 5:")
 		x = v.decoderReLU5.Forward(x)
-		//x = PyReLU(x, v.decoderReLU5)
 		fmt.Printf("After dec_relu5: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 6:")
 		x = v.decoderConv6.Forward(x)
-		//x = PyConvT(x, v.decoderConv6, 128, 64)
 		fmt.Printf("After dec_convT6: %v\n", x.Shape)
 
 		fmt.Println("Decoder BN 7:")
-		//x = PyBatchNorm2d(x, v.decoderConv7, 64)
 		x = v.decoderConv7.Forward(x)
 		fmt.Printf("After dec_bn7: %v\n", x.Shape)
 
 		fmt.Println("Decoder ReLU 8:")
 		x = v.decoderReLU8.Forward(x)
-		//x = PyReLU(x, v.decoderReLU8)
 		fmt.Printf("After dec_relu8: %v\n", x.Shape)
 
 		fmt.Println("\nDecoder ConvT 9:")
 		x = v.decoderConv9.Forward(x)
-		//x = PyConvT(x, v.decoderConv9, 64, 3)
 		fmt.Printf("After dec_convT9: %v\n", x.Shape)
 
 		fmt.Println("Decoder Tanh 10 (Output):")
 		x = v.decoderTanh10.Forward(x)
-		//x = PyTanh(x, v.decoderTanh10)
 		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
 
 		{
@@ -442,7 +356,6 @@ sv_image(in1)
 `, x, x)
 		fmt.Println("\n=== VAE Forward Pass Complete ===")
 	}
-	//[64,3,64,64]
 	return x
 }
 

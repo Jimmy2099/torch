@@ -20,14 +20,7 @@ import (
 	"time"
 )
 
-// CNN
 type CNN struct {
-	//        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
-	//        self.conv2 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
-	//        self.fc1 = torch.nn.Linear(in_features=64 * 7 * 7, out_features=128)
-	//        self.fc2 = torch.nn.Linear(in_features=128, out_features=10)
-	//        self.relu = torch.nn.ReLU()
-	//        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 	conv1 *torch.ConvLayer
 	conv2 *torch.ConvLayer
 	fc1   *torch.LinearLayer
@@ -37,61 +30,49 @@ type CNN struct {
 }
 
 func (c *CNN) Parameters() []*matrix.Matrix {
-	//TODO implement me
 	panic("implement me")
 }
 
-// Forward performs the forward pass of the CNN.
 func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting Forward Pass ===")
 	fmt.Printf("Input shape: %v\n", x.Shape)
 
-	// Conv1: (1,1,28,28) -> (1,32,28,28)
 	fmt.Println("\nConv1:")
 	x = c.conv1.Forward(x)
 	fmt.Printf("After conv1: %v\n", x.Shape)
 
-	// ReLU1: (1,32,28,28) -> (1,32,28,28)
 	fmt.Println("\nReLU1:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu1: %v\n", x.Shape)
 
-	// Pool1: (1,32,28,28) -> (1,32,14,14)
 	fmt.Println("\nPool1:")
 	x = c.pool.Forward(x)
 	fmt.Printf("After pool1: %v\n", x.Shape)
 
-	// Conv2: (1,32,14,14) -> (1,64,14,14)
 	fmt.Println("\nConv2:")
 	x = c.conv2.Forward(x)
 	fmt.Printf("After conv2: %v\n", x.Shape)
 
-	// ReLU2: (1,64,14,14) -> (1,64,14,14)
 	fmt.Println("\nReLU2:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu2: %v\n", x.Shape)
 
-	// Pool2: (1,64,14,14) -> (1,64,7,7)
 	fmt.Println("\nPool2:")
 	x = c.pool.Forward(x)
 	fmt.Printf("After pool2: %v\n", x.Shape)
 
-	// Flatten: (1,64,7,7) -> (1,3136)
 	fmt.Println("\nFlatten:")
 	x = x.Flatten()
 	fmt.Printf("After flatten: %v\n", x.Shape)
 
-	// FC1: (1,3136) -> (1,128)
 	fmt.Println("\nFC1:")
 	x = c.fc1.Forward(x)
 	fmt.Printf("After fc1: %v\n", x.Shape)
 
-	// ReLU3: (1,128) -> (1,128)
 	fmt.Println("\nReLU3:")
 	x = c.relu.Forward(x)
 	fmt.Printf("After relu3: %v\n", x.Shape)
 
-	// FC2: (1,128) -> (1,10)
 	fmt.Println("\nFC2:")
 	x = c.fc2.Forward(x)
 	fmt.Printf("After fc2: %v\n", x.Shape)
@@ -111,7 +92,6 @@ func NewCNN() *CNN {
 		pool:  torch.NewMaxPool2DLayer(2, 2, 0),
 	}
 
-	//cnn.LoadModelFromCSV()
 	layer := []string{
 		"conv1",
 		"conv2",
@@ -186,16 +166,9 @@ func NewCNN() *CNN {
 }
 
 func (c *CNN) Backward(targets *matrix.Matrix, lr float32) {
-	//// 反向传播
-	//grad := c.fc2.Backward(targets, lr)
-	//grad = c.fc1.Backward(grad, lr)
-	//grad = grad.Reshape(8, 12)
-	//grad = c.pool1.Backward(grad)
-	//_ = c.conv1.BackwardWithLR(grad, lr)
 }
 
 func (c *CNN) ZeroGrad() {
-	// 清零梯度
 	c.conv1.ZeroGrad()
 	c.fc1.ZeroGrad()
 	c.fc2.ZeroGrad()
@@ -204,25 +177,21 @@ func (c *CNN) ZeroGrad() {
 func main() {
 
 	{
-		//generate test data
 		d, _ := os.Getwd()
 		runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
 	}
 	directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
 
-	// Load data (images and labels)
 	images, labels, err := LoadDataFromCSVDir(directory)
 	if err != nil {
 		log.Fatalf("Error loading data: %v", err)
 	}
 
-	// Example: Print the first image matrix and its corresponding label
 	if len(images) > 0 && len(labels) > 0 {
 		fmt.Printf("First Image Matrix:\n%v\n", images[0])
 		fmt.Printf("First Image Label: %s\n", labels[0])
 	}
 
-	//num := 4
 	result := []int{}
 	for num := 0; num < len(images); num++ {
 		model := NewCNN()
@@ -249,36 +218,29 @@ func main() {
 
 }
 
-// ReadCSV reads an image from a CSV file and converts it to a matrix
 func ReadCSV(filepath string) (*tensor.Tensor, error) {
-	// Open the CSV file
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	// Read the CSV file
 	reader := csv.NewReader(file)
 	lines, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
 
-	// Flattened data of the image (784 pixels for MNIST)
-	// We assume each line is a single pixel in the image, and the total number of values should be 28*28 = 784
 	rows := len(lines)
 	cols := len(lines[0])
 	if rows*cols != 784 { // Ensure it matches the MNIST image size
 		return nil, fmt.Errorf("expected 784 values in CSV, got %d", rows*cols)
 	}
 
-	// Convert the CSV data to a flat matrix (784,)
 	data := make([]float32, rows*cols)
 
 	for i, line := range lines {
 		for j, value := range line {
-			// Convert string to float32
 			val, err := strconv.ParseFloat(value, 64)
 			if err != nil {
 				return nil, err
@@ -287,7 +249,6 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 		}
 	}
 
-	// Create a Tensor from the flattened image data
 	tensorImage := tensor.NewTensor(data, []int{28, 28})
 
 	return tensorImage, nil
@@ -297,7 +258,6 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 	var tensors []*tensor.Tensor
 	var labels []string
 
-	// 读取标签文件
 	labelFilePath := filepath.Join(directory, "labels.csv")
 	labelFile, err := os.Open(labelFilePath)
 	if err != nil {
@@ -311,7 +271,6 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 		return nil, nil, fmt.Errorf("读取标签CSV失败: %v", err)
 	}
 
-	// 创建文件名到标签的映射
 	labelMap := make(map[string]string)
 	for _, record := range labelRecords {
 		if len(record) >= 2 {
@@ -321,7 +280,6 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 		}
 	}
 
-	// 读取图像文件
 	files, err := os.ReadDir(directory)
 	if err != nil {
 		return nil, nil, fmt.Errorf("读取目录失败: %v", err)
@@ -342,7 +300,6 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 			continue
 		}
 
-		// 获取对应的标签
 		label := file.Name()
 
 		tensors = append(tensors, image)
@@ -353,11 +310,9 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 }
 
 func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
-	// Pass the image through the model's forward pass
 	image = image.Reshape([]int{1, 1, 28, 28})
 	output := model.Forward(image)
 
-	// Convert tensor to matrix for argmax operation
 	outputMatrix := &matrix.Matrix{
 		Data: [][]float32{output.Data},
 		Rows: 1,
@@ -372,16 +327,12 @@ func predictPlot(imagePaths []string, predictions []int) error {
 		return fmt.Errorf("image paths and predictions length mismatch")
 	}
 
-	// 随机数后缀（保证每次文件名不同，不带 * 号）
 	rand.Seed(time.Now().UnixNano())
 	suffix := fmt.Sprintf("%d", rand.Intn(1000000))
 
-	// 构造临时 Python 脚本文件名，例如：predict_plot_123456.py
 	tmpScriptFileName := filepath.Join(os.TempDir(), "predict_plot_"+suffix+".py")
-	// 构造临时数据文件名，例如：image_predictions_123456.txt
 	tmpDataFileName := filepath.Join(os.TempDir(), "image_predictions_"+suffix+".txt")
 
-	// Python 脚本内容，不包含任何数据，数据从数据文件传入
 	pythonScript := `
 import sys
 import matplotlib.pyplot as plt
@@ -420,7 +371,6 @@ if __name__ == "__main__":
     data_file = sys.argv[1]
     predict_plot(data_file)
 `
-	// 创建 Python 脚本文件
 	scriptFile, err := os.Create(tmpScriptFileName)
 	if err != nil {
 		return fmt.Errorf("unable to create temp Python script: %v", err)
@@ -433,7 +383,6 @@ if __name__ == "__main__":
 	scriptFile.Close()
 	defer os.Remove(tmpScriptFileName) // 执行完后删除文件
 
-	// 创建临时数据文件，写入图片路径和预测结果，每行格式：图片路径,预测结果
 	dataFile, err := os.Create(tmpDataFileName)
 	if err != nil {
 		return fmt.Errorf("unable to create temp data file: %v", err)
@@ -448,7 +397,6 @@ if __name__ == "__main__":
 	dataFile.Close()
 	defer os.Remove(tmpDataFileName)
 
-	// 调用 Python 脚本，将数据文件路径作为参数传入
 	cmd := exec.Command("python", tmpScriptFileName, tmpDataFileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -462,10 +410,8 @@ if __name__ == "__main__":
 
 func runCommand(workSpace string, fileName string) {
 
-	// 执行 Python 脚本
 	cmd := exec.Command("python", fileName)
 	cmd.Dir = workSpace
-	// 实时打印输出
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(fmt.Sprintln("Error creating Stdout pipe:", err))
@@ -476,12 +422,10 @@ func runCommand(workSpace string, fileName string) {
 		panic(fmt.Sprintln("Error creating Stderr pipe:", err))
 	}
 
-	// 启动命令
 	if err := cmd.Start(); err != nil {
 		panic(fmt.Sprintln("Error starting Python script:", err))
 	}
 
-	// 使用 Goroutines 来实时打印标准输出和错误输出
 	go func() {
 		_, err := io.Copy(os.Stdout, stdout)
 		if err != nil {
@@ -496,7 +440,6 @@ func runCommand(workSpace string, fileName string) {
 		}
 	}()
 
-	// 等待命令执行完成
 	if err := cmd.Wait(); err != nil {
 		panic(fmt.Sprintln("Error waiting for Python script to finish:", err))
 	}

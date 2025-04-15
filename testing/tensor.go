@@ -52,7 +52,6 @@ func GetTensorTestResult(inPyScript string, inTensor1 *tensor.Tensor, inTensor2 
 	inputPath2 := filepath.ToSlash(inFile2.Name())
 	outPutPath := filepath.ToSlash(outFile.Name())
 	inPyScript = strings.TrimSpace(inPyScript)
-	// Python 脚本
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
@@ -99,7 +98,6 @@ save_tensor_to_csv(out,"%s")
 
 	RunPyScript(pythonScript)
 
-	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
 		panic(err)

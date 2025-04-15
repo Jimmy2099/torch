@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// IsTesting 检测当前是否在 go test 环境中运行
 func IsTesting() bool {
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "-test.") {
@@ -17,7 +16,6 @@ func IsTesting() bool {
 	return false
 }
 
-// 智能时间格式化函数（核心逻辑）
 func formatDuration(d time.Duration) string {
 	switch {
 	case d >= time.Hour:
@@ -36,7 +34,6 @@ func formatDuration(d time.Duration) string {
 }
 
 func TimeMeasure(start time.Time) string {
-	//time.Sleep(350*time.Millisecond + 458*time.Microsecond)
 	elapsed := time.Since(start)
 	return fmt.Sprintf("Execution time: %s \n", formatDuration(elapsed))
 }

@@ -23,7 +23,6 @@ func (m *Tensor) TensorData() []float32 {
 	return m.Data
 }
 
-// Save 将Tensor结构体使用gob编码保存到指定文件
 func (t *Tensor) Save(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {

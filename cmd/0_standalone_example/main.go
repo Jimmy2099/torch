@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-// y =a + wx+ wx + wx + b
 
-// NeuronCellUnit represents a neuron, storing weights, bias, forward propagation output, and error term
 type NeuronCellUnit struct {
 	weights []float32
 	bias    float32
@@ -17,27 +15,22 @@ type NeuronCellUnit struct {
 	delta   float32
 }
 
-// Layer represents a layer of neurons
 type Layer struct {
 	neurons []NeuronCellUnit
 }
 
-// Network represents the entire neural network, composed of multiple layers
 type Network struct {
 	layers []Layer
 }
 
-// sigmoid is the activation function
 func sigmoid(x float32) float32 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-// sigmoidDerivative is the derivative of sigmoid, used for backpropagation
 func sigmoidDerivative(output float32) float32 {
 	return output * (1 - output)
 }
 
-// newNeuron randomly initializes a neuron, numInputs is the number of inputs for this neuron
 func newNeuron(numInputs int) NeuronCellUnit {
 	weights := make([]float32, numInputs)
 	for i := range weights {
@@ -47,12 +40,10 @@ func newNeuron(numInputs int) NeuronCellUnit {
 	return NeuronCellUnit{weights: weights, bias: bias}
 }
 
-// newNetwork initializes a neural network with input size, a list of hidden layer neuron counts, and output neuron count
 func newNetwork(numInputs int, hiddenLayerSizes []int, numOutputs int) *Network {
 	net := &Network{}
 	previousSize := numInputs
 
-	// Add hidden layers
 	for _, size := range hiddenLayerSizes {
 		layer := Layer{neurons: make([]NeuronCellUnit, size)}
 		for i := 0; i < size; i++ {
@@ -62,7 +53,6 @@ func newNetwork(numInputs int, hiddenLayerSizes []int, numOutputs int) *Network 
 		previousSize = size
 	}
 
-	// Add output layer
 	outLayer := Layer{neurons: make([]NeuronCellUnit, numOutputs)}
 	for i := 0; i < numOutputs; i++ {
 		outLayer.neurons[i] = newNeuron(previousSize)
@@ -71,7 +61,6 @@ func newNetwork(numInputs int, hiddenLayerSizes []int, numOutputs int) *Network 
 	return net
 }
 
-// forward performs one forward propagation and returns the final output
 func (net *Network) forward(input []float32) []float32 {
 	outputs := input
 	for li := 0; li < len(net.layers); li++ {
@@ -90,9 +79,7 @@ func (net *Network) forward(input []float32) []float32 {
 	return outputs
 }
 
-// backward calculates the errors for each layer using backpropagation and updates weights and biases
 func (net *Network) backward(expected []float32, learningRate float32, inputs []float32) {
-	// Calculate delta for output layer
 	outputLayerIndex := len(net.layers) - 1
 	outputLayer := &net.layers[outputLayerIndex]
 	for i := 0; i < len(outputLayer.neurons); i++ {
@@ -101,7 +88,6 @@ func (net *Network) backward(expected []float32, learningRate float32, inputs []
 		outputLayer.neurons[i].delta = errorVal * sigmoidDerivative(output)
 	}
 
-	// Calculate delta for hidden layers in reverse order
 	for li := outputLayerIndex - 1; li >= 0; li-- {
 		layer := &net.layers[li]
 		nextLayer := net.layers[li+1]
@@ -114,7 +100,6 @@ func (net *Network) backward(expected []float32, learningRate float32, inputs []
 		}
 	}
 
-	// Update weights and biases for all layers
 	for li := 0; li < len(net.layers); li++ {
 		var layerInputs []float32
 		if li == 0 {
@@ -138,13 +123,10 @@ func (net *Network) backward(expected []float32, learningRate float32, inputs []
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	// Generate data: randomly generate points in a 2D plane, and classify using the equation y = 2x + 1
-	// If the y-coordinate is greater than 2x+1, the label is 1; otherwise, it's 0
 	numPoints := 200
 	var inputs [][]float32
 	var expectedOutputs [][]float32
 
-	// Randomly generate points within the x, y range
 	for i := 0; i < numPoints; i++ {
 		x := rand.Float32()*10 - 5 // x in [-5, 5]
 		y := rand.Float32()*10 - 5 // y in [-5, 5]
@@ -156,22 +138,18 @@ func main() {
 		expectedOutputs = append(expectedOutputs, []float32{label})
 	}
 
-	// Create a neural network with 2 inputs, one hidden layer (2 neurons), and 1 output for binary classification
 	net := newNetwork(2, []int{2}, 1)
 
 	epochs := 10000
 	learningRate := float32(0.5)
 
-	// Training process
 	for epoch := 0; epoch < epochs; epoch++ {
-		// Optionally shuffle the data order
 		for i := 0; i < len(inputs); i++ {
 			net.forward(inputs[i])
 			net.backward(expectedOutputs[i], learningRate, inputs[i])
 		}
 	}
 
-	// Test the trained network: output for a subset of points
 	for i := 0; i < 10; i++ {
 		test := inputs[i]
 		output := net.forward(test)

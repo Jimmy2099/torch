@@ -19,7 +19,6 @@ import (
 	"time"
 )
 
-// glm "gitlab.com/brickhill/site/fauxgl"
 
 type Render struct {
 	p          *plot.Plot
@@ -70,10 +69,8 @@ func (m *Render) Init() {
 }
 
 func main() {
-	//for test
 	glm.Identity()
 
-	//pprof
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
 	}()
@@ -84,7 +81,6 @@ func main() {
 	m = &Render{}
 	m.Init()
 
-	// load our OBJ
 	f, err := os.Open("./model/teapot.obj")
 	if err != nil {
 		panic(err)
@@ -100,7 +96,6 @@ func main() {
 			NewVec3(face.Points[1].Vertex.X, face.Points[1].Vertex.Y, face.Points[1].Vertex.Z),
 			NewVec3(face.Points[2].Vertex.X, face.Points[2].Vertex.Y, face.Points[2].Vertex.Z))...)
 	}
-	//	model := glm.Identity()
 	model := tensor.Identity()
 	projection := tensor.Perspective(m.fovy, float32(m.width)/float32(m.height), m.near, m.far)
 	viewport := tensor.Viewport(0, 0, float32(1), float32(1))
@@ -109,21 +104,15 @@ func main() {
 	go func() {
 		for {
 			view = tensor.LookAt(m.camera, m.lookAt, m.up)
-			//model = model.Rotate(tensor.NewTensor([]float32{1, 0, 0}, []int{3}), glm.Radians(5))
 			matrix = projection.MatMulMatrix(view).MatMulMatrix(viewport).MatMulMatrix(model)
 			data4 := Camera(matrix, data3)
-			//Multithreading Optimize
-			//data4 := CameraMultithreading(&matrix, data3)
 
 			data4 = m.Scaling(data4)
 			m.AddVecData(data4)
 			m.GFrameBuff = ebiten.NewImageFromImage(imaging.FlipV(m.frameBuff))
-			//img := canvas.NewImageFromImage(imaging.FlipV(m.frameBuff))
 			if g != nil {
 				g.FrameBuff = m.GFrameBuff
 			}
-			//w.SetContent(img)
-			//time.Sleep(time.Millisecond * 10)
 			{
 				upLeft := image.Point{0, 0}
 				lowRight := image.Point{m.width, m.height}

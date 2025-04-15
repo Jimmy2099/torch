@@ -53,7 +53,6 @@ func (g *G) Update() error {
 	ebimgui.BeginFrame()
 	defer func() {
 		ebimgui.EndFrame()
-		//mgr.Cache.RemoveTexture(imgui.TextureID(&myImageIDRef))
 	}()
 
 	imgui.Text("ภาษาไทย测试조선말")                        // To display these, you'll need to register a compatible font
@@ -61,9 +60,6 @@ func (g *G) Update() error {
 	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0) // Edit 1 float using a slider from 0.0f to 1.0f
 	imgui.ColorEdit3("clear color", &g.clearColor)    // Edit 3 floats representing a color
 
-	//imgui.Checkbox("Demo Window", &showDemoWindow) // Edit bools storing our window open/close state
-	//imgui.Checkbox("Go Demo Window", &showGoDemoWindow)
-	//imgui.Checkbox("Another Window", &showAnotherWindow)
 
 	if imgui.Button("Button") { // Buttons return true when clicked (most widgets return true when edited/activated)
 		g.counter++

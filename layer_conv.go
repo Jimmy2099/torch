@@ -5,7 +5,6 @@ import (
 	"math/rand"
 )
 
-// ConvLayer 卷积层实现
 type ConvLayer struct {
 	InChannels  int
 	OutChannels int
@@ -27,26 +26,22 @@ func (l *ConvLayer) GetBias() *tensor.Tensor {
 	return l.Bias
 }
 
-// SetWeights 设置权重
 func (l *ConvLayer) SetWeights(data []float32) {
 	if len(data) != l.OutChannels*l.InChannels*l.KernelSize*l.KernelSize {
 		panic("Weights data length mismatch")
 	}
 
-	// 创建新数组并拷贝数据
 	copiedData := make([]float32, len(data))
 	copy(copiedData, data) // 深拷贝
 
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
 }
 
-// SetBias 设置偏置
 func (l *ConvLayer) SetBias(data []float32) {
 	if len(data) != l.OutChannels {
 		panic("bias data length mismatch")
 	}
 
-	// 深拷贝偏置数据
 	copiedData := make([]float32, len(data))
 	copy(copiedData, data)
 
@@ -64,11 +59,9 @@ func (l *ConvLayer) SetBiasAndShape(data []float32, shape []int) {
 }
 
 func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
-	// 初始化权重和偏置
 	weightsData := make([]float32, outCh*inCh*kSize*kSize)
 	biasData := make([]float32, outCh)
 
-	// Xavier初始化
 	xavierScale := 1.0 / float32(inCh*kSize*kSize)
 	for i := range weightsData {
 		weightsData[i] = float32(rand.Float32()) * xavierScale
@@ -88,27 +81,21 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 }
 
 func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	// 保存输入用于反向传播
 	c.InputCache = x.Clone()
 
-	// 执行卷积操作
 	convOut, err := x.Conv2D(c.Weights, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)
 	}
 
-	// 处理偏置广播 - 改进版
 	var biasBroadcast *tensor.Tensor
 	switch len(convOut.Shape) {
 	case 1: // 1D输出 (out_channels,)
 		biasBroadcast = c.Bias
 	case 2: // 2D输出 (out_channels, out_size)
-		// 将偏置从(out_channels,1)扩展到(out_channels,out_size)
 		biasBroadcast = c.Bias.Repeat(1, convOut.Shape[1])
 	case 4: // 4D输出 (batch, out_channels, height, width)
-		// 改进的4D广播方式 - 先reshape再expand
 		biasBroadcast = c.Bias.Reshape([]int{1, c.OutChannels, 1, 1})
-		// 使用Expand代替Repeat
 		biasBroadcast = biasBroadcast.Expand([]int{
 			convOut.Shape[0], // batch
 			c.OutChannels,    // channels
@@ -119,26 +106,22 @@ func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 		panic("unsupported output shape from convolution")
 	}
 
-	// 添加偏置
 	result := convOut.Add(biasBroadcast)
 
 	return result
 }
 
 func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
-	// 计算权重梯度 (支持批处理)
 	gradWeights, err := c.InputCache.Conv2DGradWeights(gradOutput, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)
 	}
 	c.GradWeights = gradWeights
 
-	// 计算偏置梯度 (支持批处理)
 	gradBias := gradOutput.SumByDim(0) // 沿批处理维度求和
 	gradBias = gradBias.SumByDim(1)    // 沿空间维度求和
 	c.GradBias = gradBias
 
-	// 计算输入梯度 (支持批处理)
 	gradInput, err := gradOutput.Conv2DGradInput(c.Weights, c.KernelSize, c.Stride, c.Padding)
 	if err != nil {
 		panic(err)
@@ -148,20 +131,16 @@ func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
 }
 
 func (c *ConvLayer) BackwardWithLR(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	// 先计算梯度
 	gradInput := c.Backward(gradOutput)
 
-	// 立即更新参数
 	c.UpdateParameters(learningRate)
 
 	return gradInput
 }
 
 func (c *ConvLayer) UpdateParameters(learningRate float32) {
-	// 更新权重
 	c.Weights = c.Weights.Sub(c.GradWeights.MulScalar(learningRate))
 
-	// 更新偏置
 	c.Bias = c.Bias.Sub(c.GradBias.MulScalar(learningRate))
 }
 

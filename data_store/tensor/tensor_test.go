@@ -1,4 +1,3 @@
-// tensor_test.go
 package tensor
 
 import (
@@ -6,10 +5,7 @@ import (
 	"testing" // Go's testing package
 )
 
-// TestNewTensor checks if the NewTensor constructor correctly initializes
-// the Data and Shape fields of a Tensor struct.
 func TestNewTensor2(t *testing.T) {
-	// Define test cases
 	testCases := []struct {
 		name           string    // Name of the test case
 		inputData      []float32 // Input data for NewTensor
@@ -79,12 +75,9 @@ func TestNewTensor2(t *testing.T) {
 		},
 	}
 
-	// Iterate over test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) { // Use t.Run for subtests
 
-			// --- Defer panic check ---
-			// Although NewTensor isn't expected to panic, this is good practice
 			defer func() {
 				r := recover()
 				if r != nil && !tc.expectPanic {
@@ -94,21 +87,13 @@ func TestNewTensor2(t *testing.T) {
 				}
 			}()
 
-			// --- Call the function under test ---
 			actualTensor := NewTensor(tc.inputData, tc.inputShape)
 
-			// --- Assertions ---
 			if actualTensor == nil {
 				t.Fatalf("NewTensor returned nil, expected a valid *Tensor")
-				// Use Fatalf because subsequent checks depend on actualTensor != nil
 			}
 
-			// Check if the Data field matches the expected data
-			// reflect.DeepEqual is good for comparing slices, maps, structs etc.
 			if !reflect.DeepEqual(actualTensor.Data, tc.expectedTensor.Data) {
-				// Handle special case for nil vs empty slice comparison if needed,
-				// though DeepEqual usually handles this correctly.
-				// Check len specifically if DeepEqual fails for nil vs empty slice nuance.
 				isActualDataNilOrEmpty := actualTensor.Data == nil || len(actualTensor.Data) == 0
 				isExpectedDataNilOrEmpty := tc.expectedTensor.Data == nil || len(tc.expectedTensor.Data) == 0
 				if !(isActualDataNilOrEmpty && isExpectedDataNilOrEmpty) { // Only error if they are not both nil/empty
@@ -116,9 +101,7 @@ func TestNewTensor2(t *testing.T) {
 				}
 			}
 
-			// Check if the Shape field matches the expected shape
 			if !reflect.DeepEqual(actualTensor.Shape, tc.expectedTensor.Shape) {
-				// Handle nil vs empty slice for Shape as well
 				isActualShapeNilOrEmpty := actualTensor.Shape == nil || len(actualTensor.Shape) == 0
 				isExpectedShapeNilOrEmpty := tc.expectedTensor.Shape == nil || len(tc.expectedTensor.Shape) == 0
 				if !(isActualShapeNilOrEmpty && isExpectedShapeNilOrEmpty) {
@@ -126,18 +109,6 @@ func TestNewTensor2(t *testing.T) {
 				}
 			}
 
-			// Optional: Check if the underlying slices are the *same* ones passed in
-			// (NewTensor does not copy the slices)
-			// Note: This test might be too strict depending on desired behavior.
-			// If NewTensor *should* copy, this test would need to check they are *not* the same address but DeepEqual.
-			// Using == on slices checks if they point to the same underlying array start & have same len/cap
-			// A more robust check is using pointer equality on the first element if len > 0
-			// if len(tc.inputData) > 0 && len(actualTensor.Data) > 0 && &tc.inputData[0] != &actualTensor.Data[0] {
-			//  	t.Errorf("Data slice was copied, expected same underlying array")
-			// }
-			// if len(tc.inputShape) > 0 && len(actualTensor.Shape) > 0 && &tc.inputShape[0] != &actualTensor.Shape[0] {
-			// 	t.Errorf("Shape slice was copied, expected same underlying array")
-			// }
 
 		})
 	}

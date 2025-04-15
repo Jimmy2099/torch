@@ -9,36 +9,23 @@ import (
 	"strings"
 )
 
-// V1: https://github.com/philpax/ggml/blob/2b65fba00c83b9fa041df2ac55ccd8c2f10c5281/docs/gguf.md
-// V2: https://github.com/philpax/ggml/blob/574b408f472923071fbc7a265c974c00ce01f959/docs/gguf.md
-// V3: Like v2, but can store both little- and big-endian data.
 
-// Reader is a reader for GGUF files.
 type Reader struct {
 	r io.ReadSeeker
 
-	// ByteOrder is the byte order of the GGUF file. This package
-	// does not do any byte swapping for tensor data, it's the
-	// responsibility of you, the user, to make sure endian is
-	// correct or swapped.
 	ByteOrder binary.ByteOrder
 
-	// Version is the GGUF version.
 	Version int
 
-	// Metadata is the metadata in the file.
 	Metadata Metadata
 
-	// Tensors is the list of tensors in the file.
 	Tensors []TensorInfo
 
 	tensorOffset int64
 
-	// Helper to read int32 or int64 depending on GGUF version.
 	readUint func(io.Reader, binary.ByteOrder) (uint64, error)
 }
 
-// readString reads a GGUF string from r.
 func (r *Reader) readString() (string, error) {
 	trim := func(r rune) bool {
 		var asciiSpace = [33]bool{
@@ -75,8 +62,6 @@ func (r *Reader) readString() (string, error) {
 	return string(datastr), nil
 }
 
-// readMetaDataValueScalar reads a GGUF scalar value from r. String is a special
-// case because it is variable length.
 func (r *Reader) readMetaDataValueScalar(typ Type) (interface{}, error) {
 	switch typ {
 	case Uint8:
@@ -126,7 +111,6 @@ func (r *Reader) readMetaDataValueScalar(typ Type) (interface{}, error) {
 	}
 }
 
-// readMetaDataValueArray reads a GGUF metadata array from r.
 func readMetaDataValueArray[T readables](r *Reader, length uint64) ([]T, error) {
 	a := make([]T, length)
 
@@ -142,7 +126,6 @@ func readMetaDataValueArray[T readables](r *Reader, length uint64) ([]T, error) 
 	return a, nil
 }
 
-// readMetaValue reads a GGUF metadata value from r.
 func (r *Reader) readMetaValue() (interface{}, error) {
 	typ, err := read[Type](r.r, r.ByteOrder)
 	if err != nil {
@@ -233,7 +216,6 @@ func (r *Reader) readMetaValue() (interface{}, error) {
 	}
 }
 
-// OpenFile opens a GGUF file.
 func OpenFile(filename string) (*Reader, error) {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -243,8 +225,6 @@ func OpenFile(filename string) (*Reader, error) {
 	return Open(f)
 }
 
-// Open opens a GGUF file from r. r must be positoned at the start
-// of the file.
 func Open(readseeker io.ReadSeeker) (*Reader, error) {
 	var buf [4]byte
 
@@ -257,8 +237,6 @@ func Open(readseeker io.ReadSeeker) (*Reader, error) {
 		return nil, fmt.Errorf("not a GGUF file, unknown magic: %q", buf)
 	}
 
-	// Jump to the last byte of the version, and check if this
-	// could be a big-endian file.
 	_, err = readseeker.Seek(3, io.SeekCurrent)
 	if err != nil {
 		return nil, err
@@ -276,7 +254,6 @@ func Open(readseeker io.ReadSeeker) (*Reader, error) {
 		byteOrder = binary.BigEndian
 	}
 
-	// Jump back to read the version in file byteorder.
 	_, err = readseeker.Seek(-4, io.SeekCurrent)
 	if err != nil {
 		return nil, err
@@ -393,8 +370,6 @@ func Open(readseeker io.ReadSeeker) (*Reader, error) {
 	return r, nil
 }
 
-// TensorInfo returns the tensor info for the tensor with the given
-// name. If the tensor is not found, an error is returned.
 func (r *Reader) TensorInfo(name string) (*TensorInfo, error) {
 	for i := range r.Tensors {
 		if r.Tensors[i].Name == name {
@@ -405,9 +380,6 @@ func (r *Reader) TensorInfo(name string) (*TensorInfo, error) {
 	return nil, fmt.Errorf("tensor %q not found", name)
 }
 
-// TensorSize returns the total size of all tensors in the file.
-// This is useful if you would like to show a progress bar showing
-// the progress of reading the file.
 func (r *Reader) TensorSize() int64 {
 	size := int64(0)
 

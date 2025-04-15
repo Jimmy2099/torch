@@ -42,11 +42,9 @@ func main() {
 		v := g.Metadata[k]
 
 		switch vv := v.(type) {
-		// Scalars:
 		case uint8, int8, uint16, int16, uint32, int32, float32, bool, string, uint64, int64, float32, fmt.Stringer:
 			print(k, vv)
 
-		// Arrays:
 		case []uint8:
 			printArray(k, vv)
 

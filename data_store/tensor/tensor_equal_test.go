@@ -3,7 +3,6 @@ package tensor
 import "testing"
 
 func TestTensorEqual(t *testing.T) {
-	// Basic test cases
 	t.Run("Identical tensors", func(t *testing.T) {
 		data := []float32{1.0, 2.0, 3.0}
 		t1 := NewTensor(data, []int{3})
@@ -13,7 +12,6 @@ func TestTensorEqual(t *testing.T) {
 		}
 	})
 
-	// Special shape test
 	t.Run("Empty tensor comparison", func(t *testing.T) {
 		empty1 := NewTensor([]float32{}, []int{0})
 		empty2 := NewTensor([]float32{}, []int{0})
@@ -22,7 +20,6 @@ func TestTensorEqual(t *testing.T) {
 		}
 	})
 
-	// Edge case test
 	t.Run("Nil comparison", func(t *testing.T) {
 		var nilTensor *Tensor
 		nonNil := NewTensor(nil, []int{0})

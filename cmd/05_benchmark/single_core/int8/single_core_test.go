@@ -62,7 +62,6 @@ func Test_Single_Core_Int8(t *testing.T) {
 	}
 
 	ioutil.WriteFile(fmt.Sprintf("../../single_core_%s_result.txt", DataTypeString), []byte(result), 0644)
-	// Prevent compiler from optimizing away the global variable
 	fmt.Fprintf(os.Stdout, "\nBenchmark verification value: %v\n", globalSink)
 }
 

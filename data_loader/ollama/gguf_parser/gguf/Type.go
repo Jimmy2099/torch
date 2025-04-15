@@ -4,7 +4,6 @@ import (
 	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
-// Type is the type of a GGUF metadata value.
 type Type uint32
 
 const (
@@ -19,14 +18,11 @@ const (
 	String  Type = 8
 	Array   Type = 9
 
-	// Added in v2
 	Uint64  Type = 10
 	Int64   Type = 11
 	Float64 Type = 12
 )
 
-// String returns the string representation of a GGUF type.
-// Implements fmt.Stringer.
 func (t Type) String() string {
 	switch t {
 	case Uint8:

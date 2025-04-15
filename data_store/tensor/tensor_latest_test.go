@@ -8,20 +8,16 @@ import (
 )
 
 func TestTensor_TransposeByDim(t *testing.T) {
-	// 创建测试张量 shape: [2, 3]
 	td := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 
-	// 转置行列
 	tT := td.TransposeByDim(0, 1)
 
-	// 验证结果
 	expected := NewTensor([]float32{1, 4, 2, 5, 3, 6}, []int{3, 2})
 	if !tT.Equal(expected) {
 		panic("Transpose failed")
 	}
 }
 
-// 辅助函数：创建指定形状并填充连续数据的张量
 func createTensor(shape []int) *Tensor {
 	size := product(shape)
 	data := make([]float32, size)
@@ -47,7 +43,6 @@ func TestSplitLastDim(t *testing.T) {
 	t.Run("分割不足部分应补零（潜在bug）", func(t *testing.T) {
 		tensor := createTensor([]int{2, 5}) // 数据: 0-9
 		split := tensor.SplitLastDim(3, 1)
-		// 预期形状 [2,3]，实际数据应为 [3,4,0,8,9,0]
 		expected := &Tensor{
 			Data:  []float32{3, 4, 0, 8, 9, 0},
 			Shape: []int{2, 3},
@@ -85,7 +80,6 @@ func TestSlice(t *testing.T) {
 			Shape: []int{3, 2, 5},
 			Data:  make([]float32, 3*2*5),
 		}
-		// 填充预期数据（手动计算切片区域）
 		for i := 0; i < 3; i++ {
 			copy(expected.Data[i*10:(i+1)*10], tensor.Data[i*20+5:i*20+15])
 		}
@@ -164,7 +158,6 @@ func TestConcat(t *testing.T) {
 }
 
 func TestMaxByDim(t *testing.T) {
-	// 测试二维张量
 	t.Run("2D矩阵列最大值", func(t *testing.T) {
 		data := []float32{
 			1, 5, 3,
@@ -172,7 +165,6 @@ func TestMaxByDim(t *testing.T) {
 		}
 		input := NewTensor(data, []int{2, 3})
 
-		// 测试dim=1，保持维度
 		max1 := input.MaxByDim(1, true)
 		expectedShape := []int{2, 1}
 		if !shapeEqual(max1.Shape, expectedShape) {
@@ -183,7 +175,6 @@ func TestMaxByDim(t *testing.T) {
 			t.Errorf("数据错误，期望%v，得到%v", expectedData, max1.Data)
 		}
 
-		// 测试dim=0，不保持维度
 		max0 := input.MaxByDim(0, false)
 		expectedShape = []int{3}
 		if !shapeEqual(max0.Shape, expectedShape) {
@@ -195,7 +186,6 @@ func TestMaxByDim(t *testing.T) {
 		}
 	})
 
-	// 测试三维张量
 	t.Run("3D张量深度最大值", func(t *testing.T) {
 		data := []float32{
 			1, 2, 3, 4,
@@ -247,7 +237,6 @@ func TestGetIndices(t *testing.T) {
 }
 
 func TestGetBroadcastedValue(t *testing.T) {
-	// 创建形状为[3,1]的掩码
 	maskData := []float32{1, 0, 1}
 	mask := NewTensor(maskData, []int{3, 1})
 
@@ -277,14 +266,12 @@ func TestSumByDim2(t *testing.T) {
 	}
 	input := NewTensor(data, []int{3, 2})
 
-	// 测试dim=0求和
 	sum0 := input.SumByDim2(0, true)
 	expected := []float32{9, 12} // (1+3+5), (2+4+6)
 	if !sliceEqual(sum0.Data, expected, 1e-6) {
 		t.Errorf("dim0求和错误，期望%v，得到%v", expected, sum0.Data)
 	}
 
-	// 测试dim=1不保持维度
 	sum1 := input.SumByDim2(1, false)
 	expected = []float32{3, 7, 11} // 各行求和
 	if !sliceEqual(sum1.Data, expected, 1e-6) {
@@ -318,17 +305,14 @@ func TestSoftmaxByDim(t *testing.T) {
 	data := []float32{1, 2, 3, 4}
 	input := NewTensor(data, []int{2, 2})
 
-	// 测试dim=1
 	softmax := input.SoftmaxByDim(1)
 	sum0 := softmax.Data[0] + softmax.Data[1]
 	sum1 := softmax.Data[2] + softmax.Data[3]
 
-	// 验证概率和为1
 	if math.Abs(sum0-1.0) > 1e-6 || math.Abs(sum1-1.0) > 1e-6 {
 		t.Errorf("softmax概率和不为1: %.6f, %.6f", sum0, sum1)
 	}
 
-	// 验证数值顺序
 	if softmax.Data[0] >= softmax.Data[1] {
 		t.Error("第一行softmax顺序错误")
 	}
@@ -371,7 +355,6 @@ func sameInf(a, b float32) bool {
 }
 
 func TestTensor_ShapeCopy(t *testing.T) {
-	// 定义辅助断言函数
 	assertShapeEqual := func(t *testing.T, got, want []int) {
 		t.Helper()
 		if len(got) != len(want) {
@@ -385,9 +368,7 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		}
 	}
 
-	// 测试用例
 	t.Run("Nil Shape", func(t *testing.T) {
-		// 直接构造而不是使用NewTensor来测试nil情况
 		tsr := &Tensor{
 			Data:  []float32{1, 2, 3},
 			Shape: nil,
@@ -421,11 +402,9 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		tsr := NewTensor(make([]float32, 60), originalShape)
 		copyShape := tsr.ShapeCopy()
 
-		// 修改复制后的shape
 		copyShape[0] = 99
 		copyShape[1] = 100
 
-		// 验证原始shape未改变
 		assertShapeEqual(t, tsr.Shape, originalShape)
 	})
 
@@ -443,7 +422,6 @@ func TestTensor_ShapeCopy(t *testing.T) {
 }
 
 func Test2DMatrixMultiplication(t *testing.T) {
-	// 输入形状自动转换为[1,2,2]
 	a := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	b := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 
@@ -454,7 +432,6 @@ func Test2DMatrixMultiplication(t *testing.T) {
 
 	result := a.MatMul(b)
 
-	// 验证数据
 	if !slices.Equal(result.Data, expected) {
 		t.Errorf("结果错误:\n期望: %v\n实际: %v",
 			expected,
@@ -470,7 +447,6 @@ func TestRepeatInterleave(t *testing.T) {
 		repeats  int
 		expected *Tensor
 	}{
-		// 2D测试用例
 		{
 			name: "2D dim0 repeats2",
 			input: NewTensor(
@@ -519,7 +495,6 @@ func TestRepeatInterleave(t *testing.T) {
 			),
 		},
 
-		// 4D测试用例
 		{
 			name: "4D dim1 repeats2 channels",
 			input: NewTensor(
@@ -568,10 +543,8 @@ func TestRepeatInterleave(t *testing.T) {
 			name: "4D multi-batch channels repeat",
 			input: NewTensor(
 				[]float32{
-					// Batch 1
 					1, 1, 2, 2, // 通道1 (2x2)
 					3, 3, 4, 4, // 通道2
-					// Batch 2
 					5, 5, 6, 6,
 					7, 7, 8, 8,
 				},
@@ -581,12 +554,10 @@ func TestRepeatInterleave(t *testing.T) {
 			repeats: 2,
 			expected: NewTensor(
 				[]float32{
-					// Batch1
 					1, 1, 2, 2, // 通道1 ×2
 					1, 1, 2, 2,
 					3, 3, 4, 4, // 通道2 ×2
 					3, 3, 4, 4,
-					// Batch2
 					5, 5, 6, 6,
 					5, 5, 6, 6,
 					7, 7, 8, 8,
@@ -601,7 +572,6 @@ func TestRepeatInterleave(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.input.RepeatInterleave(tt.dim, tt.repeats)
 
-			// 验证数据
 			if !result.Equal(tt.expected) {
 				t.Errorf("数据不符\n期望: %v %v 实际: %v %v", tt.expected.Data[:5], result.Data[:5], tt.expected.Shape, result.Shape)
 			}
@@ -610,7 +580,6 @@ func TestRepeatInterleave(t *testing.T) {
 }
 
 func TestGetValue(t *testing.T) {
-	// 测试用例表
 	tests := []struct {
 		name      string
 		tensor    *Tensor
@@ -618,7 +587,6 @@ func TestGetValue(t *testing.T) {
 		expected  float32
 		wantPanic bool
 	}{
-		// 一维张量
 		{
 			name:      "1D valid index",
 			tensor:    NewTensor([]float32{1, 2, 3, 4}, []int{4}),
@@ -633,7 +601,6 @@ func TestGetValue(t *testing.T) {
 			wantPanic: true,
 		},
 
-		// 二维张量
 		{
 			name:      "2D valid index",
 			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3}),
@@ -648,7 +615,6 @@ func TestGetValue(t *testing.T) {
 			wantPanic: true,
 		},
 
-		// 三维张量
 		{
 			name:      "3D valid index",
 			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2}),
@@ -675,7 +641,6 @@ func TestGetValue(t *testing.T) {
 }
 
 func TestMaskedFill1(t *testing.T) {
-	// 测试用例表
 	tests := []struct {
 		name     string
 		input    *Tensor
@@ -683,7 +648,6 @@ func TestMaskedFill1(t *testing.T) {
 		value    float32
 		expected []float32
 	}{
-		// 基础测试：无需广播
 		{
 			name:     "No broadcast - exact shape match",
 			input:    NewTensor([]float32{1, 2, 3, 4}, []int{2, 2}),
@@ -692,30 +656,7 @@ func TestMaskedFill1(t *testing.T) {
 			expected: []float32{1, -99, -99, 4},
 		},
 
-		//// 广播测试：mask维度少于输入张量
-		//{
-		//	name: "Broadcast mask with fewer dimensions",
-		//	input: NewTensor([]float32{
-		//		1, 2, 3,
-		//		4, 5, 6,
-		//		7, 8, 9,
-		//		10, 11, 12,
-		//	}, []int{2, 2, 3}), // 形状：2层, 2行, 3列
-		//	mask: NewTensor([]float32{
-		//		0, 1, // 最后一个维度为1的mask [2,1]
-		//		1, 0,
-		//	}, []int{2, 2}), // 广播至 [2,2,3]
-		//	value: -99,
-		//	expected: []float32{
-		//		1, -99, -99, // 第一层第一行：mask[0,0]=0 → 不填充
-		//		4, 5, 6, // 第一层第二行：mask[0,1]=1 → 全填充
-		//
-		//		-99, -99, -99, // 第二层第一行：mask[1,0]=1 → 全填充
-		//		10, 11, 12, // 第二层第二行：mask[1,1]=0 → 不填充
-		//	},
-		//},
 
-		// 广播测试：mask维度为1的维度
 		{
 			name:  "Broadcast with size-1 dimensions",
 			input: NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
@@ -728,7 +669,6 @@ func TestMaskedFill1(t *testing.T) {
 			},
 		},
 
-		// 边缘情况：全填充
 		{
 			name:     "Full masking",
 			input:    NewTensor([]float32{1, 2, 3}, []int{3}),
@@ -748,12 +688,6 @@ func TestMaskedFill1(t *testing.T) {
 	}
 }
 
-// 0 = {float32} 0.0055236816
-// 2 = {float32} -0.0107421875
-// 1 = {float32} 0.018798828
-// 4 = {float32} 0.0005874634
-// 3 = {float32} 0.0095825195
-// [ 0.00552368  0.01879883 -0.01074219  0.00958252  0.00058746]
 func TestTensorRoundTo(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -792,7 +726,6 @@ func TestTensorRoundTo(t *testing.T) {
 			tensor := NewTensor(tt.input, []int{len(tt.input)})
 			rounded := tensor.RoundTo(tt.decimals)
 
-			// 精度允许误差范围（因float32精度限制）
 			const epsilon = 1e-7
 			for i, v := range rounded.Data {
 				if diff := math.Abs(float32(v - tt.expected[i])); diff > epsilon {

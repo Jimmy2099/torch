@@ -10,31 +10,25 @@ func (t *Tensor) Sub(other *Tensor) *Tensor {
 	}
 
 	{
-		// 检查空张量
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			// 返回与输入形状相同的空张量
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		// 检查是否可广播
 		if !canBroadcast(t.Shape, other.Shape) {
 			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
 		}
 	}
 
 	{
-		// 获取广播后的形状
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
 		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
 
-		// 计算每个张量的strides
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
 
-		// 遍历每个元素的位置
 		size := result.Size()
 		for i := 0; i < size; i++ {
 			indices := result.Indices(i)
@@ -55,31 +49,25 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 	}
 
 	{
-		// 检查空张量
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			// 返回与输入形状相同的空张量
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		// 检查是否可广播
 		if !canBroadcast(t.Shape, other.Shape) {
 			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
 		}
 	}
 
 	{
-		// 获取广播后的形状
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
 		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
 
-		// 计算每个张量的strides
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
 
-		// 遍历每个元素的位置
 		size := result.Size()
 		for i := 0; i < size; i++ {
 			indices := result.Indices(i)
@@ -92,33 +80,26 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 	}
 }
 
-// Add 张量加法（支持广播）
 func (t *Tensor) Add(other *Tensor) *Tensor {
 	{
-		// 检查空张量
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			// 返回与输入形状相同的空张量
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		// 检查是否可广播
 		if !canBroadcast(t.Shape, other.Shape) {
 			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
 		}
 	}
 
-	// 获取广播后的形状
 	broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
 	result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
 
-	// 计算每个张量的strides
 	tStrides := computeStrides(t.Shape)
 	otherStrides := computeStrides(other.Shape)
 
-	// 遍历每个元素的位置
 	size := result.Size()
 	for i := 0; i < size; i++ {
 		indices := result.Indices(i)
@@ -130,34 +111,27 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 	return result
 }
 
-// Mul 张量乘法（支持广播）
 func (t *Tensor) Mul(other *Tensor) *Tensor {
 	{
-		// 检查空张量
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			// 返回与输入形状相同的空张量
 			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
 			return &Tensor{
 				Shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		// 检查是否可广播
 		if !canBroadcast(t.Shape, other.Shape) {
 			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
 		}
 	}
 	{
 
-		// 获取广播后的形状
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
 		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
 
-		// 计算每个张量的strides
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
 
-		// 遍历每个元素的位置
 		size := result.Size()
 		for i := 0; i < size; i++ {
 			indices := result.Indices(i)
@@ -170,14 +144,12 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 	}
 }
 
-// MatMul 矩阵乘法 支持批量矩阵乘法
 func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	a := t
 	b := other
 	aIs1D := false
 	bIs1D := false
 
-	// 处理一维张量
 	if len(a.Shape) == 1 {
 		a = a.Reshape(append([]int{1}, a.Shape...))
 		aIs1D = true
@@ -187,7 +159,6 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		bIs1D = true
 	}
 
-	// 处理空张量
 	if len(a.Data) == 0 || len(b.Data) == 0 {
 		aBatch := a.Shape[:len(a.Shape)-2]
 		bBatch := b.Shape[:len(b.Shape)-2]
@@ -207,14 +178,12 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		}
 	}
 
-	// 检查最后两个维度是否兼容
 	aLastDim := a.Shape[len(a.Shape)-1]
 	bSecondLastDim := b.Shape[len(b.Shape)-2]
 	if aLastDim != bSecondLastDim {
 		panic(fmt.Sprintf("matmul: dimension mismatch (%d vs %d)", aLastDim, bSecondLastDim))
 	}
 
-	// 获取批量维度并计算广播后的形状
 	aBatchShape := a.Shape[:len(a.Shape)-2]
 	bBatchShape := b.Shape[:len(b.Shape)-2]
 	batchShape := getBroadcastedShape(aBatchShape, bBatchShape)
@@ -237,11 +206,9 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		aBatchIndices := getBroadcastedIndices(indices, aBatchShape, batchShape)
 		bBatchIndices := getBroadcastedIndices(indices, bBatchShape, batchShape)
 
-		// 修正：使用完整的批量维度计算偏移量
 		aOffset := dotProduct(aBatchIndices, aStrides[:len(aBatchIndices)])
 		bOffset := dotProduct(bBatchIndices, bStrides[:len(bBatchIndices)])
 
-		// 确保矩阵数据块正确分割
 		aMatrix := a.Data[aOffset : aOffset+m*aLastDim]
 		bMatrix := b.Data[bOffset : bOffset+aLastDim*p] // aLastDim = n = bSecondLastDim
 
@@ -251,7 +218,6 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		copy(result.Data[resultOffset:resultOffset+matrixSize], resultMatrix)
 	}
 
-	// 压缩一维情况
 	if aIs1D {
 		newShape := append(result.Shape[:len(result.Shape)-2], result.Shape[len(result.Shape)-1])
 		result = result.Reshape(newShape)
@@ -263,7 +229,6 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	return result
 }
 
-// 新增辅助函数计算点积
 func dotProduct(a, b []int) int {
 	sum := 0
 	for i := range a {
@@ -272,7 +237,6 @@ func dotProduct(a, b []int) int {
 	return sum
 }
 
-// 辅助函数
 func getBatchIndices(batchIdx int, shape []int) []int {
 	indices := make([]int, len(shape))
 	for i := range shape {

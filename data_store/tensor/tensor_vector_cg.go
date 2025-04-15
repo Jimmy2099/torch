@@ -9,7 +9,6 @@ func NewVec3(x, y, z float32) *Tensor {
 	return NewTensor([]float32{x, y, z}, []int{3})
 }
 
-//tensor vector computer graphic
 
 func (m *Tensor) X() float32 {
 	return m.Data[0]
@@ -23,7 +22,6 @@ func (m *Tensor) Z() float32 {
 	return m.Data[2]
 }
 
-//
 
 func (t *Tensor) IsMatrix() bool {
 	return len(t.Shape) == 2
@@ -52,7 +50,6 @@ func (t *Tensor) checkVector() {
 	}
 }
 
-// 矩阵行列式（仅限4x4）
 func (t *Tensor) Determinant() float32 {
 	t.checkSquareMatrix()
 	if t.Shape[0] != 4 {
@@ -74,7 +71,6 @@ func (t *Tensor) Determinant() float32 {
 		m[3]*m[6]*m[8]*m[13] - m[3]*m[6]*m[9]*m[12]
 }
 
-// 逆矩阵（4x4专用实现）
 func (t *Tensor) Inverse() *Tensor {
 	t.checkSquareMatrix()
 	if t.Shape[0] != 4 {
@@ -86,8 +82,6 @@ func (t *Tensor) Inverse() *Tensor {
 	det := t.Determinant()
 
 	inv[0] = (m[5]*m[10]*m[15] - m[5]*m[11]*m[14] + m[7]*m[9]*m[14] - m[6]*m[9]*m[15] + m[6]*m[11]*m[13] - m[7]*m[10]*m[13]) / det
-	// 完整实现需要计算所有16个元素，此处为示例
-	// 实际需要实现完整4x4逆矩阵计算
 
 	return NewTensor(inv, []int{4, 4})
 }
@@ -204,25 +198,20 @@ func (t *Tensor) Homogeneous() *Tensor {
 	return NewTensor(append(t.Data, 1.0), []int{4})
 }
 
-// 生成旋转矩阵
 func RotateTensor(axis *Tensor, angle float32) *Tensor {
-	// 验证输入参数
 	if !axis.IsVector() || len(axis.Data) != 3 {
 		panic("Rotate requires 3D vector axis")
 	}
 
-	// 归一化轴向量
 	normAxis := axis.Normalize()
 	x := normAxis.Data[0]
 	y := normAxis.Data[1]
 	z := normAxis.Data[2]
 
-	// 计算三角函数值
 	s := math.Sin(angle)
 	c := math.Cos(angle)
 	m := 1 - c
 
-	// 构建4x4旋转矩阵
 	data := []float32{
 		m*x*x + c, m*x*y + z*s, m*x*z - y*s, 0,
 		m*x*y - z*s, m*y*y + c, m*y*z + x*s, 0,
@@ -233,9 +222,7 @@ func RotateTensor(axis *Tensor, angle float32) *Tensor {
 	return NewTensor(data, []int{4, 4})
 }
 
-// 矩阵乘法
 func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
-	// 验证矩阵形状
 	if len(a.Shape) != 2 || len(b.Shape) != 2 {
 		panic("Matrix multiplication requires 2D tensors")
 	}
@@ -243,15 +230,12 @@ func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
 		panic(fmt.Sprintf("Shape mismatch: %v vs %v", a.Shape, b.Shape))
 	}
 
-	// 获取矩阵维度
 	m := a.Shape[0] // 结果行数
 	n := b.Shape[1] // 结果列数
 	k := a.Shape[1] // 公共维度
 
-	// 初始化结果矩阵数据
 	result := make([]float32, m*n)
 
-	// 执行矩阵乘法
 	for i := 0; i < m; i++ {
 		for j := 0; j < n; j++ {
 			var sum float32
@@ -265,21 +249,17 @@ func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
 	return NewTensor(result, []int{m, n})
 }
 
-// 链式旋转方法（类似原Rotate方法）
 func (a *Tensor) Rotate(axis *Tensor, angle float32) *Tensor {
 	rotation := RotateTensor(axis, angle)
 	return rotation.MatMulMatrix(a)
 }
 
-// Viewport 创建视口变换矩阵
 func Viewport(x, y, w, h float32) *Tensor {
-	// 计算视口边界
 	l := x
 	b := y
 	r := x + w
 	t := y + h
 
-	// 构建4x4视口变换矩阵（行主序）
 	data := []float32{
 		(r - l) / 2, 0, 0, (r + l) / 2,
 		0, (t - b) / 2, 0, (t + b) / 2,
@@ -291,33 +271,27 @@ func Viewport(x, y, w, h float32) *Tensor {
 }
 
 func (m *Tensor) MulPosition(v *Tensor) *Tensor {
-	// 验证矩阵为4x4
 	if !m.IsMatrix() || m.Shape[0] != 4 || m.Shape[1] != 4 {
 		panic("MulPosition需要4x4矩阵")
 	}
 
-	// 验证输入为3D向量
 	if !v.IsVector() || len(v.Data) != 3 {
 		panic("输入向量需要是3D向量")
 	}
 
-	// 转换为齐次坐标 [x, y, z, 1]
 	homoData := make([]float32, 4)
 	copy(homoData, v.Data)
 	homoData[3] = 1.0
 	homogeneous := NewTensor(homoData, []int{4})
 
-	// 执行矩阵变换（优化后的直接计算）
 	result := make([]float32, 4)
 	mData := m.Data
 	vData := homogeneous.Data
 
-	// 直接展开循环优化性能
 	result[0] = mData[0]*vData[0] + mData[1]*vData[1] + mData[2]*vData[2] + mData[3]*vData[3]
 	result[1] = mData[4]*vData[0] + mData[5]*vData[1] + mData[6]*vData[2] + mData[7]*vData[3]
 	result[2] = mData[8]*vData[0] + mData[9]*vData[1] + mData[10]*vData[2] + mData[11]*vData[3]
 	result[3] = mData[12]*vData[0] + mData[13]*vData[1] + mData[14]*vData[2] + mData[15]*vData[3]
 
-	// 返回前三个分量（忽略w分量）
 	return NewTensor(result[:3], []int{3})
 }

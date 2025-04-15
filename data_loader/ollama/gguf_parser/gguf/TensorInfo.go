@@ -4,11 +4,9 @@ import (
 	"io"
 )
 
-// TensorInfo is used to represent a tensor in a GGUF file.
 type TensorInfo struct {
 	g *Reader
 
-	// The name of the tensor.
 	Name string
 
 	Dimensions []uint64
@@ -18,12 +16,7 @@ type TensorInfo struct {
 	Offset uint64
 }
 
-// Reader returns an io.Reader that can be used to read the tensor
-// data. The reader is positioned at the start of the tensor data.
-// The caller of this function is responsible for calculating how
-// much data to read.
 func (t *TensorInfo) Reader() (io.Reader, error) {
-	// FIXME: Use io.NewSectionReader.
 	_, err := t.g.r.Seek(t.g.tensorOffset, io.SeekStart)
 	if err != nil {
 		return nil, err
@@ -37,9 +30,6 @@ func (t *TensorInfo) Reader() (io.Reader, error) {
 	return t.g.r, nil
 }
 
-// Size returns the size of the tensor data in bytes. This can be
-// useful in comfination with TensorSize() on the Reader if you
-// would like to show a progress bar.
 func (t *TensorInfo) Size() int64 {
 	s, found := sizes[t.Type]
 	if !found {

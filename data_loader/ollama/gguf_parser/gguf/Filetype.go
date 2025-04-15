@@ -1,6 +1,5 @@
 package gguf
 
-// Filetype is the type of the majority of the tensors in the file.
 type Filetype uint32
 
 const (
@@ -47,8 +46,6 @@ var ftypeNames = map[Filetype]string{
 	MostlyQ6_K:        "mostly Q6_K",
 }
 
-// String return a string representation of the Filetype. All strings are
-// matched to those used in llama.cpp.
 func (f Filetype) String() string {
 	name, found := ftypeNames[f]
 	if found {

@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// BasicTrainer 实现基本的训练器
 type BasicTrainer struct {
 	LossFunc func(predictions, targets *tensor.Tensor) float32
 	Verbose  bool
@@ -22,35 +21,28 @@ func NewBasicTrainer(lossFunc func(predictions, targets *tensor.Tensor) float32)
 func (t *BasicTrainer) Train(model ModelInterface, inputs, targets *tensor.Tensor, epochs int, learningRate float32) {
 	start := time.Now()
 
-	// 记录损失历史
 	lossHistory := make([]float32, 0, epochs)
 
 	for epoch := 0; epoch < epochs; epoch++ {
-		// 前向传播
 		outputs := model.Forward(inputs)
 
-		// 计算损失
 		loss := t.LossFunc(outputs, targets)
 		lossHistory = append(lossHistory, loss)
 
-		// 反向传播
 		model.ZeroGrad()
 		model.Backward(targets, learningRate)
 
-		// 打印训练信息
 		if t.Verbose && (epoch+1)%50 == 0 {
 			fmt.Printf("Epoch [%d/%d], Loss: %.4f, Time: %v\n",
 				epoch+1, epochs, loss, time.Since(start))
 		}
 	}
 
-	// 绘制损失曲线
 	if t.Verbose {
 		printLoss(lossHistory)
 	}
 }
 
-// plotLoss 绘制损失曲线
 func printLoss(lossHistory []float32) {
 	fmt.Println("\nTraining complete! Loss history:")
 	for i, loss := range lossHistory {

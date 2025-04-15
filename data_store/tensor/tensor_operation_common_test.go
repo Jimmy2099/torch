@@ -6,11 +6,9 @@ import (
 	"testing"
 )
 
-// --- Test Helper Functions ---
 
 const epsilon = 1e-9 // Tolerance for float comparisons
 
-// tensorsEqual compares two Tensors for equality (shape and data within tolerance).
 func tensorsEqual(t1, t2 *Tensor, tol float32) bool {
 	if t1 == nil || t2 == nil {
 		return t1 == t2 // Both nil are equal, one nil isn't
@@ -21,7 +19,6 @@ func tensorsEqual(t1, t2 *Tensor, tol float32) bool {
 	return floatsEqual(t1.Data, t2.Data, tol)
 }
 
-// checkPanic checks if a function call panics.
 func checkPanic1(t *testing.T, f func()) {
 	t.Helper()
 	defer func() {
@@ -42,17 +39,13 @@ func TestTensor_Size(t *testing.T) {
 		{"Vector", []int{5}, 5},
 		{"Matrix", []int{2, 3}, 6},
 		{"3D Tensor", []int{2, 1, 4}, 8},
-		// {"Empty Shape (Scalar)", []int{}, 1}, // Ambiguous, depends on interpretation
 		{"Empty Tensor", []int{0}, 0}, // Test case for shape with 0 dim
 		{"Empty Tensor High Dim", []int{2, 0, 3}, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create data slice of the required size
 			data := make([]float32, tt.want)
-			// Handle the edge case of size 0 explicitly for NewTensor
 			if tt.want == 0 && len(tt.shape) > 0 {
-				// Find the zero dim
 				zeroFound := false
 				for _, d := range tt.shape {
 					if d == 0 {
@@ -63,23 +56,17 @@ func TestTensor_Size(t *testing.T) {
 				if !zeroFound {
 					t.Fatalf("Test setup error: shape %v results in size 0 but has no zero dimension", tt.shape)
 				}
-				// NewTensor might panic if not handled, let's assume it works or bypass
 				tensor := &Tensor{Data: []float32{}, Shape: tt.shape}
 				if got := tensor.Size(); got != tt.want {
 					t.Errorf("Size() = %v, want %v", got, tt.want)
 				}
 				return // Skip NewTensor for this specific 0-size case test run
 			} else if tt.want == 0 && len(tt.shape) == 0 {
-				// Handle Tensor with nil Data and nil Shape if Size() should be 0
 				tensor := &Tensor{}
 				if got := tensor.Size(); got != 0 { // product of empty shape is 1, Size() impl should maybe handle nil Shape? Current impl works.
-					// Current impl returns 1, adjust test if 0 is expected for Tensor{}
-					// t.Errorf("Size() for Tensor{} = %v, want %v", got, 0)
 				}
-				// Let's test the documented behavior (product of dims)
 				tensor = NewTensor([]float32{}, []int{}) // Requires NewTensor to handle [] shape correctly
 				if got := tensor.Size(); got != 1 {      // product({}) is 1
-					//  t.Errorf("Size() for shape [] = %v, want %v", got, 1) // This depends on NewTensor behavior
 				}
 				return // Skip standard path
 
@@ -129,7 +116,6 @@ func TestTensor_At(t *testing.T) {
 		})
 	}
 
-	// Test 1D tensor
 	tensor1D := NewTensor([]float32{10, 20, 30}, []int{3})
 	if got := tensor1D.At(1); got != 20.0 {
 		t.Errorf("At(1) on 1D tensor = %v, want %v", got, 20.0)
@@ -170,12 +156,10 @@ func TestZerosLike(t *testing.T) {
 		t.Errorf("ZerosLike(%v) = %v, want %v", source, tensor, wantTensor)
 	}
 
-	// Test panic on nil tensor
 	t.Run("PanicOnNilInput", func(t *testing.T) {
 		checkPanic(t, func() { ZerosLike(nil) }, "")
 	})
 
-	// Test panic on tensor with nil shape
 	t.Run("PanicOnNilShape", func(t *testing.T) {
 		badTensor := &Tensor{Data: []float32{1}} // Shape is nil
 		checkPanic(t, func() { ZerosLike(badTensor) }, "")
@@ -193,7 +177,6 @@ func TestTensor_AddScalar(t *testing.T) {
 		t.Errorf("AddScalar(%v) = %v, want %v", scalar, result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by AddScalar. Got %v, want %v", original, originalWant)
@@ -211,7 +194,6 @@ func TestTensor_MulScalar(t *testing.T) {
 		t.Errorf("MulScalar(%v) = %v, want %v", scalar, result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by MulScalar. Got %v, want %v", original, originalWant)
@@ -219,7 +201,6 @@ func TestTensor_MulScalar(t *testing.T) {
 }
 
 func TestTensor_Div(t *testing.T) {
-	// Note: Original Div lacks shape check. Test assumes matching shapes.
 	t1 := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
 	t2 := NewTensor([]float32{2, 4, 5, 8}, []int{2, 2})
 	result := t1.Div(t2)
@@ -230,7 +211,6 @@ func TestTensor_Div(t *testing.T) {
 		t.Errorf("Div(%v / %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
 	t2Want := NewTensor([]float32{2, 4, 5, 8}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -240,8 +220,6 @@ func TestTensor_Div(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Div. Got %v", t2)
 	}
 
-	// TODO: Add tests for shape mismatch panic once implemented in Div.
-	// TODO: Add tests for division by zero if desired behavior is defined (e.g., Inf/NaN or panic).
 }
 
 func TestTensor_Sqrt(t *testing.T) {
@@ -254,20 +232,17 @@ func TestTensor_Sqrt(t *testing.T) {
 		t.Errorf("Sqrt() = %v, want %v", result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{1, 4, 9, 16}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by Sqrt. Got %v, want %v", original, originalWant)
 	}
 
-	// Test with zero
 	zeroTensor := NewTensor([]float32{0.0, 4.0}, []int{2})
 	sqrtZero := zeroTensor.Sqrt()
 	wantSqrtZero := NewTensor([]float32{0.0, 2.0}, []int{2})
 	if !tensorsEqual(sqrtZero, wantSqrtZero, epsilon) {
 		t.Errorf("Sqrt() with zero = %v, want %v", sqrtZero, wantSqrtZero)
 	}
-	// Test with negative (expect NaN) - Go's math.Sqrt handles this
 	negTensor := NewTensor([]float32{-4.0, 9.0}, []int{2})
 	sqrtNeg := negTensor.Sqrt()
 	if !math.IsNaN(sqrtNeg.Data[0]) || math.Abs(sqrtNeg.Data[1]-3.0) > epsilon {
@@ -286,13 +261,11 @@ func TestTensor_Pow(t *testing.T) {
 		t.Errorf("Pow(%v) = %v, want %v", exponent, result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by Pow. Got %v, want %v", original, originalWant)
 	}
 
-	// Test fractional exponent (sqrt)
 	sqrtTensor := NewTensor([]float32{4.0, 9.0}, []int{2})
 	sqrtResult := sqrtTensor.Pow(0.5)
 	wantSqrtResult := NewTensor([]float32{2.0, 3.0}, []int{2})
@@ -320,8 +293,6 @@ func TestTensor_SumByDim1(t *testing.T) {
 			name:     "Sum dim 0, keep",
 			dims:     []int{0},
 			keepDims: true,
-			// (0,0,*) + (1,0,*) = [1+9, 2+10, 3+11, 4+12] = [10, 12, 14, 16]
-			// (0,1,*) + (1,1,*) = [5+13, 6+14, 7+15, 8+16] = [18, 20, 22, 24]
 			wantData:  []float32{10, 12, 14, 16, 18, 20, 22, 24},
 			wantShape: []int{1, 2, 4},
 		},
@@ -336,8 +307,6 @@ func TestTensor_SumByDim1(t *testing.T) {
 			name:     "Sum dim 1, keep",
 			dims:     []int{1},
 			keepDims: true,
-			// (0,0,*) + (0,1,*) = [1+5, 2+6, 3+7, 4+8] = [6, 8, 10, 12]
-			// (1,0,*) + (1,1,*) = [9+13, 10+14, 11+15, 12+16] = [22, 24, 26, 28]
 			wantData:  []float32{6, 8, 10, 12, 22, 24, 26, 28},
 			wantShape: []int{2, 1, 4},
 		},
@@ -352,10 +321,6 @@ func TestTensor_SumByDim1(t *testing.T) {
 			name:     "Sum dim 2, keep",
 			dims:     []int{2},
 			keepDims: true,
-			// (0,0,*) sum = 1+2+3+4=10
-			// (0,1,*) sum = 5+6+7+8=26
-			// (1,0,*) sum = 9+10+11+12=42
-			// (1,1,*) sum = 13+14+15+16=58
 			wantData:  []float32{10, 26, 42, 58},
 			wantShape: []int{2, 2, 1},
 		},
@@ -370,10 +335,6 @@ func TestTensor_SumByDim1(t *testing.T) {
 			name:     "Sum dims 0, 2, keep",
 			dims:     []int{0, 2},
 			keepDims: true,
-			// Sum over dim 0 -> [10, 12, 14, 16], [18, 20, 22, 24] Shape (1,2,4)
-			// Sum previous over dim 2 (now dim 2) -> [10+12+14+16], [18+20+22+24] = [52], [84] Shape (1,2,1)
-			// OR Sum over dim 2 first -> [10],[26]; [42],[58] Shape(2,2,1)
-			// Sum previous over dim 0 (now dim 0) -> [10+42], [26+58] = [52], [84] Shape(1,2,1)
 			wantData:  []float32{52, 84},
 			wantShape: []int{1, 2, 1}, // Order shouldn't matter
 		},
@@ -404,19 +365,16 @@ func TestTensor_SumByDim1(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tensor.SumByDim1(tt.dims, tt.keepDims)
 			wantTensor := NewTensor(tt.wantData, tt.wantShape)
-			// Special case for empty wantShape which NewTensor might turn into [1]
 			if len(tt.wantShape) == 0 && len(tt.wantData) == 1 {
 				wantTensor = &Tensor{Data: tt.wantData, Shape: []int{}}
 			}
 
 			if !tensorsEqual(result, wantTensor, epsilon) {
-				// Use %v for tensor which includes shape, helps debugging shape issues
 				t.Errorf("SumByDim1(%v, %v) = %v, want %v", tt.dims, tt.keepDims, result, wantTensor)
 			}
 		})
 	}
 
-	// Test panic on invalid dimension
 	t.Run("PanicInvalidDim", func(t *testing.T) {
 		checkPanic(t, func() { tensor.SumByDim1([]int{0, 3}, false) }, "") // 3 is invalid for shape [2,2,4]
 		checkPanic(t, func() { tensor.SumByDim1([]int{-1}, false) }, "")   // -1 is invalid
@@ -424,7 +382,6 @@ func TestTensor_SumByDim1(t *testing.T) {
 }
 
 func TestTensor_Mul(t *testing.T) {
-	// Note: Original Mul lacks shape check. Test assumes matching shapes.
 	t1 := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	t2 := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	result := t1.Mul(t2)
@@ -435,7 +392,6 @@ func TestTensor_Mul(t *testing.T) {
 		t.Errorf("Mul(%v * %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	t2Want := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -445,11 +401,9 @@ func TestTensor_Mul(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Mul. Got %v", t2)
 	}
 
-	// TODO: Add tests for shape mismatch panic once implemented in Mul.
 }
 
 func TestTensor_Add(t *testing.T) {
-	// Note: Original Add lacks shape check. Test assumes matching shapes.
 	t1 := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	t2 := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	result := t1.Add(t2)
@@ -460,7 +414,6 @@ func TestTensor_Add(t *testing.T) {
 		t.Errorf("Add(%v + %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	t2Want := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -470,7 +423,6 @@ func TestTensor_Add(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Add. Got %v", t2)
 	}
 
-	// TODO: Add tests for shape mismatch panic once implemented in Add.
 }
 
 func TestTensor_DivScalar(t *testing.T) {
@@ -484,13 +436,11 @@ func TestTensor_DivScalar(t *testing.T) {
 		t.Errorf("DivScalar(%v) = %v, want %v", scalar, result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by DivScalar. Got %v, want %v", original, originalWant)
 	}
 
-	// Test division by zero
 	divZeroResult := original.DivScalar(0.0)
 	if !math.IsInf(divZeroResult.Data[0], 1) || // Expect +Inf
 		!math.IsInf(divZeroResult.Data[1], 1) ||
@@ -519,7 +469,6 @@ func TestTensor_Sum111(t *testing.T) {
 		t.Errorf("Sum111() = %v, want %v", result, wantTensor)
 	}
 
-	// Test empty tensor
 	emptyTensor := NewTensor([]float32{}, []int{0}) // Requires NewTensor handling
 	emptyResult := emptyTensor.Sum111()
 	wantEmpty := NewTensor([]float32{0.0}, []int{1})
@@ -538,9 +487,6 @@ func TestTensor_Get(t *testing.T) {
 		name    string
 		indices []int
 		want    float32
-		// Note: Get doesn't explicitly panic on wrong number/out of bounds indices
-		// It relies on the underlying slice access after calculating idx.
-		// We could add tests expecting panic for out-of-bounds idx calculation result.
 	}{
 		{"Valid Index [0, 0]", []int{0, 0}, 1.0},
 		{"Valid Index [0, 2]", []int{0, 2}, 3.0},
@@ -557,18 +503,14 @@ func TestTensor_Get(t *testing.T) {
 		})
 	}
 
-	// Test 1D tensor
 	tensor1D := NewTensor([]float32{10, 20, 30}, []int{3})
 	if got := tensor1D.Get([]int{1}); got != 20.0 {
 		t.Errorf("Get([1]) on 1D tensor = %v, want %v", got, 20.0)
 	}
 
-	// Test potential panics (based on index calculation)
 	t.Run("PanicOutOfBounds", func(t *testing.T) {
-		// These will likely panic due to slice bounds error after idx calculation
 		checkPanic(t, func() { tensor.Get([]int{2, 0}) }, "")
 		checkPanic(t, func() { tensor.Get([]int{0, 3}) }, "")
-		// checkPanic(t, func() { tensor.Get([]int{0}) }) // Incorrect number of indices, might panic depending on loop logic/stride calc
 	})
 
 }
@@ -580,13 +522,11 @@ func TestTensor_Set1(t *testing.T) {
 
 	tensor.Set1(indices, value)
 
-	// Verify the set value
 	got := tensor.Get(indices) // Use Get to verify
 	if math.Abs(got-value) > epsilon {
 		t.Errorf("Set1(%v, %v); Get(%v) = %v, want %v", indices, value, indices, got, value)
 	}
 
-	// Verify other elements are unchanged
 	if math.Abs(tensor.Get([]int{0, 0})-1.0) > epsilon {
 		t.Errorf("Set1 affected other element [0,0], got %v, want 1.0", tensor.Get([]int{0, 0}))
 	}
@@ -597,7 +537,6 @@ func TestTensor_Set1(t *testing.T) {
 		t.Errorf("Set1 affected other element [1,1], got %v, want 4.0", tensor.Get([]int{1, 1}))
 	}
 
-	// Test potential panics (similar to Get)
 	t.Run("PanicOutOfBounds", func(t *testing.T) {
 		checkPanic(t, func() { tensor.Set1([]int{2, 0}, 100.0) }, "")
 		checkPanic(t, func() { tensor.Set1([]int{0, 2}, 100.0) }, "")
@@ -615,7 +554,6 @@ func TestTensor_Max1(t *testing.T) {
 		{"Mixed Signs", []float32{-1, 0, -5, 3}, []int{4}, 3.0},
 		{"All Negative", []float32{-10, -2, -5}, []int{3}, -2.0},
 		{"Single Element", []float32{42}, []int{1}, 42.0},
-		// {"Empty Tensor", []float32{}, []int{0}, 0.0}, // Requires NewTensor for []int{0}
 	}
 
 	for _, tt := range tests {
@@ -628,7 +566,6 @@ func TestTensor_Max1(t *testing.T) {
 		})
 	}
 
-	// Test the documented empty tensor case specifically
 	t.Run("Empty Tensor", func(t *testing.T) {
 		emptyTensor := &Tensor{Data: []float32{}, Shape: []int{0}} // Create directly if NewTensor panics
 		got := emptyTensor.Max1()
@@ -638,10 +575,7 @@ func TestTensor_Max1(t *testing.T) {
 	})
 }
 
-// Assume Tensor, NewTensor, epsilon, tensorsEqual, floatsEqual, checkPanic
-// are defined as in the previous example.
 
-// --- Tests for the newly provided functions ---
 
 func TestTensor_Sub1(t *testing.T) {
 	t1 := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
@@ -654,7 +588,6 @@ func TestTensor_Sub1(t *testing.T) {
 		t.Errorf("Sub1(%v - %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
 	t2Want := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -664,7 +597,6 @@ func TestTensor_Sub1(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Sub1. Got %v", t2)
 	}
 
-	// Test panic on shape mismatch
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
 		t3_diff_shape := NewTensor([]float32{1, 2, 3}, []int{3})               // Different shape
 		t4_diff_rank := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})    // Different rank but same size (still mismatch)
@@ -675,7 +607,6 @@ func TestTensor_Sub1(t *testing.T) {
 		checkPanic(t, func() { t1.Sub1(t5_same_rank_diff_dim) }, "")
 	})
 
-	// Test with zeros and negatives
 	t.Run("ZerosAndNegatives", func(t *testing.T) {
 		a := NewTensor([]float32{1, -2, 0, 5}, []int{4})
 		b := NewTensor([]float32{3, 0, -4, 5}, []int{4})
@@ -725,7 +656,6 @@ func TestTensor_Div1(t *testing.T) {
 		t.Errorf("Div1(%v / %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{10, 20, -30, 0}, []int{2, 2})
 	t2Want := NewTensor([]float32{2, 4, 5, 8}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -735,12 +665,10 @@ func TestTensor_Div1(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Div1. Got %v", t2)
 	}
 
-	// Test division by zero
 	t.Run("DivisionByZero", func(t *testing.T) {
 		numerator := NewTensor([]float32{5, -5, 0, 1}, []int{4})
 		denominator := NewTensor([]float32{0, 0, 0, 2}, []int{4})
 		res := numerator.Div1(denominator)
-		// Expected: [Inf, -Inf, NaN, 0.5]
 		if !math.IsInf(res.Data[0], 1) {
 			t.Errorf("Expected +Inf at index 0, got %v", res.Data[0])
 		}
@@ -755,7 +683,6 @@ func TestTensor_Div1(t *testing.T) {
 		}
 	})
 
-	// Test panic on shape mismatch
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
 		t3_diff_shape := NewTensor([]float32{1, 2, 3}, []int{3})
 		checkPanic(t, func() { t1.Div1(t3_diff_shape) }, "")
@@ -773,7 +700,6 @@ func TestTensor_Multiply1(t *testing.T) {
 		t.Errorf("Multiply1(%v * %v) = %v, want %v", t1, t2, result, wantTensor)
 	}
 
-	// Test original tensors are unchanged
 	t1Want := NewTensor([]float32{1, 2, -3, 0}, []int{2, 2})
 	t2Want := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	if !tensorsEqual(t1, t1Want, epsilon) {
@@ -783,7 +709,6 @@ func TestTensor_Multiply1(t *testing.T) {
 		t.Errorf("Original tensor t2 was modified by Multiply1. Got %v", t2)
 	}
 
-	// Test panic on shape mismatch
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
 		t3_diff_shape := NewTensor([]float32{1, 2, 3}, []int{3})
 		checkPanic(t, func() { t1.Multiply1(t3_diff_shape) }, "")
@@ -800,7 +725,6 @@ func TestTensor_Apply1(t *testing.T) {
 		if !tensorsEqual(result, wantTensor, epsilon) {
 			t.Errorf("Apply1(sqrt) = %v, want %v", result, wantTensor)
 		}
-		// Check original unchanged
 		originalWant := NewTensor([]float32{1, 4, 9, 16}, []int{2, 2})
 		if !tensorsEqual(original, originalWant, epsilon) {
 			t.Errorf("Original tensor was modified by Apply1(sqrt). Got %v", original)
@@ -815,7 +739,6 @@ func TestTensor_Apply1(t *testing.T) {
 		if !tensorsEqual(result, wantTensor, epsilon) {
 			t.Errorf("Apply1(x*2) = %v, want %v", result, wantTensor)
 		}
-		// Check original unchanged
 		originalWant := NewTensor([]float32{1, 4, 9, 16}, []int{2, 2})
 		if !tensorsEqual(original, originalWant, epsilon) {
 			t.Errorf("Original tensor was modified by Apply1(x*2). Got %v", original)
@@ -851,7 +774,6 @@ func TestTensor_Clone1(t *testing.T) {
 		t.Errorf("Clone1 did not create a deep copy of Shape slice")
 	}
 
-	// Modify original and check if clone is affected (deep copy check)
 	original.Data[0] = 99.0
 	if original.Shape != nil && len(original.Shape) > 0 {
 		original.Shape[0] = 55 // Modify shape slice element
@@ -864,13 +786,11 @@ func TestTensor_Clone1(t *testing.T) {
 		t.Errorf("Modifying original tensor's shape slice affected the cloned tensor's shape slice")
 	}
 
-	// Verify cloned shape is still the original shape
 	wantShape := []int{2, 2}
 	if !reflect.DeepEqual(cloned.Shape, wantShape) {
 		t.Errorf("Cloned tensor shape changed unexpectedly. Got %v, want %v", cloned.Shape, wantShape)
 	}
 
-	// Test cloning empty tensor
 	empty := NewTensor([]float32{}, []int{0, 2})
 	clonedEmpty := empty.Clone1()
 	wantEmpty := NewTensor([]float32{}, []int{0, 2})
@@ -878,7 +798,6 @@ func TestTensor_Clone1(t *testing.T) {
 		t.Errorf("Cloning empty tensor failed. Got %v, want %v (different instance)", clonedEmpty, wantEmpty)
 	}
 
-	// Test cloning scalar tensor
 	scalar := NewTensor([]float32{5.0}, []int{1})
 	clonedScalar := scalar.Clone1()
 	if !tensorsEqual(scalar, clonedScalar, epsilon) || scalar == clonedScalar {
@@ -912,7 +831,6 @@ func TestShapeEqual(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test both the exported and unexported versions if both exist and are meant to be the same
 			if got := shapeEqual(tt.shape1, tt.shape2); got != tt.want {
 				t.Errorf("unexported shapeEqual(%v, %v) = %v, want %v", tt.shape1, tt.shape2, got, tt.want)
 			}
@@ -934,13 +852,11 @@ func TestTensor_SubScalar(t *testing.T) {
 		t.Errorf("SubScalar(%v) = %v, want %v", scalar, result, wantTensor)
 	}
 
-	// Check original tensor is unchanged
 	originalWant := NewTensor([]float32{10, 20, 30, 0}, []int{2, 2})
 	if !tensorsEqual(original, originalWant, epsilon) {
 		t.Errorf("Original tensor was modified by SubScalar. Got %v, want %v", original, originalWant)
 	}
 
-	// Test subtracting zero
 	t.Run("SubtractZero", func(t *testing.T) {
 		resZero := original.SubScalar(0.0)
 		if !tensorsEqual(resZero, originalWant, epsilon) {
@@ -948,7 +864,6 @@ func TestTensor_SubScalar(t *testing.T) {
 		}
 	})
 
-	// Test subtracting negative (addition)
 	t.Run("SubtractNegative", func(t *testing.T) {
 		resNeg := original.SubScalar(-2.0)
 		wantNegData := []float32{12, 22, 32, 2}

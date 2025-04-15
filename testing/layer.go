@@ -25,13 +25,11 @@ func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTens
 			panic(err)
 		}
 		layerWeights.Close()
-		//defer os.Remove(layerWeights.Name())
 		layerBias, err = os.CreateTemp("", "layer_bias.*.csv")
 		if err != nil {
 			panic(err)
 		}
 		layerBias.Close()
-		//defer os.Remove(layerBias.Name())
 
 		WeightsTensor := layer.GetWeights()
 		BiasTensor := layer.GetBias()
@@ -53,7 +51,6 @@ func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTens
 			panic(err)
 		}
 		inFile2.Close()
-		//defer os.Remove(inFile2.Name())
 		err = inTensor.SaveToCSV(inFile2.Name())
 		if err != nil {
 			panic(err)
@@ -67,7 +64,6 @@ func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTens
 			panic(err)
 		}
 		outFile.Close()
-		//defer os.Remove(outFile.Name())
 	}
 
 	layerWeightsPath := filepath.ToSlash(layerWeights.Name())
@@ -77,7 +73,6 @@ func GetLayerTestResult64(inPyScript string, layer torch.LayerForTesting, inTens
 
 	outPutPath := filepath.ToSlash(outFile.Name())
 	inPyScript = strings.TrimSpace(inPyScript)
-	// Python 脚本
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
@@ -134,7 +129,6 @@ save_tensor_to_csv(out,"%s")
 
 	RunPyScript(pythonScript)
 
-	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
 		panic(err)
@@ -152,11 +146,9 @@ func GetPytorchInitData(pyScript string) *tensor.Tensor {
 			panic(err)
 		}
 		outFile.Close()
-		//defer os.Remove(outFile.Name())
 	}
 
 	outPutPath := filepath.ToSlash(outFile.Name())
-	// Python 脚本
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
@@ -186,7 +178,6 @@ save_tensor_to_csv(out,"%s")
 
 	RunPyScript(pythonScript)
 
-	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
 		panic(err)
@@ -203,7 +194,6 @@ func LayerTest(inPyScript string, inTensor *tensor.Tensor, dataType string) *ten
 			panic(err)
 		}
 		inFile2.Close()
-		//defer os.Remove(inFile2.Name())
 		err = inTensor.SaveToCSV(inFile2.Name())
 		if err != nil {
 			panic(err)
@@ -217,14 +207,12 @@ func LayerTest(inPyScript string, inTensor *tensor.Tensor, dataType string) *ten
 			panic(err)
 		}
 		outFile.Close()
-		//defer os.Remove(outFile.Name())
 	}
 
 	inTensorPath := filepath.ToSlash(inFile2.Name())
 
 	outPutPath := filepath.ToSlash(outFile.Name())
 	inPyScript = strings.TrimSpace(inPyScript)
-	// Python 脚本
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
@@ -267,7 +255,6 @@ save_tensor_to_csv(out,"%s")
 
 	RunPyScript(pythonScript)
 
-	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
 		panic(err)
@@ -284,7 +271,6 @@ func LayerTest1(inPyScript string, inTensors []*tensor.Tensor, dataType string) 
 			panic(err)
 		}
 		inFile2.Close()
-		//defer os.Remove(inFile2.Name())
 		err = inTensors[i].SaveToCSV(inFile2.Name())
 		if err != nil {
 			panic(err)
@@ -299,7 +285,6 @@ func LayerTest1(inPyScript string, inTensors []*tensor.Tensor, dataType string) 
 			panic(err)
 		}
 		outFile.Close()
-		//defer os.Remove(outFile.Name())
 	}
 
 	textpy := ""
@@ -311,7 +296,6 @@ func LayerTest1(inPyScript string, inTensors []*tensor.Tensor, dataType string) 
 
 	outPutPath := filepath.ToSlash(outFile.Name())
 	inPyScript = strings.TrimSpace(inPyScript)
-	// Python 脚本
 	pythonScript := fmt.Sprintf(`
 import numpy as np
 import torch
@@ -354,7 +338,6 @@ save_tensor_to_csv(out,"%s")
 
 	RunPyScript(pythonScript)
 
-	// 读取计算结果
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
 		panic(err)

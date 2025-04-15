@@ -2,27 +2,18 @@ package matrix
 
 import math "github.com/chewxy/math32"
 
-// Conv2D 实现二维卷积操作
 func (m *Matrix) Conv2D(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入维度：(1, height, width) 对于MNIST单通道图像
-	// 权重维度：(out_channels, kernelSize*kernelSize)
-	// 输出维度：(out_channels, out_height, out_width)
 
-	// 计算输出空间尺寸
 	outHeight := (m.Rows+2*pad-kernelSize)/stride + 1
 	outWidth := (m.Cols+2*pad-kernelSize)/stride + 1
 
-	// 执行im2col展开
 	unfolded := m.im2col(kernelSize, stride, pad)
 
-	// 矩阵乘法：weights * unfolded
 	result := weights.Multiply(unfolded)
 
-	// 重新排列为输出形状
 	return result.Reshape(weights.Rows, outHeight*outWidth)
 }
 
-// im2col_get_pixel 实现边界检查的像素获取
 func im2col_get_pixel(im []float32, height, width, channels int,
 	row, col, channel, pad int) float32 {
 	row -= pad
@@ -34,7 +25,6 @@ func im2col_get_pixel(im []float32, height, width, channels int,
 	return im[col+width*(row+height*channel)]
 }
 
-// im2col 基于Caffe实现的高效版本，使用一维数组和前置递增
 func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 	channels := m.Rows
 	height := int(math.Sqrt(float32(m.Cols))) // 假设是方阵
@@ -44,13 +34,11 @@ func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 	width_col := (width+2*pad-kernelSize)/stride + 1
 	channels_col := channels * kernelSize * kernelSize
 
-	// 将输入数据展平为一维数组
 	im := make([]float32, 0, channels*height*width)
 	for c := 0; c < channels; c++ {
 		im = append(im, m.Data[c]...)
 	}
 
-	// 创建一维输出数组
 	cols := NewMatrix(channels_col, height_col*width_col)
 	data_col := make([]float32, channels_col*height_col*width_col)
 
@@ -74,7 +62,6 @@ func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 		}
 	}
 
-	// 将一维数组转换回Matrix格式
 	for c := 0; c < channels_col; c++ {
 		start := c * height_col * width_col
 		end := start + height_col*width_col
@@ -106,7 +93,6 @@ func (m *Matrix) Pad2D(pad int) *Matrix {
 	return padded
 }
 
-// Repeat 将矩阵沿行和列方向重复
 func (m *Matrix) Repeat(rowRepeat, colRepeat int) *Matrix {
 	newRows := m.Rows * rowRepeat
 	newCols := m.Cols * colRepeat
@@ -120,52 +106,34 @@ func (m *Matrix) Repeat(rowRepeat, colRepeat int) *Matrix {
 	return result
 }
 
-// Conv2DGradWeights 计算权重梯度
 func (m Matrix) Conv2DGradWeights(gradOutput *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入梯度维度：(out_channels, out_hout_w)
-	// 输出梯度维度：(out_channels, in_channelskernelSizekernelSize)
 
-	// 执行im2col展开输入
 	unfolded := m.im2col(kernelSize, stride, pad)
 
-	// 矩阵乘法：gradOutput * unfolded^T
 	return gradOutput.Multiply(unfolded.Transpose())
 }
 
-// Conv2DGradInput 计算输入梯度
 func (m *Matrix) Conv2DGradInput(weights *Matrix, kernelSize, stride, pad int) *Matrix {
-	// 输入梯度维度：(out_channels, out_hout_w)
-	// 输出梯度维度：(in_channels, in_hin_w)
 
-	// 转置权重矩阵
 	wT := weights.Transpose()
 
-	// 矩阵乘法：wT * gradOutput
 	result := wT.Multiply(m)
 
-	// 执行col2im操作
 	return result.col2im(kernelSize, stride, pad, m.Rows, m.Cols)
 }
 
-// col2im 将展开的列重新排列为图像格式
 func (m *Matrix) col2im(kernelSize, stride, pad, inHeight, inWidth int) *Matrix {
-	// 计算原始尺寸（包含padding）
 	origHeight := inHeight + 2
 	origWidth := inWidth + 2
 
-	// 初始化输出矩阵
 	output := NewMatrix(origHeight, origWidth)
 
-	// 遍历所有列
 	for i := 0; i < m.Cols; i++ {
-		// 计算原始位置
 		h := (i / origWidth) * stride
 		w := (i % origWidth) * stride
 
-		// 获取当前patch并reshape
 		patch := m.GetCol(i).Reshape(kernelSize, kernelSize)
 
-		// 累加到对应位置
 		for dh := 0; dh < kernelSize; dh++ {
 			for dw := 0; dw < kernelSize; dw++ {
 				output.Data[h+dh][w+dw] += patch.Data[dh][dw]
@@ -173,11 +141,9 @@ func (m *Matrix) col2im(kernelSize, stride, pad, inHeight, inWidth int) *Matrix 
 		}
 	}
 
-	// 去除padding
 	return output.GetRows(pad, origHeight-pad).GetCols(pad, origWidth-pad)
 }
 
-// Pad2D 实现二维padding
 func (m *Matrix) Pad2D1(pad int) *Matrix {
 	if pad == 0 {
 		return m.Clone()
@@ -193,7 +159,6 @@ func (m *Matrix) Pad2D1(pad int) *Matrix {
 	return padded
 }
 
-// Flatten 展平矩阵为列向量
 func (m *Matrix) Flatten() *Matrix {
 	return m.Reshape(m.Cols*m.Rows, 1)
 }
@@ -210,31 +175,24 @@ func (m *Matrix) FlattenByDim(startDim, endDim int) *Matrix {
 		endDim = m.Dimensions() - 1 // -1 代表最后一个维度
 	}
 
-	// 计算展平后矩阵的维度
 	rows := 1
 	cols := 1
 
-	// 计算从 startDim 到 endDim 展平的维度
 	for i := startDim; i <= endDim; i++ {
 		rows *= m.DimSize(i)
 	}
 
-	// 计算剩余的维度
 	for i := endDim + 1; i < m.Dimensions(); i++ {
 		cols *= m.DimSize(i)
 	}
 
-	// 调用 Reshape 进行展平
 	return m.Reshape(rows, cols)
 }
 
-// Dimensions 获取矩阵的维度数量
 func (m *Matrix) Dimensions() int {
-	// 对于二维矩阵，只有行和列两维
 	return 2
 }
 
-// DimSize 获取指定维度的大小，dim = 0 时返回行数，dim = 1 时返回列数
 func (m *Matrix) DimSize(dim int) int {
 	if dim == 0 {
 		return m.Rows
@@ -244,12 +202,10 @@ func (m *Matrix) DimSize(dim int) int {
 	panic("invalid dimension")
 }
 
-// Clone 深拷贝矩阵
 func (m *Matrix) Clone() *Matrix {
 	return Copy(m)
 }
 
-// GetCols 获取指定列范围的子矩阵
 func (m *Matrix) GetCols(start, end int) *Matrix {
 	if start < 0 || end > m.Cols || start >= end {
 		panic("invalid column range")
@@ -264,7 +220,6 @@ func (m *Matrix) GetCols(start, end int) *Matrix {
 	return result
 }
 
-// SetCol 设置指定列的数据
 func (m *Matrix) SetCol(colIdx int, data *Matrix) {
 	if data.Rows != m.Rows || data.Cols != 1 {
 		panic("invalid column data dimensions")
@@ -275,7 +230,6 @@ func (m *Matrix) SetCol(colIdx int, data *Matrix) {
 	}
 }
 
-// GetCol 获取指定列的数据
 func (m *Matrix) GetCol(colIdx int) *Matrix {
 	result := NewMatrix(m.Rows, 1)
 	for i := 0; i < m.Rows; i++ {
@@ -284,7 +238,6 @@ func (m *Matrix) GetCol(colIdx int) *Matrix {
 	return result
 }
 
-// Sum 沿指定维度求和
 func (m *Matrix) SumByDim(dim int) *Matrix {
 	if dim == 0 { // 沿列求和，返回行向量
 		result := NewMatrix(1, m.Cols)
@@ -310,16 +263,13 @@ func (m *Matrix) SumByDim(dim int) *Matrix {
 	panic("invalid dimension for sum")
 }
 
-// Pad 在矩阵四周添加 padding 数量的零填充
 func (m *Matrix) Pad(padding int) *Matrix {
 	newRows := m.Rows + 2*padding
 	newCols := m.Cols + 2*padding
-	// 初始化全零矩阵
 	paddedData := make([][]float32, newRows)
 	for i := range paddedData {
 		paddedData[i] = make([]float32, newCols)
 	}
-	// 将原矩阵拷贝到中间位置
 	for i := 0; i < m.Rows; i++ {
 		for j := 0; j < m.Cols; j++ {
 			paddedData[i+padding][j+padding] = m.Data[i][j]
@@ -332,7 +282,6 @@ func (m *Matrix) Pad(padding int) *Matrix {
 	}
 }
 
-// Crop 裁剪掉矩阵四周 padding 数量的边界
 func (m *Matrix) Crop(padding int) *Matrix {
 	if padding == 0 {
 		return m

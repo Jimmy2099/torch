@@ -49,7 +49,6 @@ func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
 		panic(fmt.Sprintf("Embedding expects 2D input, got %dD", len(indices.Shape)))
 	}
 
-	// 直接使用Data字段（已经是[]float32类型）
 	floatIndices := indices.Data
 	intIndices := make([]int, len(floatIndices))
 	for i, v := range floatIndices {
@@ -86,12 +85,10 @@ func (e *Embedding) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 	batchSize := gradOutput.Shape[0]
 	seqLen := gradOutput.Shape[1]
 
-	// 重置梯度
 	for i := range e.GradWeights.Data {
 		e.GradWeights.Data[i] = 0
 	}
 
-	// 累积梯度
 	for b := 0; b < batchSize; b++ {
 		for s := 0; s < seqLen; s++ {
 			idx := e.LastIndices[b*seqLen+s]
@@ -108,7 +105,6 @@ func (e *Embedding) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 		}
 	}
 
-	// 更新权重
 	for i := range e.Weights.Data {
 		e.Weights.Data[i] -= learningRate * e.GradWeights.Data[i]
 	}
@@ -117,7 +113,6 @@ func (e *Embedding) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 }
 
 func (e *Embedding) ZeroGrad() {
-	// 手动清零梯度
 	for i := range e.GradWeights.Data {
 		e.GradWeights.Data[i] = 0
 	}
@@ -133,8 +128,6 @@ func (e *Embedding) SetWeightsAndShape(data []float32, shape []int) {
 			e.VocabSize, e.EmbDim, shape))
 	}
 
-	// 创建新权重并保留梯度结构
 	e.Weights = tensor.NewTensor(data, shape)
-	// 重置梯度张量
 	e.GradWeights = tensor.NewTensor(make([]float32, len(data)), shape)
 }

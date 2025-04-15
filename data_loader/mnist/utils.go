@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-// 读取图像文件
 func loadImages(filename string) ([][]float32, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -32,7 +31,6 @@ func loadImages(filename string) ([][]float32, error) {
 	return data, nil
 }
 
-// 读取标签文件
 func loadLabels(filename string) ([][]float32, error) {
 	file, err := os.Open(filename)
 	if err != nil {

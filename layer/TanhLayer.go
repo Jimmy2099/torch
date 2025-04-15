@@ -1,4 +1,3 @@
-// layer/TanhLayer.go
 package layer
 
 import (
@@ -7,9 +6,7 @@ import (
 	math "github.com/chewxy/math32"
 )
 
-// TanhLayer implements the hyperbolic tangent activation function.
 type TanhLayer struct {
-	// Cache output for backward pass
 	outputCache *tensor.Tensor
 }
 
@@ -27,14 +24,10 @@ func (r *TanhLayer) GetBias() *tensor.Tensor {
 	}
 }
 
-// NewTanhLayer creates a new TanhLayer.
 func NewTanhLayer() *TanhLayer {
 	return &TanhLayer{}
 }
 
-// Forward applies the Tanh function element-wise.
-// input: Input tensor
-// Returns: Output tensor with Tanh applied
 func (t *TanhLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 	outputData := make([]float32, len(input.Data))
 	for i, val := range input.Data {
@@ -42,17 +35,12 @@ func (t *TanhLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 	}
 	output := tensor.NewTensor(outputData, input.Shape)
 
-	// Cache the output for backward pass
 	t.outputCache = output
 
 	fmt.Println("TanhLayer Forward Pass")
 	return output
 }
 
-// Backward calculates the gradient through the Tanh layer.
-// gradOutput: Gradient of the loss with respect to the output of this layer.
-// learningRate: Not used by activation layers.
-// Returns: Gradient of the loss with respect to the input of this layer.
 func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	if t.outputCache == nil {
 		panic("Backward called before Forward or output cache is nil for TanhLayer")
@@ -63,7 +51,6 @@ func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 
 	gradInputData := make([]float32, len(gradOutput.Data))
 	for i := range gradOutput.Data {
-		// Derivative of tanh(x) is 1 - tanh(x)^2
 		tanhOutput := t.outputCache.Data[i]
 		gradInputData[i] = gradOutput.Data[i] * (1.0 - tanhOutput*tanhOutput)
 	}
@@ -72,22 +59,15 @@ func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 	return gradInput
 }
 
-// ZeroGrad does nothing for TanhLayer as it has no trainable parameters.
 func (t *TanhLayer) ZeroGrad() {
-	// No parameters to zero gradients for
 }
 
-// Parameters returns an empty slice as TanhLayer has no trainable parameters.
 func (t *TanhLayer) Parameters() []*tensor.Tensor {
 	return []*tensor.Tensor{}
 }
 
-// SetWeights does nothing for TanhLayer.
 func (t *TanhLayer) SetWeights(data [][]float32) {
-	// No weights to set
 }
 
-// SetBias does nothing for TanhLayer.
 func (t *TanhLayer) SetBias(data [][]float32) {
-	// No bias to set
 }

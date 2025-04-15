@@ -5,7 +5,6 @@ import (
 	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
-// Model 定义模型接口
 type ModelInterface interface {
 	Forward(input *tensor.Tensor) *tensor.Tensor
 	Backward(target *tensor.Tensor, learningRate float32)
@@ -16,10 +15,8 @@ type Model struct {
 	_      ModelInterface
 	_      TrainerInterface
 	Layers []Layer
-	//
 	LayerIndex2Name map[int]string
 	LayerName2Index map[string]int
-	//
 }
 
 func NewModel() *Model {
@@ -52,7 +49,6 @@ func (m *Model) ZeroGrad() {
 	}
 }
 
-// Trainer 定义训练器接口
 type TrainerInterface interface {
 	Train(model ModelInterface, inputs, targets *tensor.Tensor, epochs int, learningRate float32)
 	Validate(model ModelInterface, inputs, targets *tensor.Tensor) float32

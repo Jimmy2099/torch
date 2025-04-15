@@ -4,7 +4,6 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
-// MSE 均方误差损失函数
 func MSE(predictions, targets *tensor.Tensor) float32 {
 	diff := predictions.Sub(targets)                                // 使用Tensor的Sub方法
 	squared := diff.Apply(func(x float32) float32 { return x * x }) // 使用Tensor的Apply方法

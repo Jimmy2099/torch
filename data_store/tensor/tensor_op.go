@@ -44,7 +44,6 @@ func NewTensorFromSlice(data [][]float32) *Tensor {
 	}
 }
 
-// Reshape changes the shape of the tensor.  It does NOT allocate new memory.
 func (t *Tensor) Reshape(shape []int) *Tensor {
 	size := 1
 	for _, dim := range shape {
@@ -68,7 +67,6 @@ func (t *Tensor) Squeeze() *Tensor {
 	return t.Reshape(newShape)
 }
 
-// 精确维度压缩方法
 func (t *Tensor) SqueezeSpecific(dims []int) *Tensor {
 	newShape := make([]int, 0)
 	for i, dim := range t.Shape {
@@ -89,7 +87,6 @@ func (t *Tensor) SqueezeSpecific(dims []int) *Tensor {
 	return t.Reshape(newShape)
 }
 
-// Indices 将线性索引转换为多维索引
 func (t *Tensor) Indices(i int) []int {
 	indices := make([]int, len(t.Shape))
 	strides := computeStrides(t.Shape)

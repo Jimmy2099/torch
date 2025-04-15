@@ -6,7 +6,6 @@ import (
 	"sort"
 )
 
-// Product 计算形状各维度的乘积（总元素数）
 func Product(shape []int) int {
 	if len(shape) == 0 {
 		return 0

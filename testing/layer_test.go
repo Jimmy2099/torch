@@ -36,7 +36,6 @@ func TestGetLayerTestResult(t *testing.T) {
 	})
 
 	t.Run("linear layer tests", func(t *testing.T) {
-		// 参数化线性层测试
 		testCases := []struct {
 			name        string
 			inFeatures  int
@@ -73,24 +72,20 @@ func TestGetLayerTestResult(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				// 生成PyTorch脚本
 				script := fmt.Sprintf(
 					`torch.nn.Linear(in_features=%d, out_features=%d)`,
 					tc.inFeatures,
 					tc.outFeatures,
 				)
 
-				// 生成测试数据
 				t1 := tensor.Random(tc.inputShape, -100, 100)
 				weights := tensor.Random(tc.weightShape, -100, 100)
 				bias := tensor.Random(tc.biasShape, -100, 100)
 
-				// 初始化层
 				l := torch.NewLinearLayer(tc.inFeatures, tc.outFeatures)
 				l.SetWeightsAndShape(weights.Data, weights.Shape)
 				l.SetBiasAndShape(bias.Data, bias.Shape)
 
-				// 获取结果并验证
 				result := GetLayerTestResult(script, l, t1)
 				t2 := l.Forward(t1)
 
@@ -105,7 +100,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 线性层bias=True测试
 	t.Run("linear layer bias", func(t *testing.T) {
 		inFeatures := 8192
 		outFeatures := 64
@@ -130,7 +124,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 卷积层测试
 	t.Run("conv2d layer", func(t *testing.T) {
 		inChannels := 3
 		outChannels := 64
@@ -142,7 +135,6 @@ func TestGetLayerTestResult(t *testing.T) {
 			`torch.nn.Conv2d(in_channels=%d, out_channels=%d, kernel_size=[%v,%v], stride=[%v,%v], padding=[%v,%v])`,
 			inChannels, outChannels, kernelSize[0], kernelSize[1], stride[0], stride[1], padding[0], padding[1],
 		)
-		// 输入形状 [batch, channels, height, width]
 		input := tensor.Random([]int{1, 3, 64, 64}, -1, 1)
 		weights := tensor.Random([]int{64, 3, 5, 5}, -1, 1)
 		bias := tensor.Random([]int{64}, -1, 1)
@@ -159,7 +151,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 卷积层参数化测试
 	t.Run("conv2d layers", func(t *testing.T) {
 		testCases := []struct {
 			name        string
@@ -194,22 +185,10 @@ func TestGetLayerTestResult(t *testing.T) {
 				weightShape: []int{128, 64, 3, 3},
 				biasShape:   []int{128},
 			},
-			//{
-			//	name:        "asymmetric params",
-			//	inChannels:  128,
-			//	outChannels: 256,
-			//	kernelSize:  []int{7, 3},
-			//	stride:      []int{3, 2},
-			//	padding:     []int{1, 0},
-			//	inputShape:  []int{4, 128, 64, 64},
-			//	weightShape: []int{256, 128, 7, 3},  TODO H!=W
-			//	biasShape:   []int{256},
-			//},
 		}
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				// 生成PyTorch脚本
 				script := fmt.Sprintf(
 					`torch.nn.Conv2d(
                     in_channels=%d, 
@@ -225,12 +204,10 @@ func TestGetLayerTestResult(t *testing.T) {
 					tc.padding[0], tc.padding[1],
 				)
 
-				// 生成测试数据
 				input := tensor.Random(tc.inputShape, -1, 1)
 				weights := tensor.Random(tc.weightShape, -1, 1)
 				bias := tensor.Random(tc.biasShape, -1, 1)
 
-				// 初始化卷积层（注意：需要确保NewConvLayer支持不同参数）
 				l := torch.NewConvLayer(
 					tc.inChannels,
 					tc.outChannels,
@@ -239,11 +216,9 @@ func TestGetLayerTestResult(t *testing.T) {
 					tc.padding[0],
 				)
 
-				// 设置参数时需要确保形状匹配
 				l.SetWeightsAndShape(weights.Data, weights.Shape)
 				l.SetBiasAndShape(bias.Data, bias.Shape)
 
-				// 验证前向传播
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
 
@@ -258,7 +233,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// ReLU激活函数测试
 	t.Run("relu activation", func(t *testing.T) {
 		script := `torch.nn.ReLU()`
 		input := tensor.Random([]int{64, 64}, -100, 100)
@@ -267,13 +241,11 @@ func TestGetLayerTestResult(t *testing.T) {
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
 
-		// 验证所有负值变为0，正值保持不变
 		if !result.EqualFloat32(expected) {
 			t.Errorf("ReLU activation failed:\nExpected:\n%v\nGot:\n%v", expected, result)
 		}
 	})
 
-	// ReLU参数化测试
 	t.Run("relu activations", func(t *testing.T) {
 		testCases := []struct {
 			name       string
@@ -321,7 +293,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 批量归一化层测试
 	t.Run("batchnorm2d layer", func(t *testing.T) {
 		numFeatures := 64
 		eps := float32(1e-5)
@@ -331,7 +302,6 @@ func TestGetLayerTestResult(t *testing.T) {
 			`torch.nn.BatchNorm2d(num_features=%d, eps=%v, momentum=%v).to(dtype=torch.float32)`,
 			numFeatures, eps, momentum,
 		)
-		// 输入形状 [batch, channels, height, width]
 		input := tensor.Random([]int{1, 64, 32, 32}, -1, 1)
 		weight := tensor.Random([]int{64}, -1, 1)
 		bias := tensor.Random([]int{64}, -1, 1)
@@ -351,7 +321,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 批量归一化层测试
 	t.Run("batchnorm2d layer test", func(t *testing.T) {
 		testCases := []struct {
 			name        string
@@ -416,7 +385,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 转置卷积层测试
 	t.Run("convtranspose2d layer", func(t *testing.T) {
 		inChannels := 512
 		outChannels := 256
@@ -453,7 +421,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// 转置卷积层测试
 	t.Run("convtranspose2d layer test", func(t *testing.T) {
 		testCases := []struct {
 			name          string
@@ -540,7 +507,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// Flatten层测试
 	t.Run("flatten layer", func(t *testing.T) {
 		script := `torch.nn.Flatten(start_dim=0, end_dim=-1)`
 		input := tensor.Random([]int{1, 512, 4, 4}, -1, 1)
@@ -554,7 +520,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// Flatten层测试
 	t.Run("flatten layer test", func(t *testing.T) {
 		testCases := []struct {
 			name       string
@@ -589,7 +554,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// Tanh激活层测试
 	t.Run("tanh layer", func(t *testing.T) {
 		script := `torch.nn.Tanh()`
 		input := tensor.Random([]int{1, 3, 64, 64}, -1, 1)
@@ -598,7 +562,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
 
-		// 验证输出范围在[-1, 1]之间
 		for _, v := range result.Data {
 			if v < -1 || v > 1 {
 				t.Errorf("Tanh output out of range: %v", v)
@@ -609,7 +572,6 @@ func TestGetLayerTestResult(t *testing.T) {
 		}
 	})
 
-	// Tanh激活层测试
 	t.Run("tanh layer", func(t *testing.T) {
 		testCases := []struct {
 			name       string
@@ -642,7 +604,6 @@ func TestGetLayerTestResult(t *testing.T) {
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
 
-				// 验证数值范围和数值一致性
 				for i, v := range result.Data {
 					if v < -1 || v > 1 {
 						t.Errorf("%s: Output[%d] out of range: %.4f", tc.name, i, v)
@@ -661,14 +622,12 @@ func TestPointerSafety(t *testing.T) {
 	x := tensor.NewTensor([]float32{1, 2}, []int{1, 2})
 	layer := torch.NewLinearLayer(2, 3)
 
-	// 测试Clone深拷贝
 	cloned := x.Clone()
 	cloned.Data[0] = 9
 	if x.Data[0] == 9 {
 		t.Fatal("Clone is shallow")
 	}
 
-	// 测试权重独立
 	w := []float32{1, 2, 3, 4, 5, 6}
 	layer.SetWeights(w)
 	w[0] = 9
@@ -678,29 +637,24 @@ func TestPointerSafety(t *testing.T) {
 }
 
 func TestReLUPointerSafety(t *testing.T) {
-	// 测试输入独立性
 	t.Run("InputIndependence", func(t *testing.T) {
 		relu := torch.NewReLULayer()
 		input := tensor.NewTensor([]float32{1.0, -2.0, 3.0}, []int{3})
 		output := relu.Forward(input.Clone())
 
-		// 修改原始输入
 		input.Data[0] = -5.0
 
-		// 验证输出未改变
 		if output.Data[0] != 1.0 {
 			t.Error("ReLU output modified by input change")
 		}
 	})
 
-	// 测试原地操作模式
 	t.Run("InplaceOperation", func(t *testing.T) {
 		relu := torch.NewReLULayer()
 		relu.SetInplace(true)
 		input := tensor.NewTensor([]float32{1.0, -2.0, 3.0}, []int{3})
 		output := relu.Forward(input)
 		fmt.Sprint(output.Data[0])
-		// 验证输入是否被修改
 		if input.Data[1] != -2.0 {
 			t.Error("Inplace ReLU incorrectly modified input")
 		}
@@ -710,30 +664,23 @@ func TestReLUPointerSafety(t *testing.T) {
 func TestBatchNormPointerSafety(t *testing.T) {
 	bn := torch.NewBatchNormLayer(256, 1e-5, 0.1)
 
-	// 测试权重独立性
 	t.Run("WeightIndependence", func(t *testing.T) {
 		weights := make([]float32, 256)
 		copy(weights, bn.GetWeights().Data)
 
-		// 修改原始数组
 		weights[0] = 999.0
 
-		// 验证层内权重未改变
 		if bn.GetWeights().Data[0] == 999.0 {
 			t.Error("BatchNorm weights sharing detected")
 		}
 	})
 
-	// 测试运行统计量更新
 	t.Run("RunningStatsIsolation", func(t *testing.T) {
-		// 保存原始统计量
 		originalMean := bn.RunningMean.Clone()
 
-		// 执行前向传播更新统计量
 		x := tensor.Ones([]int{64, 256, 8, 8})
 		bn.Forward(x)
 
-		// 验证原始统计量未被修改
 		if reflect.DeepEqual(bn.RunningMean.Data, originalMean.Data) {
 			t.Error("Running mean not updated properly")
 		}
@@ -759,22 +706,18 @@ func TestConvLayerSafety(t *testing.T) {
 func TestEmbeddingPointerSafety(t *testing.T) {
 	emb := torch.NewEmbedding(10000, 512)
 
-	// 测试权重设置安全
 	t.Run("WeightSettingSafety", func(t *testing.T) {
 		weights := make([]float32, 10000*512)
 		copy(weights, emb.GetWeights().Data)
 		weights[0] = 999.0
 
-		// 设置新权重
 		emb.SetWeightsAndShape(weights, []int{10000, 512})
 
-		// 验证旧梯度是否重置
 		if emb.GradWeights.Data[0] != 0 {
 			t.Error("Embedding grad weights not reset")
 		}
 	})
 
-	// 测试索引转换安全
 	t.Run("IndexConversionSafety", func(t *testing.T) {
 		indices := tensor.NewTensor([]float32{1.5, 2.0}, []int{1, 2})
 		defer func() {
@@ -789,21 +732,17 @@ func TestEmbeddingPointerSafety(t *testing.T) {
 func TestMaxPool2DSafety(t *testing.T) {
 	pool := torch.NewMaxPool2DLayer(2, 2, 0)
 
-	// 测试输入独立性
 	t.Run("InputIsolation", func(t *testing.T) {
 		input := tensor.NewTensor([]float32{1, 2, 3, 4}, []int{1, 1, 2, 2})
 		output := pool.Forward(input.Clone())
 
-		// 修改原始输入
 		input.Data[0] = 999.0
 
-		// 验证输出未改变
 		if output.Data[0] != 4.0 {
 			t.Error("MaxPool output affected by input modification")
 		}
 	})
 
-	// 测试梯度传播正确性
 	t.Run("GradientPropagation", func(t *testing.T) {
 		input := tensor.Ones([]int{1, 3, 32, 32})
 		output := pool.Forward(input)
@@ -815,7 +754,6 @@ func TestMaxPool2DSafety(t *testing.T) {
 
 		gradInput := pool.Backward(gradOutput)
 
-		// 验证梯度形状
 		if !reflect.DeepEqual(gradInput.Shape, input.Shape) {
 			t.Error("MaxPool grad shape mismatch")
 		}

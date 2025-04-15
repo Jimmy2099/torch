@@ -11,7 +11,6 @@ import (
 	"testing"
 )
 
-// 辅助函数：比较浮点数切片是否近似相等
 func floatsEqual(a, b []float32, epsilon float32) bool {
 	if len(a) != len(b) {
 		return false
@@ -29,19 +28,16 @@ func TestNewEmbedding(t *testing.T) {
 	embDim := 3
 	emb := torch.NewEmbedding(vocabSize, embDim)
 
-	// 检查权重形状
 	if emb.Weights.Shape[0] != vocabSize || emb.Weights.Shape[1] != embDim {
 		t.Errorf("Expected weights shape [%d,%d], got %v", vocabSize, embDim, emb.Weights.Shape)
 	}
 
-	// 检查梯度形状
 	if emb.GradWeights.Shape[0] != vocabSize || emb.GradWeights.Shape[1] != embDim {
 		t.Errorf("Expected gradWeights shape [%d,%d], got %v", vocabSize, embDim, emb.GradWeights.Shape)
 	}
 }
 
 func TestEmbeddingForward(t *testing.T) {
-	// 测试用例表格
 	tests := []struct {
 		name          string
 		input         *tensor.Tensor
@@ -103,13 +99,11 @@ func TestEmbeddingForward(t *testing.T) {
 			output := emb.Forward(tt.input)
 
 			if !tt.shouldPanic {
-				// 验证输出形状
 				if !reflect.DeepEqual(output.Shape, tt.expectedShape) {
 					t.Errorf("Shape mismatch\nexpected: %v\ngot: %v",
 						tt.expectedShape, output.Shape)
 				}
 
-				// 验证输出数据
 				expectedTensor := tensor.NewTensor(tt.expected, tt.expectedShape)
 				if !floatsEqual(output.Data, expectedTensor.Data, 1e-6) {
 					t.Errorf("Output mismatch\nexpected: %v\ngot: %v",
@@ -139,10 +133,6 @@ func TestEmbeddingBackward(t *testing.T) {
 	t.Run("gradient_accumulation", func(t *testing.T) {
 		emb.Backward(gradOutput, 0.1)
 
-		// 预期梯度累加：
-		// 索引0: [0.1+0.5, 0.2+0.6] = [0.6, 0.8]
-		// 索引1: [0.3, 0.4]
-		// 索引2: [0.7, 0.8]
 		expectedGrad := []float32{0.6, 0.8, 0.3, 0.4, 0.7, 0.8}
 		if !floatsEqual(emb.GradWeights.Data, expectedGrad, 1e-6) {
 			t.Errorf("Gradient accumulation failed\nexpected: %v\ngot: %v", expectedGrad, emb.GradWeights.Data)
@@ -150,8 +140,6 @@ func TestEmbeddingBackward(t *testing.T) {
 	})
 
 	t.Run("weight_update", func(t *testing.T) {
-		// 初始权重: [1,2,3,4,5,6]
-		// 学习率0.1，梯度如上面测试
 		expectedWeights := []float32{
 			1 - 0.1*0.6, 2 - 0.1*0.8, // 索引0
 			3 - 0.1*0.3, 4 - 0.1*0.4, // 索引1
@@ -211,7 +199,6 @@ func TestEmbeddingParameters(t *testing.T) {
 }
 
 func TestEmbeddingForwardWithPyTorch(t *testing.T) {
-	// 参数化测试用例（修正结构体定义）
 	testCases := []struct {
 		name       string
 		vocabSize  int
@@ -240,7 +227,6 @@ func TestEmbeddingForwardWithPyTorch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// 生成PyTorch脚本模板
 			pyScript := fmt.Sprintf(
 				`
 torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
@@ -249,18 +235,14 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 				tc.embDim,
 			)
 
-			// 创建测试输入（带有效索引范围）
 			inputData := make([]float32, algorithm.Product(tc.inputShape))
 			for i := range inputData {
-				// 生成有效索引（0 ≤ index < vocabSize）
 				inputData[i] = float32(rand.Intn(tc.vocabSize))
 			}
 			inputTensor := tensor.NewTensor(inputData, tc.inputShape)
 
-			// 创建并配置Embedding层
 			emb := torch.NewEmbedding(tc.vocabSize, tc.embDim)
 
-			// 设置与PyTorch一致的随机权重
 			weightsData := make([]float32, tc.vocabSize*tc.embDim)
 			scale := math.Sqrt(2.0 / float32(tc.embDim))
 			for i := range weightsData {
@@ -268,7 +250,6 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			}
 			emb.SetWeightsAndShape(weightsData, []int{tc.vocabSize, tc.embDim})
 
-			// 处理空输入情况
 			if algorithm.Product(tc.inputShape) == 0 {
 				output := emb.Forward(inputTensor)
 				expectedShape := append(tc.inputShape, tc.embDim)
@@ -281,11 +262,9 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 				return
 			}
 
-			// 获取结果（添加包名前缀）
 			pyResult := GetLayerTestResult(pyScript, emb, inputTensor)
 			goResult := emb.Forward(inputTensor)
 
-			// 验证逻辑保持不变...
 			const epsilon = 1e-6
 			const relativeTol = 1e-4
 

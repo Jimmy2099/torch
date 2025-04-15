@@ -9,7 +9,6 @@ type Matrix struct {
 	Data       [][]float32
 }
 
-// NewMatrix creates a new matrix with given dimensions
 func NewMatrix(rows, cols int) *Matrix {
 	m := &Matrix{
 		Rows: rows,
@@ -22,7 +21,6 @@ func NewMatrix(rows, cols int) *Matrix {
 	return m
 }
 
-// NewRandomMatrix initializes a matrix with random values
 func NewRandomMatrix(rows, cols int) *Matrix {
 	m := NewMatrix(rows, cols)
 	for i := 0; i < rows; i++ {
@@ -33,7 +31,6 @@ func NewRandomMatrix(rows, cols int) *Matrix {
 	return m
 }
 
-// NewMatrixFromSlice creates a new matrix from a 2D slice
 func NewMatrixFromSlice(data [][]float32) *Matrix {
 	rows := len(data)
 	if rows == 0 {
@@ -61,7 +58,6 @@ func NewMatrixFromSlice1D(data []float32, rows, cols int) *Matrix {
 	m := NewMatrix(rows, cols)
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
-			// Calculate the correct index for the 1D slice
 			m.Data[i][j] = data[i*cols+j]
 		}
 	}
