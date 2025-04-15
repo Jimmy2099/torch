@@ -95,22 +95,22 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 	numRows := 1
 	numCols := 1
 
-	if len(t.Shape) == 0 { // Scalar Tensor (Shape: [])
+	if len(t.Shape) == 0 {
 		if len(t.Data) == 1 {
 			numRows = 1
 			numCols = 1
 		} else {
 			return fmt.Errorf("invalid tensor state: empty shape but %d data elements", len(t.Data))
 		}
-	} else if len(t.Shape) == 1 { // 1D Tensor (Vector)
+	} else if len(t.Shape) == 1 {
 		numRows = 1
 		numCols = t.Shape[0]
-		if numCols == 0 && len(t.Data) == 0 { // Shape [0], Data [] is valid empty
+		if numCols == 0 && len(t.Data) == 0 {
 		} else if len(t.Data) != numCols {
 			return fmt.Errorf("data length (%d) does not match shape[0] (%d)", len(t.Data), numCols)
 		}
-	} else { // N-D Tensor (N > 1)
-		numCols = t.Shape[len(t.Shape)-1] // Size of the last dimension
+	} else {
+		numCols = t.Shape[len(t.Shape)-1]
 		if numCols <= 0 {
 			return fmt.Errorf("invalid tensor shape: last dimension is non-positive (%d)", numCols)
 		}
@@ -121,23 +121,23 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 		if len(t.Data) != expectedSize {
 			return fmt.Errorf("data length (%d) does not match product of shape dimensions (%d)", len(t.Data), expectedSize)
 		}
-		numRows = len(t.Data) / numCols // All other dimensions flattened into rows
+		numRows = len(t.Data) / numCols
 	}
 
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", filename, err)
 	}
-	defer file.Close() // Ensure file is closed even if errors occur
+	defer file.Close()
 
 	writer := csv.NewWriter(file)
-	defer writer.Flush() // Flush called after the function returns, but before file.Close()
+	defer writer.Flush()
 
-	record := make([]string, numCols) // Pre-allocate slice for efficiency
+	record := make([]string, numCols)
 
 	for i := 0; i < numRows; i++ {
 		startIndex := i * numCols
-		endIndex := startIndex + numCols // Slice is exclusive at the end
+		endIndex := startIndex + numCols
 
 		if endIndex > len(t.Data) {
 			return fmt.Errorf("internal calculation error: trying to access data index %d, but length is %d", endIndex-1, len(t.Data))
@@ -159,7 +159,7 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 		return fmt.Errorf("error during csv writing/flushing for %s: %w", filename, err)
 	}
 
-	return nil // Success
+	return nil
 }
 
 func LoadFromCSV(filename string) (*Tensor, error) {

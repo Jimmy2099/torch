@@ -84,9 +84,9 @@ func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
 func NewCNN() *CNN {
 	rand.Seed(time.Now().UnixNano())
 	cnn := &CNN{
-		conv1: torch.NewConvLayer(1, 32, 3, 1, 1),  // in=1, out=32, kernel=3, stride=1, pad=1
-		conv2: torch.NewConvLayer(32, 64, 3, 1, 1), // in=32, out=64, kernel=3, stride=1, pad=1
-		fc1:   torch.NewLinearLayer(64*7*7, 128),   // 64*7*7=3136
+		conv1: torch.NewConvLayer(1, 32, 3, 1, 1),
+		conv2: torch.NewConvLayer(32, 64, 3, 1, 1),
+		fc1:   torch.NewLinearLayer(64*7*7, 128),
 		fc2:   torch.NewLinearLayer(128, 10),
 		relu:  torch.NewReLULayer(),
 		pool:  torch.NewMaxPool2DLayer(2, 2, 0),
@@ -180,7 +180,7 @@ func main() {
 		d, _ := os.Getwd()
 		runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
 	}
-	directory := "./py/mnist_images" // Adjust the path to where your image CSVs and labels.csv are stored
+	directory := "./py/mnist_images"
 
 	images, labels, err := LoadDataFromCSVDir(directory)
 	if err != nil {
@@ -233,7 +233,7 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 
 	rows := len(lines)
 	cols := len(lines[0])
-	if rows*cols != 784 { // Ensure it matches the MNIST image size
+	if rows*cols != 784 {
 		return nil, fmt.Errorf("expected 784 values in CSV, got %d", rows*cols)
 	}
 
@@ -381,7 +381,7 @@ if __name__ == "__main__":
 		return fmt.Errorf("unable to write Python script: %v", err)
 	}
 	scriptFile.Close()
-	defer os.Remove(tmpScriptFileName) // 执行完后删除文件
+	defer os.Remove(tmpScriptFileName)
 
 	dataFile, err := os.Create(tmpDataFileName)
 	if err != nil {

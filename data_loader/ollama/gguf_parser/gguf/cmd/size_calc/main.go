@@ -18,11 +18,11 @@ func printArray[T any](name string, val []T) {
 }
 
 func calculateTotalParams(tensors []gguf.TensorInfo) uint64 {
-	totalParams := uint64(0) // 使用 uint64 类型
+	totalParams := uint64(0)
 	for _, t := range tensors {
-		params := uint64(1) // 将 params 定义为 uint64 类型
+		params := uint64(1)
 		for _, dim := range t.Dimensions {
-			params *= dim // 乘法操作不再会报错
+			params *= dim
 		}
 		totalParams += params
 	}

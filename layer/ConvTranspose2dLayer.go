@@ -20,7 +20,7 @@ type ConvTranspose2dLayer struct {
 	OutputPaddingCol int
 	InChannels       int
 	OutChannels      int
-	inputCache       *tensor.Tensor // Cache for input tensor needed in backward pass
+	inputCache       *tensor.Tensor
 }
 
 func (ct *ConvTranspose2dLayer) GetWeights() *tensor.Tensor {
@@ -54,9 +54,9 @@ func NewConvTranspose2dLayer(inChannels, outChannels, kernelSizeRows, kernelSize
 		PaddingCol:       paddingCols,
 		OutputPaddingRow: outputPaddingRows,
 		OutputPaddingCol: outputPaddingCols,
-		InChannels:       inChannels, // Store inChannels
+		InChannels:       inChannels,
 		OutChannels:      outChannels,
-		inputCache:       nil, // Initialize cache to nil
+		inputCache:       nil,
 	}
 }
 

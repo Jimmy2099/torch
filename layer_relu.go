@@ -5,9 +5,9 @@ import (
 )
 
 type ReLULayer struct {
-	input    *tensor.Tensor // 保存输入用于反向传播
-	negative float32        // 负半轴斜率（支持LeakyReLU）
-	inplace  bool           // 是否原地操作
+	input    *tensor.Tensor
+	negative float32
+	inplace  bool
 }
 
 func (r *ReLULayer) GetWeights() *tensor.Tensor {

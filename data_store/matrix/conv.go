@@ -27,7 +27,7 @@ func im2col_get_pixel(im []float32, height, width, channels int,
 
 func (m *Matrix) im2col(kernelSize, stride, pad int) *Matrix {
 	channels := m.Rows
-	height := int(math.Sqrt(float32(m.Cols))) // 假设是方阵
+	height := int(math.Sqrt(float32(m.Cols)))
 	width := height
 
 	height_col := (height+2*pad-kernelSize)/stride + 1
@@ -77,7 +77,7 @@ func (m *Matrix) Pad2D(pad int) *Matrix {
 	}
 
 	channels := m.Rows
-	size := int(math.Sqrt(float32(m.Cols))) // 原始尺寸
+	size := int(math.Sqrt(float32(m.Cols)))
 	newSize := size + 2*pad
 
 	padded := NewMatrix(channels, newSize*newSize)
@@ -172,7 +172,7 @@ func (m *Matrix) FlattenByDim(startDim, endDim int) *Matrix {
 	}
 
 	if endDim == -1 {
-		endDim = m.Dimensions() - 1 // -1 代表最后一个维度
+		endDim = m.Dimensions() - 1
 	}
 
 	rows := 1
@@ -239,7 +239,7 @@ func (m *Matrix) GetCol(colIdx int) *Matrix {
 }
 
 func (m *Matrix) SumByDim(dim int) *Matrix {
-	if dim == 0 { // 沿列求和，返回行向量
+	if dim == 0 {
 		result := NewMatrix(1, m.Cols)
 		for j := 0; j < m.Cols; j++ {
 			var sum float32
@@ -249,7 +249,7 @@ func (m *Matrix) SumByDim(dim int) *Matrix {
 			result.Data[0][j] = sum
 		}
 		return result
-	} else if dim == 1 { // 沿行求和，返回列向量
+	} else if dim == 1 {
 		result := NewMatrix(m.Rows, 1)
 		for i := 0; i < m.Rows; i++ {
 			var sum float32

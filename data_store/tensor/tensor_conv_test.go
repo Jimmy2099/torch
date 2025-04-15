@@ -89,7 +89,7 @@ func TestDimensions(t *testing.T) {
 		shape    []int
 		expected int
 	}{
-		{"Scalar (conceptually)", []int{1}, 1}, // Representing scalar as 1D tensor of size 1
+		{"Scalar (conceptually)", []int{1}, 1},
 		{"1D Vector", []int{5}, 1},
 		{"2D Matrix", []int{2, 3}, 2},
 		{"3D Tensor", []int{4, 2, 3}, 3},
@@ -139,7 +139,7 @@ func TestClone(t *testing.T) {
 	if clone.Data[0] == 99 {
 		t.Errorf("Clone data was modified when original data changed. Expected %f, got %f", 1.0, clone.Data[0])
 	}
-	original.Data[0] = 1 // Restore
+	original.Data[0] = 1
 
 	clone.Data[1] = 88
 	if tensorsAreEqual(original, clone, float32EqualityThreshold) {
@@ -234,7 +234,7 @@ func TestStackTensors(t *testing.T) {
 		t.Errorf("StackTensors(dim=0) failed. Expected %v, got %v", expected0, result0)
 	}
 
-	expected1_impl := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, []int{2, 3, 2}) // Based on implementation copying sequentially
+	expected1_impl := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, []int{2, 3, 2})
 	result1, err1 := StackTensors(tensors, 1)
 	if err1 != nil {
 		t.Fatalf("StackTensors(dim=1) returned error: %v", err1)
@@ -270,7 +270,7 @@ func TestIm2Col(t *testing.T) {
 		4, 5, 7, 8,
 		5, 6, 8, 9,
 	}
-	expectedShape3D := []int{4, 4} // [C*k*k, H_out*W_out] = [1*2*2, 2*2]
+	expectedShape3D := []int{4, 4}
 
 	result3D, err3D := input3D.im2col(kernelSize, stride)
 	if err3D != nil {
@@ -298,21 +298,21 @@ func TestIm2Col(t *testing.T) {
 }
 
 func TestPad2D(t *testing.T) {
-	input3D := NewTensor([]float32{1, 2, 3, 4}, []int{1, 2, 2}) // C, H, W
+	input3D := NewTensor([]float32{1, 2, 3, 4}, []int{1, 2, 2})
 	pad := 1
 	expected3D := NewTensor([]float32{
 		0, 0, 0, 0,
 		0, 1, 2, 0,
 		0, 3, 4, 0,
 		0, 0, 0, 0,
-	}, []int{1, 4, 4}) // C, H+2p, W+2p
+	}, []int{1, 4, 4})
 
 	result3D := input3D.Pad2D(pad)
 	if !tensorsAreEqual(expected3D, result3D, float32EqualityThreshold) {
 		t.Errorf("Pad2D (3D) failed. Expected %v, got %v", expected3D, result3D)
 	}
 
-	input4D := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 1, 2, 2}) // B, C, H, W
+	input4D := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 1, 2, 2})
 	expected4D := NewTensor([]float32{
 		0, 0, 0, 0,
 		0, 1, 2, 0,
@@ -322,7 +322,7 @@ func TestPad2D(t *testing.T) {
 		0, 5, 6, 0,
 		0, 7, 8, 0,
 		0, 0, 0, 0,
-	}, []int{2, 1, 4, 4}) // B, C, H+2p, W+2p
+	}, []int{2, 1, 4, 4})
 
 	result4D := input4D.Pad2D(pad)
 	if !tensorsAreEqual(expected4D, result4D, float32EqualityThreshold) {
@@ -395,7 +395,7 @@ func TestPadAndCrop(t *testing.T) {
 	}
 
 	crop0 := input.Crop(0)
-	if crop0 != input { // Should return the same tensor instance
+	if crop0 != input {
 		t.Errorf("Crop(0) should return the original tensor instance")
 	}
 }
@@ -406,14 +406,14 @@ func TestFlattenByDim(t *testing.T) {
 			t.Errorf("FlattenByDim fail unexpectedly.")
 		}
 	}()
-	input := NewTensor(make([]float32, 24), []int{2, 3, 4}) // B=2, C=3, W=4
+	input := NewTensor(make([]float32, 24), []int{2, 3, 4})
 
 	originalData := make([]float32, len(input.Data))
 	copy(originalData, input.Data)
 
 	tensorToFlatten1 := input.Clone()
 	expectedShape1 := []int{2, 12}
-	tensorToFlatten1.FlattenByDim(1, 2) // Or FlattenByDim(1, -1)
+	tensorToFlatten1.FlattenByDim(1, 2)
 	if !reflect.DeepEqual(tensorToFlatten1.Shape, expectedShape1) {
 		t.Errorf("FlattenByDim(1, -1) failed. Expected shape %v, got %v", expectedShape1, tensorToFlatten1.Shape)
 	}
@@ -432,7 +432,7 @@ func TestFlattenByDim(t *testing.T) {
 	}
 
 	tensorToFlatten3 := input.Clone()
-	expectedShape3 := []int{24, 1} // Check if implementation results in [N, 1] or [1, N]
+	expectedShape3 := []int{24, 1}
 	tensorToFlatten3.FlattenByDim(0, -1)
 	if !reflect.DeepEqual(tensorToFlatten3.Shape, expectedShape3) {
 		t.Errorf("FlattenByDim(0, -1) failed. Expected shape %v, got %v", expectedShape3, tensorToFlatten3.Shape)
@@ -483,7 +483,7 @@ func TestSetCol(t *testing.T) {
 		1, 2, 3,
 		4, 5, 6,
 	}, []int{2, 3})
-	colData := NewTensor([]float32{9, 8}, []int{2, 1}) // Correct shape
+	colData := NewTensor([]float32{9, 8}, []int{2, 1})
 
 	expected := NewTensor([]float32{
 		1, 9, 3,
@@ -496,11 +496,11 @@ func TestSetCol(t *testing.T) {
 	}
 
 	badDataShape1 := NewTensor([]float32{9, 8, 7}, []int{3, 1})
-	colData1D := NewTensor([]float32{9, 8}, []int{2}) // Incorrect shape (needs to be 2D column)
+	colData1D := NewTensor([]float32{9, 8}, []int{2})
 
 	targetReset := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 	checkPanic(t, func() { targetReset.SetCol(1, badDataShape1) }, "Invalid column data dimensions")
-	checkPanic(t, func() { targetReset.SetCol(1, colData1D) }, "Invalid column data dimensions") // Fails because data.Shape[1] != 1
+	checkPanic(t, func() { targetReset.SetCol(1, colData1D) }, "Invalid column data dimensions")
 
 	input3D := NewTensor(make([]float32, 8), []int{2, 2, 2})
 	checkPanic(t, func() { input3D.SetCol(0, colData) }, "only works for 2D")
@@ -512,7 +512,7 @@ func TestGetCol(t *testing.T) {
 		4, 5, 6,
 	}, []int{2, 3})
 
-	expectedCol1 := NewTensor([]float32{2, 5}, []int{2}) // Implementation returns 1D
+	expectedCol1 := NewTensor([]float32{2, 5}, []int{2})
 	resultCol1 := input.GetCol(1)
 	if !tensorsAreEqual(expectedCol1, resultCol1, float32EqualityThreshold) {
 		t.Errorf("GetCol(1) failed. Expected %v, got %v", expectedCol1, resultCol1)
@@ -557,8 +557,8 @@ func TestMatMul(t *testing.T) {
 	t1 := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	t2 := NewTensor([]float32{5, 6, 7, 8}, []int{2, 2})
 	expected := NewTensor([]float32{
-		1*5 + 2*7, 1*6 + 2*8, // 5+14=19, 6+16=22
-		3*5 + 4*7, 3*6 + 4*8, // 15+28=43, 18+32=50
+		1*5 + 2*7, 1*6 + 2*8,
+		3*5 + 4*7, 3*6 + 4*8,
 	}, []int{2, 2})
 
 	result := t1.MatMul(t2)
@@ -569,8 +569,8 @@ func TestMatMul(t *testing.T) {
 	t3 := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 	t4 := NewTensor([]float32{7, 8, 9, 10, 11, 12}, []int{3, 2})
 	expected2 := NewTensor([]float32{
-		1*7 + 2*9 + 3*11, 1*8 + 2*10 + 3*12, // 7+18+33=58, 8+20+36=64
-		4*7 + 5*9 + 6*11, 4*8 + 5*10 + 6*12, // 28+45+66=139, 32+50+72=154
+		1*7 + 2*9 + 3*11, 1*8 + 2*10 + 3*12,
+		4*7 + 5*9 + 6*11, 4*8 + 5*10 + 6*12,
 	}, []int{2, 2})
 	result2 := t3.MatMul(t4)
 	if !tensorsAreEqual(expected2, result2, float32EqualityThreshold) {
@@ -619,9 +619,9 @@ func TestExpand(t *testing.T) {
 	}
 
 	checkPanic(t, func() { row.Expand([]int{4, 3, 1}) }, "dimensions must match")
-	checkPanic(t, func() { row.Expand([]int{4, 4}) }, "cannot expand dimension") // Dim 1 size mismatch
+	checkPanic(t, func() { row.Expand([]int{4, 4}) }, "cannot expand dimension")
 	nonUnit := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	checkPanic(t, func() { nonUnit.Expand([]int{2, 3}) }, "cannot expand dimension") // Dim 1 size mismatch and not 1
+	checkPanic(t, func() { nonUnit.Expand([]int{2, 3}) }, "cannot expand dimension")
 }
 
 func TestGetRow(t *testing.T) {
@@ -652,11 +652,11 @@ func TestGetRow(t *testing.T) {
 func TestSigmoid(t *testing.T) {
 	input := NewTensor([]float32{-1, 0, 1, 100, -100}, []int{5})
 	expectedData := []float32{
-		1.0 / (1.0 + math.Exp(1.0)),  // sigmoid(-1)
-		0.5,                          // sigmoid(0)
-		1.0 / (1.0 + math.Exp(-1.0)), // sigmoid(1)
-		1.0,                          // sigmoid(100) -> approx 1
-		0.0,                          // sigmoid(-100) -> approx 0
+		1.0 / (1.0 + math.Exp(1.0)),
+		0.5,
+		1.0 / (1.0 + math.Exp(-1.0)),
+		1.0,
+		0.0,
 	}
 	expected := NewTensor(expectedData, []int{5})
 
@@ -700,7 +700,7 @@ func TestConv2D_Simple(t *testing.T) {
 		t.Errorf("Conv2D (simple) failed.\nExpected: %v\nGot:      %v", expected, result)
 	}
 
-	input3D := NewTensor(input.Data, []int{1, 3, 3}) // C, H, W
+	input3D := NewTensor(input.Data, []int{1, 3, 3})
 	result3D, err3D := input3D.Conv2D(weights, kernelSize, stride, pad)
 	if err3D != nil {
 		t.Fatalf("Conv2D (3D input) failed with error: %v", err3D)
@@ -710,8 +710,8 @@ func TestConv2D_Simple(t *testing.T) {
 	}
 
 	pad = 1
-	inputPad := NewTensor([]float32{5}, []int{1, 1, 1, 1})   // 1x1x1x1 input
-	weightsPad := NewTensor([]float32{1}, []int{1, 1, 1, 1}) // 1x1x1x1 kernel
+	inputPad := NewTensor([]float32{5}, []int{1, 1, 1, 1})
+	weightsPad := NewTensor([]float32{1}, []int{1, 1, 1, 1})
 	expectedPad := NewTensor([]float32{0, 0, 0, 0, 5, 0, 0, 0, 0}, []int{1, 1, 3, 3})
 	resultPad, errPad := inputPad.Conv2D(weightsPad, 1, 1, pad)
 	if errPad != nil {
@@ -721,7 +721,7 @@ func TestConv2D_Simple(t *testing.T) {
 		t.Errorf("Conv2D (padding) failed.\nExpected: %v\nGot:      %v", expectedPad, resultPad)
 	}
 
-	badWeights := NewTensor(make([]float32, 8), []int{1, 2, 2, 2}) // Mismatched input channels
+	badWeights := NewTensor(make([]float32, 8), []int{1, 2, 2, 2})
 	_, errMismatch := input.Conv2D(badWeights, kernelSize, stride, pad)
 	if errMismatch == nil || !contains(errMismatch.Error(), "weights shape mismatch") {
 		t.Errorf("Conv2D did not return expected error for mismatched channels")

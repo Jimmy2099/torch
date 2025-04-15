@@ -179,7 +179,7 @@ func PolynomialFeatures(X *Matrix, degree int) *Matrix {
 
 	result := NewMatrix(newFeaturesCount, X.Cols)
 
-	for s := 0; s < X.Cols; s++ { // 遍历每个样本
+	for s := 0; s < X.Cols; s++ {
 		result.Data[0][s] = 1.0
 
 		idx := 1

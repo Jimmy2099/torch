@@ -17,7 +17,7 @@ func loadDataset() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.Remove(file.Name()) // 程序结束时删除临时文件
+	defer os.Remove(file.Name())
 
 	_, err = file.WriteString(pythonScript)
 	if err != nil {

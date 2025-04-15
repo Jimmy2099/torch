@@ -3,7 +3,7 @@ package torch
 import "github.com/Jimmy2099/torch/data_store/tensor"
 
 type FlattenLayer struct {
-	inputShape []int // 保存输入形状以便反向传播时恢复
+	inputShape []int
 }
 
 func (r *FlattenLayer) GetWeights() *tensor.Tensor {

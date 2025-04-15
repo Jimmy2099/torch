@@ -8,8 +8,8 @@ import (
 )
 
 type MNISTData struct {
-	Images *matrix.Matrix // 归一化后的像素值 (60000, 784)
-	Labels *matrix.Matrix // One-hot 编码的标签 (60000, 10)
+	Images *matrix.Matrix
+	Labels *matrix.Matrix
 }
 
 func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {

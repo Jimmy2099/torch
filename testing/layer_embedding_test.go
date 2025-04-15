@@ -54,14 +54,14 @@ func TestEmbeddingForward(t *testing.T) {
 		},
 		{
 			name:          "empty_batch",
-			input:         tensor.NewTensor([]float32{}, []int{0, 2}), // 空batch
+			input:         tensor.NewTensor([]float32{}, []int{0, 2}),
 			shouldPanic:   false,
 			expected:      []float32{},
 			expectedShape: []int{0, 2, 2},
 		},
 		{
 			name:          "max_index",
-			input:         tensor.NewTensor([]float32{2}, []int{1, 1}), // 最大合法索引
+			input:         tensor.NewTensor([]float32{2}, []int{1, 1}),
 			shouldPanic:   false,
 			expected:      []float32{5, 6},
 			expectedShape: []int{1, 1, 2},
@@ -120,14 +120,14 @@ func TestEmbeddingBackward(t *testing.T) {
 		EmbDim:      2,
 		Weights:     tensor.NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
 		GradWeights: tensor.NewTensor(make([]float32, 6), []int{3, 2}),
-		LastIndices: []int{0, 1, 0, 2}, // 对应batch_size=2, seq_len=2
+		LastIndices: []int{0, 1, 0, 2},
 	}
 
 	gradOutput := tensor.NewTensor([]float32{
-		0.1, 0.2, // 第一个元素梯度
-		0.3, 0.4, // 第二个元素梯度
-		0.5, 0.6, // 第三个元素梯度
-		0.7, 0.8, // 第四个元素梯度
+		0.1, 0.2,
+		0.3, 0.4,
+		0.5, 0.6,
+		0.7, 0.8,
 	}, []int{2, 2, 2})
 
 	t.Run("gradient_accumulation", func(t *testing.T) {
@@ -141,9 +141,9 @@ func TestEmbeddingBackward(t *testing.T) {
 
 	t.Run("weight_update", func(t *testing.T) {
 		expectedWeights := []float32{
-			1 - 0.1*0.6, 2 - 0.1*0.8, // 索引0
-			3 - 0.1*0.3, 4 - 0.1*0.4, // 索引1
-			5 - 0.1*0.7, 6 - 0.1*0.8, // 索引2
+			1 - 0.1*0.6, 2 - 0.1*0.8,
+			3 - 0.1*0.3, 4 - 0.1*0.4,
+			5 - 0.1*0.7, 6 - 0.1*0.8,
 		}
 
 		if !floatsEqual(emb.Weights.Data, expectedWeights, 1e-6) {

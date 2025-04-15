@@ -100,7 +100,7 @@ func main() {
 	for i := range X_data {
 		X_data[i] = float32(rand.Float32())
 	}
-	X_train := tensor.NewTensor(X_data, []int{10, 2}) // [样本数, 特征数]
+	X_train := tensor.NewTensor(X_data, []int{10, 2})
 
 	y_data := make([]float32, 10)
 	for j := 0; j < 10; j++ {
@@ -112,15 +112,15 @@ func main() {
 
 	degree := 3
 	X_train_poly := polynomialFeatures(X_train, degree)
-	fmt.Printf("训练数据形状: %v\n", X_train_poly.Shape) // 应输出 [10 6]
+	fmt.Printf("训练数据形状: %v\n", X_train_poly.Shape)
 
 	model := NewNeuralNetwork([]int{6, 10, 1})
 
 	fmt.Println("\n=== 形状验证 ===")
-	fmt.Printf("输入形状: %v\n", X_train_poly.Shape) // [10 6]
-	fmt.Printf("目标形状: %v\n", y_train.Shape)      // [10 1]
+	fmt.Printf("输入形状: %v\n", X_train_poly.Shape)
+	fmt.Printf("目标形状: %v\n", y_train.Shape)
 	sampleOutput := model.Forward(X_train_poly)
-	fmt.Printf("模型输出形状: %v\n", sampleOutput.Shape) // 应输出 [10 1]
+	fmt.Printf("模型输出形状: %v\n", sampleOutput.Shape)
 
 	trainer := torch.NewBasicTrainer(torch.MSE)
 	epochs := 500
@@ -129,9 +129,9 @@ func main() {
 	trainer.Train(model, X_train_poly, y_train, epochs, float32(learningRate))
 
 	test_data := []float32{0.2, 0.3}
-	test_sample := tensor.NewTensor(test_data, []int{1, 2}) // [1样本, 2特征]
-	test_poly := polynomialFeatures(test_sample, degree)    // [1, 6]
-	prediction := model.Forward(test_poly)                  // [1, 1]
+	test_sample := tensor.NewTensor(test_data, []int{1, 2})
+	test_poly := polynomialFeatures(test_sample, degree)
+	prediction := model.Forward(test_poly)
 
 	fmt.Printf("\n预测值: %.4f\n", prediction.Data[0])
 	fmt.Printf("真实值: %.4f\n", targetFunc(test_data[0], test_data[1]))

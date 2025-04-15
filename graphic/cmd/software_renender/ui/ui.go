@@ -55,13 +55,13 @@ func (g *G) Update() error {
 		ebimgui.EndFrame()
 	}()
 
-	imgui.Text("ภาษาไทย测试조선말")                        // To display these, you'll need to register a compatible font
-	imgui.Text("Hello, world!")                       // Display some text
-	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0) // Edit 1 float using a slider from 0.0f to 1.0f
-	imgui.ColorEdit3("clear color", &g.clearColor)    // Edit 3 floats representing a color
+	imgui.Text("ภาษาไทย测试조선말")
+	imgui.Text("Hello, world!")
+	imgui.SliderFloat("float", &g.floatVal, 0.0, 1.0)
+	imgui.ColorEdit3("clear color", &g.clearColor)
 
 
-	if imgui.Button("Button") { // Buttons return true when clicked (most widgets return true when edited/activated)
+	if imgui.Button("Button") {
 		g.counter++
 	}
 	imgui.SameLine()
@@ -85,7 +85,7 @@ func (g *G) Update() error {
 		imgui.Begin("Engine")
 		imgui.Text("Engine")
 		if g.FrameBuff != nil {
-			mgr.Cache.SetTexture(imgui.TextureID(&myImageIDRef), g.FrameBuff) // Texture ID 10 will contain this example image
+			mgr.Cache.SetTexture(imgui.TextureID(&myImageIDRef), g.FrameBuff)
 			Image(imgui.TextureID(&myImageIDRef), imgui.Vec2{X: 600, Y: 480})
 		}
 		imgui.End()

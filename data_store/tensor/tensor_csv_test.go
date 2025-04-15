@@ -14,9 +14,9 @@ func newTestTensor(t *testing.T, shape []int, data []float32) *Tensor {
 
 	expectedSize := 1
 	if len(shape) == 0 {
-		if len(data) != 1 && len(data) != 0 { // Allow [] shape with 0 or 1 element for testing
+		if len(data) != 1 && len(data) != 0 {
 		} else {
-			expectedSize = len(data) // 0 or 1
+			expectedSize = len(data)
 		}
 	} else {
 		for _, dim := range shape {
@@ -36,7 +36,7 @@ func newTestTensor(t *testing.T, shape []int, data []float32) *Tensor {
 }
 
 func readCSVFile(t *testing.T, filename string) [][]string {
-	t.Helper() // Marks this as a test helper
+	t.Helper()
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -45,7 +45,7 @@ func readCSVFile(t *testing.T, filename string) [][]string {
 		}
 		info, statErr := os.Stat(filename)
 		if statErr == nil && info.Size() == 0 {
-			return [][]string{} // Return empty slice for empty file
+			return [][]string{}
 		}
 		t.Fatalf("Failed to open CSV file '%s' for reading: %v", filename, err)
 	}
@@ -66,7 +66,7 @@ func compareCSVData(t *testing.T, expected, actual [][]string) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, actual) {
 		var expectedBuf bytes.Buffer
-		csv.NewWriter(&expectedBuf).WriteAll(expected) // Error checking omitted for simplicity in test helper output
+		csv.NewWriter(&expectedBuf).WriteAll(expected)
 
 		var actualBuf bytes.Buffer
 		csv.NewWriter(&actualBuf).WriteAll(actual)
@@ -81,7 +81,7 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 		name        string
 		tensorShape []int
 		tensorData  []float32
-		expectedCSV [][]string // Expected content as slice of slices of strings
+		expectedCSV [][]string
 	}{
 		{
 			name:        "Scalar Tensor",
@@ -106,23 +106,23 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 			tensorShape: []int{2, 2, 2},
 			tensorData:  []float32{1, 2, 3, 4, 5, 6, 7, 8},
 			expectedCSV: [][]string{
-				{"1", "2"}, // First inner vector of first matrix
-				{"3", "4"}, // Second inner vector of first matrix
-				{"5", "6"}, // First inner vector of second matrix
-				{"7", "8"}, // Second inner vector of second matrix
+				{"1", "2"},
+				{"3", "4"},
+				{"5", "6"},
+				{"7", "8"},
 			},
 		},
 		{
 			name:        "Empty Tensor (Shape [0])",
 			tensorShape: []int{0},
 			tensorData:  []float32{},
-			expectedCSV: [][]string{}, // Expect an empty file (no records)
+			expectedCSV: [][]string{},
 		},
 		{
 			name:        "Empty Tensor (Shape [3, 0])",
 			tensorShape: []int{3, 0},
 			tensorData:  []float32{},
-			expectedCSV: [][]string{}, // Expect an empty file (no records)
+			expectedCSV: [][]string{},
 		},
 		{
 			name:        "Tensor with Zeros",
@@ -135,7 +135,7 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tensor := newTestTensor(t, tc.tensorShape, tc.tensorData)
-			tempDir := t.TempDir() // Create a temporary directory cleaned up automatically
+			tempDir := t.TempDir()
 			filename := filepath.Join(tempDir, "output.csv")
 
 			err := tensor.SaveToCSV(filename)
@@ -169,7 +169,7 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		name        string
 		tensor      *Tensor
 		filename    string
-		expectedErr string // Substring of the expected error message
+		expectedErr string
 	}{
 		{
 			name:        "Nil Tensor",
@@ -179,19 +179,19 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		},
 		{
 			name:        "Tensor with Nil Data",
-			tensor:      &Tensor{Shape: []int{2}, Data: nil}, // Manually create invalid state
+			tensor:      &Tensor{Shape: []int{2}, Data: nil},
 			filename:    validFilename,
 			expectedErr: "tensor with nil data",
 		},
 		{
 			name:        "Scalar shape with incorrect data length",
-			tensor:      &Tensor{Shape: []int{}, Data: []float32{1, 2}}, // Manually create invalid state
+			tensor:      &Tensor{Shape: []int{}, Data: []float32{1, 2}},
 			filename:    validFilename,
-			expectedErr: "invalid tensor state: empty shape but 2 data elements", // Matches error in SaveToCSV
+			expectedErr: "invalid tensor state: empty shape but 2 data elements",
 		},
 		{
 			name:        "1D Shape/Data Mismatch (Data too short)",
-			tensor:      newTestTensor(t, []int{5}, []float32{1, 2, 3}), // Use helper, mismatch allowed for test
+			tensor:      newTestTensor(t, []int{5}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match shape[0] (5)",
 		},
@@ -203,21 +203,21 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		},
 		{
 			name:        "ND Shape/Data Mismatch",
-			tensor:      newTestTensor(t, []int{2, 2}, []float32{1, 2, 3}), // Expected 4 elements
+			tensor:      newTestTensor(t, []int{2, 2}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match product of shape dimensions (4)",
 		},
 		{
 			name: "ND Invalid Shape (Last dim zero with data)",
-			tensor:      &Tensor{Shape: []int{2, 0}, Data: []float32{1.0}}, // Manually create inconsistent state
+			tensor:      &Tensor{Shape: []int{2, 0}, Data: []float32{1.0}},
 			filename:    validFilename,
-			expectedErr: "data length (1) does not match product of shape dimensions (0)", // Caught by general size validation
+			expectedErr: "data length (1) does not match product of shape dimensions (0)",
 		},
 		{
 			name:   "Invalid Filename (causes create error)",
 			tensor: newTestTensor(t, []int{1}, []float32{1}),
-			filename:    tempDir,                 // Try to write to the directory itself
-			expectedErr: "failed to create file", // Error message might vary slightly by OS ("is a directory", "permission denied" etc.)
+			filename:    tempDir,
+			expectedErr: "failed to create file",
 		},
 	}
 
@@ -236,7 +236,7 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 			if tc.name != "Invalid Filename (causes create error)" {
 				if _, statErr := os.Stat(tc.filename); statErr == nil {
 					t.Errorf("CSV file '%s' was created unexpectedly during an error condition.", tc.filename)
-					os.Remove(tc.filename) // Clean up artifact
+					os.Remove(tc.filename)
 				} else if !os.IsNotExist(statErr) {
 					t.Logf("Warning: os.Stat failed for '%s' during error check: %v", tc.filename, statErr)
 				}

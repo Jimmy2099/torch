@@ -25,7 +25,7 @@ func loadImages(filename string) ([][]float32, error) {
 		for j := 0; j < imageSize; j++ {
 			var pixel uint8
 			binary.Read(file, binary.BigEndian, &pixel)
-			data[i][j] = float32(pixel) / 255.0 // 归一化
+			data[i][j] = float32(pixel) / 255.0
 		}
 	}
 	return data, nil
@@ -47,7 +47,7 @@ func loadLabels(filename string) ([][]float32, error) {
 		var label uint8
 		binary.Read(file, binary.BigEndian, &label)
 		oneHot := make([]float32, 10)
-		oneHot[label] = 1.0 // 转换为 One-hot 编码
+		oneHot[label] = 1.0
 		data[i] = oneHot
 	}
 	return data, nil

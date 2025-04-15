@@ -273,14 +273,14 @@ func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
 		var newShape []int
 
 		switch dim {
-		case 0: // Repeat along batch dimension
+		case 0:
 			newData = make([]float32, batch*repeats*channels*height*width)
 			newShape = []int{batch * repeats, channels, height, width}
 			for r := 0; r < repeats; r++ {
 				copy(newData[r*batch*channels*height*width:(r+1)*batch*channels*height*width],
 					t.Data)
 			}
-		case 1: // Repeat along channel dimension
+		case 1:
 			newData = make([]float32, batch*channels*repeats*height*width)
 			newShape = []int{batch, channels * repeats, height, width}
 			for b := 0; b < batch; b++ {
@@ -289,7 +289,7 @@ func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
 						t.Data[b*channels*height*width:(b+1)*channels*height*width])
 				}
 			}
-		case 2, 3: // Repeat along spatial dimensions (not commonly needed)
+		case 2, 3:
 			panic("Repeating along spatial dimensions is not yet implemented")
 		default:
 			panic("Invalid dimension for 4D tensor")
@@ -333,7 +333,7 @@ func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) (*Tensor
 		h := (i / origWidth) * stride
 		w := (i % origWidth) * stride
 
-		patchData := t.GetCol(i) // Assumes GetCol returns 1D tensor
+		patchData := t.GetCol(i)
 
 		for dh := 0; dh < kernelSize; dh++ {
 			for dw := 0; dw < kernelSize; dw++ {
@@ -341,7 +341,7 @@ func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) (*Tensor
 				if index < len(patchData.Data) {
 					output.Data[h+dh+(w+dw)*origHeight] += patchData.Data[index]
 				} else {
-					fmt.Printf("index out of bounds %d \n", index) //debug statement - needs deletion
+					fmt.Printf("index out of bounds %d \n", index)
 				}
 
 			}
@@ -400,7 +400,7 @@ func (t *Tensor) FlattenByDim(startDim, endDim int) *Tensor {
 	}
 
 	if endDim == -1 {
-		endDim = len(t.Shape) - 1 // -1 means the last dimension
+		endDim = len(t.Shape) - 1
 	}
 
 	rows := 1
@@ -476,7 +476,7 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 		panic("SumByDim works for 2D tensors")
 	}
 
-	if dim == 0 { // Sum along rows, returns a column vector
+	if dim == 0 {
 		resultData := make([]float32, t.Shape[1])
 
 		for j := 0; j < t.Shape[1]; j++ {
@@ -488,7 +488,7 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 		}
 
 		return NewTensor(resultData, []int{t.Shape[1]})
-	} else if dim == 1 { // Sum along columns, returns a row vector
+	} else if dim == 1 {
 		resultData := make([]float32, t.Shape[0])
 
 		for i := 0; i < t.Shape[0]; i++ {
@@ -640,7 +640,7 @@ func (t *Tensor) Conv2D1(weights *Tensor, kernelSize, stride, pad int) (*Tensor,
 	for b := 0; b < batchSize; b++ {
 		var sample *Tensor
 		if len(t.Shape) == 4 {
-			sample = t.GetSample(b) // Need to implement GetSample method
+			sample = t.GetSample(b)
 		} else {
 			sample = t
 		}
@@ -664,7 +664,7 @@ func (t *Tensor) Conv2D1(weights *Tensor, kernelSize, stride, pad int) (*Tensor,
 		return results[0], nil
 	}
 
-	return StackTensors(results, 0) // Need to implement StackTensors function
+	return StackTensors(results, 0)
 }
 
 func (t *Tensor) GetRow(row int) *Tensor {

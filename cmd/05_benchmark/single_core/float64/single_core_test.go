@@ -14,8 +14,8 @@ type DataType float64
 var DataTypeString = "float64"
 
 const (
-	iterations = 1_000_000_000 // 1 billion operations
-	warmup     = 100_000_000   // Warm-up iterations
+	iterations = 1_000_000_000
+	warmup     = 100_000_000
 )
 
 type TestCase struct {
@@ -23,10 +23,10 @@ type TestCase struct {
 	testFuncs map[string]func() DataType
 }
 
-var globalSink DataType // Prevent compiler optimizations
+var globalSink DataType
 
 func Test_Single_Core_Float64(t *testing.T) {
-	runtime.GOMAXPROCS(1) // Limit to a single core to reduce interference
+	runtime.GOMAXPROCS(1)
 
 	testCases := []TestCase{
 		{

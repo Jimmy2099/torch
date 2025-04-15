@@ -61,7 +61,7 @@ func LoadFlatDataFromCSV(filePath string) ([]float32, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, err // Return the specific error type
+			return nil, err
 		}
 		return nil, fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
@@ -87,7 +87,7 @@ func LoadFlatDataFromCSV(filePath string) ([]float32, error) {
 		for _, valueStr := range record {
 			valueStr = strings.TrimSpace(valueStr)
 			if valueStr == "" {
-				continue // Skip empty strings
+				continue
 			}
 			value, err := strconv.ParseFloat(valueStr, 64)
 			if err != nil {

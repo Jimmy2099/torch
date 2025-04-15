@@ -14,8 +14,8 @@ type DataType int16
 var DataTypeString = "int16"
 
 const (
-	iterations = 1_000_000_000 // 1 billion operations
-	warmup     = 100_000_000   // Warm-up iterations
+	iterations = 1_000_000_000
+	warmup     = 100_000_000
 )
 
 type TestCase struct {
@@ -23,10 +23,10 @@ type TestCase struct {
 	testFuncs map[string]func() DataType
 }
 
-var globalSink DataType // Prevent compiler optimizations
+var globalSink DataType
 
 func Test_Single_Core_Int16(t *testing.T) {
-	runtime.GOMAXPROCS(1) // Limit to a single core to reduce interference
+	runtime.GOMAXPROCS(1)
 
 	testCases := []TestCase{
 		{

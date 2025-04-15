@@ -22,21 +22,21 @@ type AutoEncoder struct {
 	relu1 *torch.ReLULayer
 	fc2   *torch.LinearLayer
 	relu2 *torch.ReLULayer
-	fc3   *torch.LinearLayer // Latent space representation
+	fc3   *torch.LinearLayer
 
 	fc4      *torch.LinearLayer
 	relu3    *torch.ReLULayer
 	fc5      *torch.LinearLayer
 	relu4    *torch.ReLULayer
 	fc6      *torch.LinearLayer
-	Sigmoid1 *torch.SigmoidLayer // Output activation
+	Sigmoid1 *torch.SigmoidLayer
 }
 
 type layerLoadInfo struct {
-	pyTorchName string             // Name used in PyTorch state_dict keys (e.g., "encoder.0")
-	goLayer     *torch.LinearLayer // Pointer to the corresponding layer in the Go struct
-	weightShape []int              // Expected shape of the weight tensor
-	biasShape   []int              // Expected shape of the bias tensor
+	pyTorchName string
+	goLayer     *torch.LinearLayer
+	weightShape []int
+	biasShape   []int
 }
 
 func NewAutoEncoder() *AutoEncoder {
@@ -58,15 +58,15 @@ func NewAutoEncoder() *AutoEncoder {
 	fmt.Println("Layers initialized.")
 
 	loadInfos := []layerLoadInfo{
-		{"encoder.0", ae.fc1, []int{128, 784}, []int{128}}, // fc1
-		{"encoder.2", ae.fc2, []int{64, 128}, []int{64}}, // fc2
-		{"encoder.4", ae.fc3, []int{32, 64}, []int{32}}, // fc3 (latent)
-		{"decoder.0", ae.fc4, []int{64, 32}, []int{64}}, // fc4
-		{"decoder.2", ae.fc5, []int{128, 64}, []int{128}}, // fc5
-		{"decoder.4", ae.fc6, []int{784, 128}, []int{784}}, // fc6
+		{"encoder.0", ae.fc1, []int{128, 784}, []int{128}},
+		{"encoder.2", ae.fc2, []int{64, 128}, []int{64}},
+		{"encoder.4", ae.fc3, []int{32, 64}, []int{32}},
+		{"decoder.0", ae.fc4, []int{64, 32}, []int{64}},
+		{"decoder.2", ae.fc5, []int{128, 64}, []int{128}},
+		{"decoder.4", ae.fc6, []int{784, 128}, []int{784}},
 	}
 
-	basePath := "py/data" // Relative path to data directory from where Go runs
+	basePath := "py/data"
 	d, err := os.Getwd()
 	if err != nil {
 		panic(fmt.Sprintf("Error getting working directory: %v", err))
@@ -88,12 +88,12 @@ func NewAutoEncoder() *AutoEncoder {
 			panic(fmt.Sprintf("Error loading weight file %s: %v", weightFilePath, err))
 		}
 
-		info.goLayer.SetWeights(weightMatrix.Data) // Assuming SetWeights takes [][]float32
+		info.goLayer.SetWeights(weightMatrix.Data)
 
 		if info.goLayer.Weights == nil {
 			panic(fmt.Sprintf("Weight tensor is nil after SetWeights for %s", info.pyTorchName))
 		}
-		info.goLayer.Weights.Reshape(info.weightShape) // Reshape internal tensor
+		info.goLayer.Weights.Reshape(info.weightShape)
 		fmt.Printf("Loaded weights for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Weights.Shape)
 
 		biasFileName := info.pyTorchName + ".bias.csv"
@@ -105,12 +105,12 @@ func NewAutoEncoder() *AutoEncoder {
 			panic(fmt.Sprintf("Error loading bias file %s: %v", biasFilePath, err))
 		}
 
-		info.goLayer.SetBias(biasMatrix.Data) // Assuming SetBias takes [][]float32
+		info.goLayer.SetBias(biasMatrix.Data)
 
 		if info.goLayer.Bias == nil {
 			panic(fmt.Sprintf("Bias tensor is nil after SetBias for %s", info.pyTorchName))
 		}
-		info.goLayer.Bias.Reshape(info.biasShape) // Reshape internal tensor
+		info.goLayer.Bias.Reshape(info.biasShape)
 		fmt.Printf("Loaded biases for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Bias.Shape)
 	}
 
@@ -123,7 +123,7 @@ func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
 	if len(x.Shape) != 2 || x.Shape[1] != 784 {
 		if x.Size() == 784 {
 			fmt.Printf("Input shape %v is not [N, 784], attempting to flatten.\n", x.Shape)
-			x = x.Flatten() // Flatten to [1, 784]
+			x = x.Flatten()
 			fmt.Printf("Flattened input shape: %v\n", x.Shape)
 		} else {
 			panic(fmt.Sprintf("Input tensor shape %v is incompatible with AutoEncoder input (expected [N, 784])", x.Shape))
@@ -175,7 +175,7 @@ func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
 
 	fmt.Println("\nSigmoid (Output):")
 	x = ae.Sigmoid1.Forward(x)
-	fmt.Printf("After sigmoid (output): %v\n", x.Shape) // Should be [N, 784]
+	fmt.Printf("After sigmoid (output): %v\n", x.Shape)
 
 	fmt.Println("\n=== AutoEncoder Forward Pass Complete ===")
 	return x
@@ -207,7 +207,7 @@ func main() {
 			d, _ := os.Getwd()
 			runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
 		}
-		directory := "./py/mnist_noisy_images" // Adjust the path to where your image CSVs and labels.csv are stored
+		directory := "./py/mnist_noisy_images"
 
 		images, labels, err := LoadDataFromCSVDir(directory)
 		if err != nil {
@@ -258,7 +258,7 @@ func ReadCSV(filepath string) (*tensor.Tensor, error) {
 
 	rows := len(lines)
 	cols := len(lines[0])
-	if rows*cols != 784 { // Ensure it matches the MNIST image size
+	if rows*cols != 784 {
 		return nil, fmt.Errorf("expected 784 values in CSV, got %d", rows*cols)
 	}
 
@@ -418,7 +418,7 @@ if __name__ == "__main__":
 		return fmt.Errorf("unable to write Python script: %v", err)
 	}
 	scriptFile.Close()
-	defer os.Remove(tmpScriptFileName) // 执行完后删除文件
+	defer os.Remove(tmpScriptFileName)
 
 	dataFile, err := os.Create(tmpDataFileName)
 	if err != nil {

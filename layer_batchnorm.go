@@ -1,7 +1,7 @@
 package torch
 
 import (
-	"github.com/Jimmy2099/torch/data_store/tensor" // 假设这个库存在
+	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
 )
@@ -82,8 +82,8 @@ func (bn *BatchNormLayer) computeVariance(x *tensor.Tensor, mean *tensor.Tensor)
 
 func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	if bn.training {
-		batchMean := bn.computeMean(x)               // 现在形状 [C]
-		batchVar := bn.computeVariance(x, batchMean) // 现在形状 [C]
+		batchMean := bn.computeMean(x)
+		batchVar := bn.computeVariance(x, batchMean)
 
 		fmt.Printf("Training mode - batchMean shape: %v, batchVar shape: %v\n",
 			batchMean.Shape, batchVar.Shape)
@@ -116,10 +116,10 @@ func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor)
 			bn.runningVar.Shape, batchVar.Shape))
 	}
 	newRunningMean := bn.RunningMean.MulScalar(1.0 - bn.momentum).Add(
-		batchMean.MulScalar(bn.momentum), // 新的权重是momentum
+		batchMean.MulScalar(bn.momentum),
 	)
 	newRunningVar := bn.runningVar.MulScalar(1.0 - bn.momentum).Add(
-		batchVar.MulScalar(bn.momentum), // 新的权重是momentum
+		batchVar.MulScalar(bn.momentum),
 	)
 
 	bn.RunningMean = newRunningMean

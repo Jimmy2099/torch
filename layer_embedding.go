@@ -9,10 +9,10 @@ import (
 
 type Embedding struct {
 	Weights     *tensor.Tensor
-	GradWeights *tensor.Tensor // 独立维护梯度张量
+	GradWeights *tensor.Tensor
 	VocabSize   int
 	EmbDim      int
-	LastIndices []int // 缓存前向传播的整数索引
+	LastIndices []int
 }
 
 func (e *Embedding) SetBiasAndShape(data []float32, shape []int) {
@@ -57,7 +57,7 @@ func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
 		}
 		intIndices[i] = int(v)
 	}
-	e.LastIndices = intIndices // 缓存整数索引
+	e.LastIndices = intIndices
 
 	batchSize, seqLen := indices.Shape[0], indices.Shape[1]
 	outputShape := []int{batchSize, seqLen, e.EmbDim}

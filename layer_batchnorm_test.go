@@ -1,7 +1,7 @@
 package torch
 
 import (
-	"github.com/Jimmy2099/torch/data_store/tensor" // 假设这个库存在
+	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
 	"reflect"
@@ -11,12 +11,12 @@ import (
 func TestMeanCalculation(t *testing.T) {
 	data := make([]float32, 2*3*4*4)
 
-	for n := 0; n < 2; n++ { // N维度
-		for c := 0; c < 3; c++ { // C维度
-			for h := 0; h < 4; h++ { // H维度
-				for w := 0; w < 4; w++ { // W维度
+	for n := 0; n < 2; n++ {
+		for c := 0; c < 3; c++ {
+			for h := 0; h < 4; h++ {
+				for w := 0; w < 4; w++ {
 					index := n*(3*4*4) + c*(4*4) + h*4 + w
-					data[index] = float32(c) // 每个通道的值等于通道号
+					data[index] = float32(c)
 				}
 			}
 		}
@@ -43,7 +43,7 @@ func TestMeanCalculation(t *testing.T) {
 func TestBatchNormShapeMismatch(t *testing.T) {
 	numFeatures := 256
 	batchSize := 64
-	inputShape := []int{batchSize, numFeatures, 8, 8} // 模拟dec_convT0的输出形状
+	inputShape := []int{batchSize, numFeatures, 8, 8}
 
 	bn := NewBatchNormLayer(numFeatures, 1e-5, 0.1)
 
@@ -57,7 +57,7 @@ func TestBatchNormShapeMismatch(t *testing.T) {
 		}
 	}()
 
-	output := bn.Forward(x) // 这里应该触发panic
+	output := bn.Forward(x)
 
 	t.Error("Expected panic did not occur")
 	_ = output
@@ -69,7 +69,7 @@ func TestComputeMeanShape(t *testing.T) {
 
 	x := tensor.Ones([]int{64, 256, 8, 8})
 
-	batchMean := bn.computeMean(x) // 假设有导出这个方法用于测试
+	batchMean := bn.computeMean(x)
 
 	expectedShape := []int{numFeatures}
 

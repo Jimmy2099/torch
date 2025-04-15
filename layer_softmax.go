@@ -6,9 +6,9 @@ import (
 )
 
 type SoftmaxLayer struct {
-	input  *tensor.Tensor // 保存输入用于反向传播
-	output *tensor.Tensor // 保存输出用于反向传播
-	axis   int            // 计算softmax的维度
+	input  *tensor.Tensor
+	output *tensor.Tensor
+	axis   int
 }
 
 func NewSoftmaxLayer(axis int) *SoftmaxLayer {
@@ -27,15 +27,15 @@ func (s *SoftmaxLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 
 	s.input = x.Clone()
 
-	maxVals := x.Max() // 修改：移除axis参数
+	maxVals := x.Max()
 
-	shifted := x.SubScalar(maxVals) // 修改：使用SubScalar方法
+	shifted := x.SubScalar(maxVals)
 
 	expVals := shifted.Apply(math.Exp)
 
-	sumExp := expVals.Sum() // 修改：移除axis参数
+	sumExp := expVals.Sum()
 
-	s.output = expVals.DivScalar(sumExp) // 修改：使用DivScalar方法
+	s.output = expVals.DivScalar(sumExp)
 
 	return s.output
 }
@@ -51,8 +51,8 @@ func (s *SoftmaxLayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
 		panic("output and gradient shapes must match")
 	}
 
-	sumDout := dout.Multiply(s.output).Sum()           // 修改：移除axis参数
-	grad := s.output.Multiply(dout.SubScalar(sumDout)) // 修改：使用SubScalar方法
+	sumDout := dout.Multiply(s.output).Sum()
+	grad := s.output.Multiply(dout.SubScalar(sumDout))
 
 	return grad
 }

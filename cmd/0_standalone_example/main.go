@@ -34,7 +34,7 @@ func sigmoidDerivative(output float32) float32 {
 func newNeuron(numInputs int) NeuronCellUnit {
 	weights := make([]float32, numInputs)
 	for i := range weights {
-		weights[i] = rand.Float32()*0.1 - 0.05 // Small random values
+		weights[i] = rand.Float32()*0.1 - 0.05
 	}
 	bias := rand.Float32()*0.1 - 0.05
 	return NeuronCellUnit{weights: weights, bias: bias}
@@ -128,8 +128,8 @@ func main() {
 	var expectedOutputs [][]float32
 
 	for i := 0; i < numPoints; i++ {
-		x := rand.Float32()*10 - 5 // x in [-5, 5]
-		y := rand.Float32()*10 - 5 // y in [-5, 5]
+		x := rand.Float32()*10 - 5
+		y := rand.Float32()*10 - 5
 		inputs = append(inputs, []float32{x, y})
 		label := float32(0.0)
 		if y > 2*x+1 {

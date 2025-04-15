@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano()) // Or use a fixed seed: rand.Seed(42)
+	rand.Seed(time.Now().UnixNano())
 }
 
 func TestNewTensorWithShape(t *testing.T) {
@@ -21,14 +21,14 @@ func TestNewTensorWithShape(t *testing.T) {
 		{"Matrix", []int{2, 3}, []int{2, 3}, []float32{0, 0, 0, 0, 0, 0}},
 		{"Vector", []int{4}, []int{4}, []float32{0, 0, 0, 0}},
 		{"Scalar", []int{1}, []int{1}, []float32{0}},
-		{"Empty Shape", []int{}, []int{}, []float32{}}, // Implementation creates size 0 data for []
+		{"Empty Shape", []int{}, []int{}, []float32{}},
 		{"Zero Dim", []int{2, 0, 3}, []int{2, 0, 3}, []float32{}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tensor := NewTensorWithShape(tt.shape)
-			wantTensor := &Tensor{Data: tt.wantData, Shape: tt.wantShape} // Use direct struct for want
+			wantTensor := &Tensor{Data: tt.wantData, Shape: tt.wantShape}
 
 			if !reflect.DeepEqual(tensor.Shape, wantTensor.Shape) {
 				if !((tensor.Shape == nil && len(wantTensor.Shape) == 0) || (wantTensor.Shape == nil && len(tensor.Shape) == 0)) {
@@ -41,7 +41,7 @@ func TestNewTensorWithShape(t *testing.T) {
 			size := 1
 			isZeroSize := false
 			if len(tensor.Shape) == 0 {
-				size = 0 // Treat shape [] as size 0 for data length check consistency
+				size = 0
 			} else {
 				for _, d := range tensor.Shape {
 					if d == 0 {
@@ -65,7 +65,7 @@ func TestNewTensorWithShape(t *testing.T) {
 		if tensor.Shape != nil {
 			t.Errorf("NewTensorWithShape(nil) shape = %v, want nil", tensor.Shape)
 		}
-		if len(tensor.Data) != 0 { // Expect size 0 for nil shape
+		if len(tensor.Data) != 0 {
 			t.Errorf("NewTensorWithShape(nil) data = %v, want []", tensor.Data)
 		}
 	})
@@ -90,9 +90,9 @@ func TestNewRandomTensor(t *testing.T) {
 
 			wantShape := tt.shape
 			if wantShape == nil {
-				wantShape = nil // Explicitly check for nil if input was nil
+				wantShape = nil
 			} else if len(wantShape) == 0 {
-				wantShape = []int{} // Normalize empty
+				wantShape = []int{}
 			}
 
 			if !reflect.DeepEqual(tensor.Shape, wantShape) {
@@ -102,7 +102,7 @@ func TestNewRandomTensor(t *testing.T) {
 			}
 
 			expectedSize := 0
-			if tensor.Shape != nil { // Calculate expected size based on actual returned shape
+			if tensor.Shape != nil {
 				isZeroSize := false
 				tempSize := 1
 				for _, d := range tensor.Shape {
@@ -116,8 +116,8 @@ func TestNewRandomTensor(t *testing.T) {
 					expectedSize = tempSize
 				} else if isZeroSize {
 					expectedSize = 0
-				} else { // shape is []int{}
-					expectedSize = 0 // Based on NewTensorWithShape implementation for data size
+				} else {
+					expectedSize = 0
 				}
 			}
 
@@ -127,7 +127,7 @@ func TestNewRandomTensor(t *testing.T) {
 
 			if expectedSize > 0 {
 				for i, val := range tensor.Data {
-					if val < -1.0 || val >= 1.0 { // Range is [-1, 1) due to rand.Float32()
+					if val < -1.0 || val >= 1.0 {
 						t.Errorf("NewRandomTensor(%v) data[%d] = %v, out of range [-1.0, 1.0)", tt.shape, i, val)
 					}
 				}
@@ -159,7 +159,7 @@ func TestNewTensorFromSlice(t *testing.T) {
 		input     [][]float32
 		wantShape []int
 		wantData  []float32
-		wantErr   bool // Expect panic
+		wantErr   bool
 	}{
 		{
 			name:      "Standard Matrix",
@@ -185,32 +185,32 @@ func TestNewTensorFromSlice(t *testing.T) {
 		{
 			name:      "Empty Outer Slice",
 			input:     [][]float32{},
-			wantShape: []int{0, 0}, // Implementation detail: returns [0, 0] shape
+			wantShape: []int{0, 0},
 			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:      "Empty Inner Slices",
-			input:     [][]float32{{}, {}}, // Rows=2, Cols=0 based on first row
+			input:     [][]float32{{}, {}},
 			wantShape: []int{2, 0},
 			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:      "Single Empty Inner Slice",
-			input:     [][]float32{{}}, // Rows=1, Cols=0
+			input:     [][]float32{{}},
 			wantShape: []int{1, 0},
 			wantData:  []float32{},
 			wantErr:   false,
 		},
 		{
 			name:    "Jagged Slice",
-			input:   [][]float32{{1, 2}, {3}}, // Different lengths
+			input:   [][]float32{{1, 2}, {3}},
 			wantErr: true,
 		},
 		{
 			name:    "Jagged Slice with Empty",
-			input:   [][]float32{{1, 2}, {}}, // Different lengths
+			input:   [][]float32{{1, 2}, {}},
 			wantErr: true,
 		},
 	}
@@ -238,7 +238,7 @@ func TestTensor_Reshape(t *testing.T) {
 		startShape []int
 		reshapeTo  []int
 		wantShape  []int
-		wantErr    bool // Expect panic
+		wantErr    bool
 	}{
 		{"Valid Reshape 2x3 to 3x2", []int{2, 3}, []int{3, 2}, []int{3, 2}, false},
 		{"Valid Reshape 6 to 2x3", []int{6}, []int{2, 3}, []int{2, 3}, false},
@@ -248,8 +248,8 @@ func TestTensor_Reshape(t *testing.T) {
 		{"Valid Reshape 1 to 1", []int{1}, []int{1}, []int{1}, false},
 		{"Invalid Reshape Size Mismatch", []int{2, 3}, []int{2, 2}, nil, true},
 		{"Invalid Reshape Size Mismatch Vector", []int{6}, []int{5}, nil, true},
-		{"Invalid Reshape Zero Dim Input", []int{2, 0, 3}, []int{6}, nil, true},                  // size 0 != size 6
-		{"Valid Reshape Zero Dim Output", []int{2, 0, 3}, []int{3, 2, 0}, []int{3, 2, 0}, false}, // size 0 == size 0
+		{"Invalid Reshape Zero Dim Input", []int{2, 0, 3}, []int{6}, nil, true},
+		{"Valid Reshape Zero Dim Output", []int{2, 0, 3}, []int{3, 2, 0}, []int{3, 2, 0}, false},
 
 	}
 
@@ -270,13 +270,13 @@ func TestTensor_Reshape(t *testing.T) {
 			var currentData []float32
 			if startSize > 0 {
 				currentData = make([]float32, startSize)
-				copy(currentData, originalData[:startSize]) // Use appropriate amount of data
+				copy(currentData, originalData[:startSize])
 			} else {
 				currentData = []float32{}
 			}
 
 			tensor := NewTensor(currentData, tt.startShape)
-			originalTensorPtr := tensor // Keep track of the original pointer
+			originalTensorPtr := tensor
 
 			if tt.wantErr {
 				checkPanic(t, func() { tensor.Reshape(tt.reshapeTo) }, "")
@@ -303,8 +303,8 @@ func TestTensor_Reshape(t *testing.T) {
 	}
 	t.Run("Reshape 1 to Empty", func(t *testing.T) {
 		tensor1 := NewTensor([]float32{5.0}, []int{1})
-		tempTargetTensor := &Tensor{Shape: []int{}} // Don't need data
-		sizeEmpty := tempTargetTensor.Size()        // Get size as calculated by Size()
+		tempTargetTensor := &Tensor{Shape: []int{}}
+		sizeEmpty := tempTargetTensor.Size()
 		sizeTensor1 := tensor1.Size()
 
 		if sizeEmpty != sizeTensor1 {
@@ -329,12 +329,12 @@ func TestTensor_Squeeze(t *testing.T) {
 		{"Remove Trailing 1", []int{2, 3, 1}, []int{2, 3}},
 		{"Remove Middle 1", []int{2, 1, 3}, []int{2, 3}},
 		{"Remove Multiple 1s", []int{1, 2, 1, 3, 1}, []int{2, 3}},
-		{"All 1s", []int{1, 1, 1}, []int{}}, // Squeezes to empty shape
-		{"Single 1", []int{1}, []int{}},     // Squeezes to empty shape
+		{"All 1s", []int{1, 1, 1}, []int{}},
+		{"Single 1", []int{1}, []int{}},
 		{"No 1s", []int{2, 3}, []int{2, 3}},
-		{"Empty Shape", []int{}, []int{}},          // No change
-		{"Nil Shape", nil, nil},                    // Should ideally handle nil shape gracefully
-		{"Shape with 0", []int{1, 0, 1}, []int{0}}, // Removes 1s, keeps 0
+		{"Empty Shape", []int{}, []int{}},
+		{"Nil Shape", nil, nil},
+		{"Shape with 0", []int{1, 0, 1}, []int{0}},
 	}
 
 	for _, tt := range tests {
@@ -363,7 +363,7 @@ func TestTensor_Squeeze(t *testing.T) {
 				startData = []float32{}
 			}
 
-			tensor := &Tensor{Data: startData, Shape: tt.startShape} // Create directly to handle nil shape
+			tensor := &Tensor{Data: startData, Shape: tt.startShape}
 			originalTensorPtr := tensor
 			var originalDataPtr *float32
 
@@ -398,7 +398,7 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 		startShape  []int
 		squeezeDims []int
 		wantShape   []int
-		wantErr     bool // Expect panic
+		wantErr     bool
 	}{
 		{"Squeeze Dim 0", []int{1, 2, 3}, []int{0}, []int{2, 3}, false},
 		{"Squeeze Dim 2", []int{2, 3, 1}, []int{2}, []int{2, 3}, false},
@@ -500,9 +500,9 @@ func TestTensor_Indices(t *testing.T) {
 
 		{"Scalar", []int{1}, 0, []int{0}},
 
-		{"Empty Shape", []int{}, 0, []int{}}, // Loop range is 0, returns empty slice
+		{"Empty Shape", []int{}, 0, []int{}},
 
-		{"Zero Dim Shape", []int{2, 0, 3}, 0, []int{0, 0, 0}}, // Only index 0 is valid
+		{"Zero Dim Shape", []int{2, 0, 3}, 0, []int{0, 0, 0}},
 
 		{"Zero Dim Shape End", []int{3, 2, 0}, 0, []int{0, 0, 0}},
 	}
@@ -519,7 +519,7 @@ func TestTensor_Indices(t *testing.T) {
 	}
 
 	t.Run("OutOfBoundsIndex", func(t *testing.T) {
-		tensor := &Tensor{Shape: []int{2, 3}} // size 6
+		tensor := &Tensor{Shape: []int{2, 3}}
 		got := tensor.Indices(6)
 		want := []int{2, 0}
 		if !reflect.DeepEqual(got, want) {

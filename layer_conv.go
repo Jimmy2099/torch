@@ -13,9 +13,9 @@ type ConvLayer struct {
 	Padding     int
 	Weights     *tensor.Tensor
 	Bias        *tensor.Tensor
-	InputCache  *tensor.Tensor // 添加输入缓存用于反向传播
-	GradWeights *tensor.Tensor // 权重梯度
-	GradBias    *tensor.Tensor // 偏置梯度
+	InputCache  *tensor.Tensor
+	GradWeights *tensor.Tensor
+	GradBias    *tensor.Tensor
 }
 
 func (l *ConvLayer) GetWeights() *tensor.Tensor {
@@ -32,7 +32,7 @@ func (l *ConvLayer) SetWeights(data []float32) {
 	}
 
 	copiedData := make([]float32, len(data))
-	copy(copiedData, data) // 深拷贝
+	copy(copiedData, data)
 
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutChannels, l.InChannels * l.KernelSize * l.KernelSize})
 }
@@ -90,17 +90,17 @@ func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 
 	var biasBroadcast *tensor.Tensor
 	switch len(convOut.Shape) {
-	case 1: // 1D输出 (out_channels,)
+	case 1:
 		biasBroadcast = c.Bias
-	case 2: // 2D输出 (out_channels, out_size)
+	case 2:
 		biasBroadcast = c.Bias.Repeat(1, convOut.Shape[1])
-	case 4: // 4D输出 (batch, out_channels, height, width)
+	case 4:
 		biasBroadcast = c.Bias.Reshape([]int{1, c.OutChannels, 1, 1})
 		biasBroadcast = biasBroadcast.Expand([]int{
-			convOut.Shape[0], // batch
-			c.OutChannels,    // channels
-			convOut.Shape[2], // height
-			convOut.Shape[3], // width
+			convOut.Shape[0],
+			c.OutChannels,
+			convOut.Shape[2],
+			convOut.Shape[3],
 		})
 	default:
 		panic("unsupported output shape from convolution")
@@ -118,8 +118,8 @@ func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
 	}
 	c.GradWeights = gradWeights
 
-	gradBias := gradOutput.SumByDim(0) // 沿批处理维度求和
-	gradBias = gradBias.SumByDim(1)    // 沿空间维度求和
+	gradBias := gradOutput.SumByDim(0)
+	gradBias = gradBias.SumByDim(1)
 	c.GradBias = gradBias
 
 	gradInput, err := gradOutput.Conv2DGradInput(c.Weights, c.KernelSize, c.Stride, c.Padding)

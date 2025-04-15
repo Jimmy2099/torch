@@ -10,9 +10,9 @@ import (
 )
 
 type RMSNorm struct {
-	Weights    *tensor.Tensor // Scale parameters (gamma)
-	eps        float32        // Small constant for numerical stability
-	inputCache *tensor.Tensor // Cache for input tensor needed in backward pass
+	Weights    *tensor.Tensor
+	eps        float32
+	inputCache *tensor.Tensor
 }
 
 func (r *RMSNorm) GetWeights() *tensor.Tensor {
@@ -20,7 +20,7 @@ func (r *RMSNorm) GetWeights() *tensor.Tensor {
 }
 
 func (r *RMSNorm) GetBias() *tensor.Tensor {
-	return nil // RMSNorm typically doesn't use bias
+	return nil
 }
 
 func NewRMSNorm(features int, eps float32) *RMSNorm {
@@ -177,18 +177,18 @@ func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor 
 	featureSize := features
 
 
-	chunkSize := (batchSize + numCPU - 1) / numCPU // 计算每个分块的大小
+	chunkSize := (batchSize + numCPU - 1) / numCPU
 	var wg sync.WaitGroup
 
-	sem := make(chan struct{}, numCPU*2) // 2倍核心数的缓冲区
+	sem := make(chan struct{}, numCPU*2)
 
 	for chunkStart := 0; chunkStart < batchSize; chunkStart += chunkSize {
 		wg.Add(1)
-		sem <- struct{}{} // 获取信号量
+		sem <- struct{}{}
 
 		go func(start, end int) {
 			defer func() {
-				<-sem // 释放信号量
+				<-sem
 				wg.Done()
 			}()
 
@@ -245,7 +245,7 @@ func (r *RMSNorm) ForwardSIMD(inputTensor *tensor.Tensor) *tensor.Tensor {
 	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
 	featureSize := features
 
-	weightsData := r.Weights.Data // 预取权重数据指针
+	weightsData := r.Weights.Data
 
 	for b := 0; b < batchSize; b++ {
 		start := b * featureSize
@@ -256,8 +256,8 @@ func (r *RMSNorm) ForwardSIMD(inputTensor *tensor.Tensor) *tensor.Tensor {
 		sumSq := vek32.Dot(inputBatch, inputBatch)
 		rms := math.Sqrt(sumSq/float32(featureSize) + r.eps)
 
-		vek32.DivNumber_Into(outputBatch, inputBatch, rms) // output = input / rms
-		vek32.Mul_Inplace(outputBatch, weightsData)        // output *= weights
+		vek32.DivNumber_Into(outputBatch, inputBatch, rms)
+		vek32.Mul_Inplace(outputBatch, weightsData)
 	}
 
 	return output

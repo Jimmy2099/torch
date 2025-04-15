@@ -419,7 +419,7 @@ func incrementIndices(indices, shape []int) bool {
 
 func (t *Tensor) ShapesMatch(other *Tensor) bool {
 	if t == nil || other == nil {
-		return false // Or handle as appropriate, maybe panic?
+		return false
 	}
 	if len(t.Shape) != len(other.Shape) {
 		return false

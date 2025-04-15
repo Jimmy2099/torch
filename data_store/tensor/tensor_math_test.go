@@ -37,9 +37,9 @@ func TestTensorAdd(t *testing.T) {
 	tests := []struct {
 		aShape, bShape []int
 	}{
-		{[]int{256}, []int{1, 256, 1, 1}}, // 原始测试
-		{[]int{3, 1}, []int{1, 4}},        // 经典广播案例
-		{[]int{5, 4}, []int{1}},           // 标量广播
+		{[]int{256}, []int{1, 256, 1, 1}},
+		{[]int{3, 1}, []int{1, 4}},
+		{[]int{5, 4}, []int{1}},
 	}
 
 	for _, tt := range tests {
@@ -77,13 +77,13 @@ func TestTensorAdd1(t *testing.T) {
 		a := Ones([]int{2, 1, 4})
 		b := Ones([]int{2, 3, 4})
 		result := a.Add(b)
-		if result.Shape[1] != 3 { // 检查广播后的形状
+		if result.Shape[1] != 3 {
 			t.Errorf("Expected broadcasted shape [2 3 4], got %v", result.Shape)
 		}
 	})
 
 	t.Run("HighDimBroadcast", func(t *testing.T) {
-		a := Ones([]int{1, 256, 1, 1}) // 原始问题中的形状
+		a := Ones([]int{1, 256, 1, 1})
 		b := Ones([]int{256})
 		result := a.Add(b)
 		if !reflect.DeepEqual(result.Shape, []int{1, 256, 1, 256}) {
@@ -93,7 +93,7 @@ func TestTensorAdd1(t *testing.T) {
 
 	t.Run("ScalarBroadcast", func(t *testing.T) {
 		a := Ones([]int{2, 2})
-		b := NewTensor([]float32{5}, []int{1}) // 标量
+		b := NewTensor([]float32{5}, []int{1})
 		result := a.Add(b)
 		expected := []float32{6, 6, 6, 6}
 		if !reflect.DeepEqual(result.TensorData(), expected) {
@@ -116,9 +116,9 @@ func TestTensorAdd1(t *testing.T) {
 		testCases := []struct {
 			aShape, bShape []int
 		}{
-			{[]int{0}, []int{1}},       // 空张量 + 标量
-			{[]int{1}, []int{0}},       // 标量 + 空张量
-			{[]int{0, 2}, []int{1, 2}}, // 多维空张量
+			{[]int{0}, []int{1}},
+			{[]int{1}, []int{0}},
+			{[]int{0, 2}, []int{1, 2}},
 		}
 
 		for _, tc := range testCases {
@@ -142,7 +142,7 @@ func TestTensorAdd1(t *testing.T) {
 			t.Skip("Skipping large tensor test in short mode")
 		}
 		a := Ones([]int{1000, 1000})
-		b := Ones([]int{1000, 1}) // 列向量
+		b := Ones([]int{1000, 1})
 		start := time.Now()
 		result := a.Add(b)
 		elapsed := time.Since(start)
@@ -192,19 +192,19 @@ func TestTensorAdd1(t *testing.T) {
 func TestMatMul99(t *testing.T) {
 	t.Run("Basic 2D MatMul", func(t *testing.T) {
 		a := NewTensor(
-			[]float32{1, 2, 3, 4}, // [[1 2], [3 4]]
+			[]float32{1, 2, 3, 4},
 			[]int{2, 2},
 		)
 		b := NewTensor(
-			[]float32{5, 6, 7, 8}, // [[5 6], [7 8]]
+			[]float32{5, 6, 7, 8},
 			[]int{2, 2},
 		)
 		result := a.MatMul(b)
 		expected := []float32{
-			1*5 + 2*7, // [0][0] = (1,2) · (5,7)
-			1*6 + 2*8, // [0][1] = (1,2) · (6,8)
-			3*5 + 4*7, // [1][0] = (3,4) · (5,7)
-			3*6 + 4*8, // [1][1] = (3,4) · (6,8)
+			1*5 + 2*7,
+			1*6 + 2*8,
+			3*5 + 4*7,
+			3*6 + 4*8,
 		}
 		assertTensorEqual(t, result, expected, []int{2, 2})
 	})
@@ -212,74 +212,74 @@ func TestMatMul99(t *testing.T) {
 	t.Run("Batch MatMul", func(t *testing.T) {
 		a := NewTensor(
 			[]float32{
-				1, 2, // [[1 2]
-				3, 4, //  [3 4]]
-				5, 6, // [[5 6]
-				7, 8}, //  [7 8]]
+				1, 2,
+				3, 4,
+				5, 6,
+				7, 8},
 			[]int{2, 2, 2},
 		)
 		b := NewTensor(
 			[]float32{
-				9, 10, // [[9 10]
-				11, 12, //  [11 12]]
-				13, 14, // [[13 14]
-				15, 16}, //  [15 16]]
+				9, 10,
+				11, 12,
+				13, 14,
+				15, 16},
 			[]int{2, 2, 2},
 		)
 		result := a.MatMul(b)
 		expected := []float32{
-			1*9 + 2*11,  // [0][0][0]
-			1*10 + 2*12, // [0][0][1]
-			3*9 + 4*11,  // [0][1][0]
-			3*10 + 4*12, // [0][1][1]
+			1*9 + 2*11,
+			1*10 + 2*12,
+			3*9 + 4*11,
+			3*10 + 4*12,
 
-			5*13 + 6*15, // [1][0][0]
-			5*14 + 6*16, // [1][0][1]
-			7*13 + 8*15, // [1][1][0]
-			7*14 + 8*16, // [1][1][1]
+			5*13 + 6*15,
+			5*14 + 6*16,
+			7*13 + 8*15,
+			7*14 + 8*16,
 		}
 		assertTensorEqual(t, result, expected, []int{2, 2, 2})
 	})
 
 	t.Run("Broadcast Batch Dims", func(t *testing.T) {
 		a := NewTensor(
-			[]float32{1, 2, 3, 4, 5, 6}, // 形状 [3,2]，广播为 [2,3,2]
+			[]float32{1, 2, 3, 4, 5, 6},
 			[]int{3, 2},
 		)
 		b := NewTensor(
 			[]float32{
-				7, 8, // Batch 0 [[7], [8]]
-				11, 12, // Batch 1 [[11], [12]]
+				7, 8,
+				11, 12,
 			},
-			[]int{2, 2, 1}, // 正确形状，4个元素
+			[]int{2, 2, 1},
 		)
 		result := a.MatMul(b)
 		expected := []float32{
-			1*7 + 2*8, // 23
-			3*7 + 4*8, // 53
-			5*7 + 6*8, // 83
+			1*7 + 2*8,
+			3*7 + 4*8,
+			5*7 + 6*8,
 
-			1*11 + 2*12, // 35
-			3*11 + 4*12, // 81
-			5*11 + 6*12, // 127
+			1*11 + 2*12,
+			3*11 + 4*12,
+			5*11 + 6*12,
 		}
 		assertTensorEqual(t, result, expected, []int{2, 3, 1})
 	})
 
 	t.Run("1D Vectors", func(t *testing.T) {
-		vec := NewTensor([]float32{1, 2, 3}, []int{3}) // 被广播为 (1,3)
+		vec := NewTensor([]float32{1, 2, 3}, []int{3})
 		mat := NewTensor(
 			[]float32{
-				4, 5, // 第0行
-				6, 7, // 第1行
-				8, 9, // 第2行
+				4, 5,
+				6, 7,
+				8, 9,
 			},
 			[]int{3, 2},
 		)
 		result := vec.MatMul(mat)
 		expected := []float32{
-			1*4 + 2*6 + 3*8, // (1,2,3) · 第0列(4,6,8)
-			1*5 + 2*7 + 3*9, // (1,2,3) · 第1列(5,7,9)
+			1*4 + 2*6 + 3*8,
+			1*5 + 2*7 + 3*9,
 		}
 		assertTensorEqual(t, result, expected, []int{2})
 	})

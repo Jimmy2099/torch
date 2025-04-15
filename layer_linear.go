@@ -15,10 +15,10 @@ type LinearLayer struct {
 	Input             *tensor.Tensor
 	Output            *tensor.Tensor
 	GradInput         *tensor.Tensor
-	WeightDecay       float32        // L2正则化系数
-	Momentum          float32        // 动量系数
-	VWeights          *tensor.Tensor // 权重动量
-	VBias             *tensor.Tensor // 偏置动量
+	WeightDecay       float32
+	Momentum          float32
+	VWeights          *tensor.Tensor
+	VBias             *tensor.Tensor
 	WeightsTransposed bool
 }
 
@@ -36,7 +36,7 @@ func (l *LinearLayer) SetWeights(data []float32) {
 	}
 
 	copiedData := make([]float32, len(data))
-	copy(copiedData, data) // 深拷贝
+	copy(copiedData, data)
 
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutputDim, l.InputDim})
 }
@@ -367,9 +367,9 @@ func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	}
 
 	matmulResult := vek32.MatMul(
-		l.Input.Data,   // [batch, input_dim]
-		l.Weights.Data, // [input_dim, output_dim]
-		l.InputDim,     // 公共维度（input_dim）
+		l.Input.Data,
+		l.Weights.Data,
+		l.InputDim,
 	)
 
 	broadcastBias := make([]float32, batchSize*l.OutputDim)

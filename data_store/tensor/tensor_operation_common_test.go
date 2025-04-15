@@ -7,11 +7,11 @@ import (
 )
 
 
-const epsilon = 1e-9 // Tolerance for float comparisons
+const epsilon = 1e-9
 
 func tensorsEqual(t1, t2 *Tensor, tol float32) bool {
 	if t1 == nil || t2 == nil {
-		return t1 == t2 // Both nil are equal, one nil isn't
+		return t1 == t2
 	}
 	if !reflect.DeepEqual(t1.Shape, t2.Shape) {
 		return false
@@ -35,11 +35,11 @@ func TestTensor_Size(t *testing.T) {
 		shape []int
 		want  int
 	}{
-		{"Scalar (implicit)", []int{1}, 1}, // Assuming NewTensor handles [] -> [1] for single element
+		{"Scalar (implicit)", []int{1}, 1},
 		{"Vector", []int{5}, 5},
 		{"Matrix", []int{2, 3}, 6},
 		{"3D Tensor", []int{2, 1, 4}, 8},
-		{"Empty Tensor", []int{0}, 0}, // Test case for shape with 0 dim
+		{"Empty Tensor", []int{0}, 0},
 		{"Empty Tensor High Dim", []int{2, 0, 3}, 0},
 	}
 	for _, tt := range tests {
@@ -60,15 +60,15 @@ func TestTensor_Size(t *testing.T) {
 				if got := tensor.Size(); got != tt.want {
 					t.Errorf("Size() = %v, want %v", got, tt.want)
 				}
-				return // Skip NewTensor for this specific 0-size case test run
+				return
 			} else if tt.want == 0 && len(tt.shape) == 0 {
 				tensor := &Tensor{}
-				if got := tensor.Size(); got != 0 { // product of empty shape is 1, Size() impl should maybe handle nil Shape? Current impl works.
+				if got := tensor.Size(); got != 0 {
 				}
-				tensor = NewTensor([]float32{}, []int{}) // Requires NewTensor to handle [] shape correctly
-				if got := tensor.Size(); got != 1 {      // product({}) is 1
+				tensor = NewTensor([]float32{}, []int{})
+				if got := tensor.Size(); got != 1 {
 				}
-				return // Skip standard path
+				return
 
 			}
 
@@ -84,13 +84,13 @@ func TestTensor_At(t *testing.T) {
 	tensor := NewTensor([]float32{
 		1, 2, 3,
 		4, 5, 6,
-	}, []int{2, 3}) // Shape [2, 3]
+	}, []int{2, 3})
 
 	tests := []struct {
 		name    string
 		indices []int
 		want    float32
-		wantErr bool // Expect panic
+		wantErr bool
 	}{
 		{"Valid Index (0,0)", []int{0, 0}, 1.0, false},
 		{"Valid Index (0,2)", []int{0, 2}, 3.0, false},
@@ -120,8 +120,8 @@ func TestTensor_At(t *testing.T) {
 	if got := tensor1D.At(1); got != 20.0 {
 		t.Errorf("At(1) on 1D tensor = %v, want %v", got, 20.0)
 	}
-	checkPanic(t, func() { tensor1D.At(3) }, "")    // Out of bounds
-	checkPanic(t, func() { tensor1D.At(0, 0) }, "") // Wrong number of indices
+	checkPanic(t, func() { tensor1D.At(3) }, "")
+	checkPanic(t, func() { tensor1D.At(0, 0) }, "")
 }
 
 func TestOnes(t *testing.T) {
@@ -161,7 +161,7 @@ func TestZerosLike(t *testing.T) {
 	})
 
 	t.Run("PanicOnNilShape", func(t *testing.T) {
-		badTensor := &Tensor{Data: []float32{1}} // Shape is nil
+		badTensor := &Tensor{Data: []float32{1}}
 		checkPanic(t, func() { ZerosLike(badTensor) }, "")
 	})
 }
@@ -276,11 +276,11 @@ func TestTensor_Pow(t *testing.T) {
 
 func TestTensor_SumByDim1(t *testing.T) {
 	tensor := NewTensor([]float32{
-		1, 2, 3, 4, // (0,0,*)
-		5, 6, 7, 8, // (0,1,*)
-		9, 10, 11, 12, // (1,0,*)
-		13, 14, 15, 16, // (1,1,*)
-	}, []int{2, 2, 4}) // Shape [2, 2, 4]
+		1, 2, 3, 4,
+		5, 6, 7, 8,
+		9, 10, 11, 12,
+		13, 14, 15, 16,
+	}, []int{2, 2, 4})
 
 	tests := []struct {
 		name      string
@@ -336,20 +336,20 @@ func TestTensor_SumByDim1(t *testing.T) {
 			dims:     []int{0, 2},
 			keepDims: true,
 			wantData:  []float32{52, 84},
-			wantShape: []int{1, 2, 1}, // Order shouldn't matter
+			wantShape: []int{1, 2, 1},
 		},
 		{
 			name:      "Sum dims 0, 2, no keep",
 			dims:      []int{0, 2},
 			keepDims:  false,
 			wantData:  []float32{52, 84},
-			wantShape: []int{2}, // Only dim 1 remains
+			wantShape: []int{2},
 		},
 		{
 			name:      "Sum all dims, keep",
 			dims:      []int{0, 1, 2},
 			keepDims:  true,
-			wantData:  []float32{136}, // 1 + ... + 16 = (1+16)*16/2 = 17*8 = 136
+			wantData:  []float32{136},
 			wantShape: []int{1, 1, 1},
 		},
 		{
@@ -357,7 +357,7 @@ func TestTensor_SumByDim1(t *testing.T) {
 			dims:      []int{0, 1, 2},
 			keepDims:  false,
 			wantData:  []float32{136},
-			wantShape: []int{}, // Should this be [1]? or empty? Current impl gives []
+			wantShape: []int{},
 		},
 	}
 
@@ -376,8 +376,8 @@ func TestTensor_SumByDim1(t *testing.T) {
 	}
 
 	t.Run("PanicInvalidDim", func(t *testing.T) {
-		checkPanic(t, func() { tensor.SumByDim1([]int{0, 3}, false) }, "") // 3 is invalid for shape [2,2,4]
-		checkPanic(t, func() { tensor.SumByDim1([]int{-1}, false) }, "")   // -1 is invalid
+		checkPanic(t, func() { tensor.SumByDim1([]int{0, 3}, false) }, "")
+		checkPanic(t, func() { tensor.SumByDim1([]int{-1}, false) }, "")
 	})
 }
 
@@ -442,7 +442,7 @@ func TestTensor_DivScalar(t *testing.T) {
 	}
 
 	divZeroResult := original.DivScalar(0.0)
-	if !math.IsInf(divZeroResult.Data[0], 1) || // Expect +Inf
+	if !math.IsInf(divZeroResult.Data[0], 1) ||
 		!math.IsInf(divZeroResult.Data[1], 1) ||
 		!math.IsInf(divZeroResult.Data[2], 1) ||
 		!math.IsInf(divZeroResult.Data[3], 1) {
@@ -451,7 +451,7 @@ func TestTensor_DivScalar(t *testing.T) {
 
 	zeroNumerator := NewTensor([]float32{0, 0, 0, 0}, []int{2, 2})
 	zeroDivZeroResult := zeroNumerator.DivScalar(0.0)
-	if !math.IsNaN(zeroDivZeroResult.Data[0]) || // Expect NaN (0/0)
+	if !math.IsNaN(zeroDivZeroResult.Data[0]) ||
 		!math.IsNaN(zeroDivZeroResult.Data[1]) ||
 		!math.IsNaN(zeroDivZeroResult.Data[2]) ||
 		!math.IsNaN(zeroDivZeroResult.Data[3]) {
@@ -462,14 +462,14 @@ func TestTensor_DivScalar(t *testing.T) {
 func TestTensor_Sum111(t *testing.T) {
 	tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 	result := tensor.Sum111()
-	wantSum := float32(1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0) // 21.0
+	wantSum := float32(1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0)
 	wantTensor := NewTensor([]float32{wantSum}, []int{1})
 
 	if !tensorsEqual(result, wantTensor, epsilon) {
 		t.Errorf("Sum111() = %v, want %v", result, wantTensor)
 	}
 
-	emptyTensor := NewTensor([]float32{}, []int{0}) // Requires NewTensor handling
+	emptyTensor := NewTensor([]float32{}, []int{0})
 	emptyResult := emptyTensor.Sum111()
 	wantEmpty := NewTensor([]float32{0.0}, []int{1})
 	if !tensorsEqual(emptyResult, wantEmpty, epsilon) {
@@ -481,7 +481,7 @@ func TestTensor_Get(t *testing.T) {
 	tensor := NewTensor([]float32{
 		1, 2, 3,
 		4, 5, 6,
-	}, []int{2, 3}) // Shape [2, 3]
+	}, []int{2, 3})
 
 	tests := []struct {
 		name    string
@@ -517,12 +517,12 @@ func TestTensor_Get(t *testing.T) {
 
 func TestTensor_Set1(t *testing.T) {
 	tensor := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	indices := []int{1, 0} // Corresponds to element '3'
+	indices := []int{1, 0}
 	value := float32(99.0)
 
 	tensor.Set1(indices, value)
 
-	got := tensor.Get(indices) // Use Get to verify
+	got := tensor.Get(indices)
 	if math.Abs(got-value) > epsilon {
 		t.Errorf("Set1(%v, %v); Get(%v) = %v, want %v", indices, value, indices, got, value)
 	}
@@ -567,7 +567,7 @@ func TestTensor_Max1(t *testing.T) {
 	}
 
 	t.Run("Empty Tensor", func(t *testing.T) {
-		emptyTensor := &Tensor{Data: []float32{}, Shape: []int{0}} // Create directly if NewTensor panics
+		emptyTensor := &Tensor{Data: []float32{}, Shape: []int{0}}
 		got := emptyTensor.Max1()
 		if got != 0.0 {
 			t.Errorf("Max1() for empty tensor = %v, want 0.0", got)
@@ -598,9 +598,9 @@ func TestTensor_Sub1(t *testing.T) {
 	}
 
 	t.Run("PanicShapeMismatch", func(t *testing.T) {
-		t3_diff_shape := NewTensor([]float32{1, 2, 3}, []int{3})               // Different shape
-		t4_diff_rank := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})    // Different rank but same size (still mismatch)
-		t5_same_rank_diff_dim := NewTensor([]float32{1, 2, 3, 4}, []int{4, 1}) // Different dimensions
+		t3_diff_shape := NewTensor([]float32{1, 2, 3}, []int{3})
+		t4_diff_rank := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
+		t5_same_rank_diff_dim := NewTensor([]float32{1, 2, 3, 4}, []int{4, 1})
 
 		checkPanic(t, func() { t1.Sub1(t3_diff_shape) }, "")
 		checkPanic(t, func() { t1.Sub1(t4_diff_rank) }, "")
@@ -629,9 +629,9 @@ func TestTensor_Sum1(t *testing.T) {
 		{"Mixed Signs", []float32{-1, 0, -5, 3, 2}, []int{5}, -1.0},
 		{"All Negative", []float32{-10, -2, -5}, []int{3}, -17.0},
 		{"Single Element", []float32{42}, []int{1}, 42.0},
-		{"Empty Tensor", []float32{}, []int{0}, 0.0},                // Shape {0} -> 0 elements
-		{"Empty Tensor High Dim", []float32{}, []int{2, 0, 3}, 0.0}, // Shape {2,0,3} -> 0 elements
-		{"Empty Tensor Empty Shape", []float32{}, []int{}, 0.0},     // Shape {} -> Data {}, size 0 (based on NewTensor logic)
+		{"Empty Tensor", []float32{}, []int{0}, 0.0},
+		{"Empty Tensor High Dim", []float32{}, []int{2, 0, 3}, 0.0},
+		{"Empty Tensor Empty Shape", []float32{}, []int{}, 0.0},
 	}
 
 	for _, tt := range tests {
@@ -747,7 +747,7 @@ func TestTensor_Apply1(t *testing.T) {
 
 	t.Run("WithNaN", func(t *testing.T) {
 		negTensor := NewTensor([]float32{-1.0, 4.0}, []int{2})
-		result := negTensor.Apply1(math.Sqrt) // sqrt(-1) is NaN
+		result := negTensor.Apply1(math.Sqrt)
 		if !math.IsNaN(result.Data[0]) {
 			t.Errorf("Apply1(sqrt) on negative number: expected NaN, got %v", result.Data[0])
 		}
@@ -776,7 +776,7 @@ func TestTensor_Clone1(t *testing.T) {
 
 	original.Data[0] = 99.0
 	if original.Shape != nil && len(original.Shape) > 0 {
-		original.Shape[0] = 55 // Modify shape slice element
+		original.Shape[0] = 55
 	}
 
 	if cloned.Data[0] == 99.0 {
@@ -819,9 +819,9 @@ func TestShapeEqual(t *testing.T) {
 		{"Identical Shapes", []int{2, 3}, []int{2, 3}, true},
 		{"Different Dimensions", []int{2, 3}, []int{2, 4}, false},
 		{"Different Ranks", []int{2, 3}, []int{2, 3, 1}, false},
-		{"One Nil, One Empty", nil, []int{}, false}, // Lengths differ (0 vs 0, but treated diff by reflect maybe?) -> len check makes it false
-		{"Both Nil", nil, nil, true},                // Lengths are both 0
-		{"Both Empty", []int{}, []int{}, true},      // Lengths are both 0
+		{"One Nil, One Empty", nil, []int{}, false},
+		{"Both Nil", nil, nil, true},
+		{"Both Empty", []int{}, []int{}, true},
 		{"One Nil, One Valid", nil, []int{2, 3}, false},
 		{"One Empty, One Valid", []int{}, []int{2, 3}, false},
 		{"Scalar vs Scalar", []int{1}, []int{1}, true},

@@ -230,9 +230,9 @@ func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
 		panic(fmt.Sprintf("Shape mismatch: %v vs %v", a.Shape, b.Shape))
 	}
 
-	m := a.Shape[0] // 结果行数
-	n := b.Shape[1] // 结果列数
-	k := a.Shape[1] // 公共维度
+	m := a.Shape[0]
+	n := b.Shape[1]
+	k := a.Shape[1]
 
 	result := make([]float32, m*n)
 

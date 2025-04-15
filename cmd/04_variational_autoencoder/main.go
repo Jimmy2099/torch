@@ -82,12 +82,12 @@ func NewVAE() *VAE {
 		decoderFc: torch.NewLinearLayer(64, 8192),
 
 		decoderConv0: layer.NewConvTranspose2dLayer(
-			512,  // 输入通道数 - 必须与前一层输出匹配
-			256,  // 输出通道数
-			5, 5, // 卷积核大小
-			2, 2, // 步长
-			2, 2, // 填充
-			1, 1, // 输出填充
+			512,
+			256,
+			5, 5,
+			2, 2,
+			2, 2,
+			1, 1,
 		),
 		decoderConv1: torch.NewBatchNormLayer(256, bnEps, bnMomentum),
 		decoderReLU2: torch.NewReLULayer(),
@@ -131,20 +131,20 @@ func NewVAE() *VAE {
 		{"encoder_conv.3.bias", vae.encoderConv3, nil, []int{128}},
 		{"encoder_conv.4.weight", vae.encoderConv4, []int{128}, nil},
 		{"encoder_conv.4.bias", vae.encoderConv4, nil, []int{128}},
-		{"encoder_conv.4.weight", vae.encoderConv4, []int{128}, nil}, // Optional
-		{"encoder_conv.4.bias", vae.encoderConv4, []int{128}, nil},   // Optional
+		{"encoder_conv.4.weight", vae.encoderConv4, []int{128}, nil},
+		{"encoder_conv.4.bias", vae.encoderConv4, []int{128}, nil},
 		{"encoder_conv.6.weight", vae.encoderConv6, []int{256, 128, 5, 5}, nil},
 		{"encoder_conv.6.bias", vae.encoderConv6, nil, []int{256}},
 		{"encoder_conv.7.weight", vae.encoderConv7, []int{256}, nil},
 		{"encoder_conv.7.bias", vae.encoderConv7, nil, []int{256}},
-		{"encoder_conv.7.weight", vae.encoderConv7, []int{256}, nil}, // Optional
-		{"encoder_conv.7.bias", vae.encoderConv7, []int{256}, nil},   // Optional
+		{"encoder_conv.7.weight", vae.encoderConv7, []int{256}, nil},
+		{"encoder_conv.7.bias", vae.encoderConv7, []int{256}, nil},
 		{"encoder_conv.9.weight", vae.encoderConv9, []int{512, 256, 5, 5}, nil},
 		{"encoder_conv.9.bias", vae.encoderConv9, nil, []int{512}},
 		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil},
 		{"encoder_conv.10.bias", vae.encoderConv10, nil, []int{512}},
-		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil}, // Optional
-		{"encoder_conv.10.bias", vae.encoderConv10, []int{512}, nil},   // Optional
+		{"encoder_conv.10.weight", vae.encoderConv10, []int{512}, nil},
+		{"encoder_conv.10.bias", vae.encoderConv10, []int{512}, nil},
 
 		{"fc_mu.weight", vae.fcMu, []int{64, 8192}, nil},
 		{"fc_mu.bias", vae.fcMu, nil, []int{64}},

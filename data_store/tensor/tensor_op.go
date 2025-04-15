@@ -19,7 +19,7 @@ func NewTensorWithShape(shape []int) *Tensor {
 func NewRandomTensor(shape []int) *Tensor {
 	t := NewTensorWithShape(shape)
 	for i := range t.Data {
-		t.Data[i] = float32(rand.Float32())*2 - 1 // Random between -1 and 1
+		t.Data[i] = float32(rand.Float32())*2 - 1
 	}
 	return t
 }

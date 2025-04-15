@@ -9,9 +9,9 @@ type MaxPool2DLayer struct {
 	PoolSize  int
 	Stride    int
 	Padding   int
-	Input     *tensor.Tensor // 保存输入用于反向传播
-	ArgMax    [][4]int       // 记录最大值位置 [batch][channel][row][col]
-	OutputDim []int          // 输出维度
+	Input     *tensor.Tensor
+	ArgMax    [][4]int
+	OutputDim []int
 }
 
 func NewMaxPool2DLayer(poolSize, stride, padding int) *MaxPool2DLayer {

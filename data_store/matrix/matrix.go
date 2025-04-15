@@ -25,7 +25,7 @@ func NewRandomMatrix(rows, cols int) *Matrix {
 	m := NewMatrix(rows, cols)
 	for i := 0; i < rows; i++ {
 		for j := 0; j < cols; j++ {
-			m.Data[i][j] = rand.Float32()*2 - 1 // Random between -1 and 1
+			m.Data[i][j] = rand.Float32()*2 - 1
 		}
 	}
 	return m

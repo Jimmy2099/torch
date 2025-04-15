@@ -29,7 +29,7 @@ func createTensor(shape []int) *Tensor {
 
 func TestSplitLastDim(t *testing.T) {
 	t.Run("正常分割最后一个维度", func(t *testing.T) {
-		tensor := createTensor([]int{2, 4}) // 数据: [0,1,2,3,4,5,6,7]
+		tensor := createTensor([]int{2, 4})
 		split := tensor.SplitLastDim(2, 0)
 		expected := &Tensor{
 			Data:  []float32{0, 1, 4, 5},
@@ -41,7 +41,7 @@ func TestSplitLastDim(t *testing.T) {
 	})
 
 	t.Run("分割不足部分应补零（潜在bug）", func(t *testing.T) {
-		tensor := createTensor([]int{2, 5}) // 数据: 0-9
+		tensor := createTensor([]int{2, 5})
 		split := tensor.SplitLastDim(3, 1)
 		expected := &Tensor{
 			Data:  []float32{3, 4, 0, 8, 9, 0},
@@ -68,7 +68,7 @@ func TestSplitLastDim(t *testing.T) {
 				t.Error("未触发无效分割点panic")
 			}
 		}()
-		tensor.SplitLastDim(3, 0) // splitPoint >= lastDim(3)
+		tensor.SplitLastDim(3, 0)
 	})
 }
 
@@ -108,7 +108,7 @@ func TestSlice(t *testing.T) {
 				t.Error("未触发非法范围panic")
 			}
 		}()
-		tensor.Slice(2, 1, 0) // start > end
+		tensor.Slice(2, 1, 0)
 	})
 }
 
@@ -214,13 +214,13 @@ func TestGetIndices(t *testing.T) {
 			name:     "2x3矩阵索引3",
 			shape:    []int{2, 3},
 			index:    3,
-			expected: []int{1, 0}, // 正确结果
+			expected: []int{1, 0},
 		},
 		{
 			name:     "3x2x4张量索引10",
 			shape:    []int{3, 2, 4},
 			index:    10,
-			expected: []int{1, 0, 2}, // 修正后的正确期望
+			expected: []int{1, 0, 2},
 		},
 	}
 
@@ -245,8 +245,8 @@ func TestGetBroadcastedValue(t *testing.T) {
 		expected float32
 	}{
 		{[]int{0, 0}, 1},
-		{[]int{1, 1}, 0}, // 广播到第二维的0
-		{[]int{2, 3}, 1}, // 广播到第二维的0
+		{[]int{1, 1}, 0},
+		{[]int{2, 3}, 1},
 	}
 
 	for i, tt := range tests {
@@ -267,13 +267,13 @@ func TestSumByDim2(t *testing.T) {
 	input := NewTensor(data, []int{3, 2})
 
 	sum0 := input.SumByDim2(0, true)
-	expected := []float32{9, 12} // (1+3+5), (2+4+6)
+	expected := []float32{9, 12}
 	if !sliceEqual(sum0.Data, expected, 1e-6) {
 		t.Errorf("dim0求和错误，期望%v，得到%v", expected, sum0.Data)
 	}
 
 	sum1 := input.SumByDim2(1, false)
-	expected = []float32{3, 7, 11} // 各行求和
+	expected = []float32{3, 7, 11}
 	if !sliceEqual(sum1.Data, expected, 1e-6) {
 		t.Errorf("dim1求和错误，期望%v，得到%v", expected, sum1.Data)
 	}
@@ -499,19 +499,19 @@ func TestRepeatInterleave(t *testing.T) {
 			name: "4D dim1 repeats2 channels",
 			input: NewTensor(
 				[]float32{
-					1, 2, 3, 4, // 通道1 (2x2)
-					5, 6, 7, 8, // 通道2
+					1, 2, 3, 4,
+					5, 6, 7, 8,
 				},
-				[]int{1, 2, 2, 2}, // (batch, channels, height, width)
+				[]int{1, 2, 2, 2},
 			),
 			dim:     1,
 			repeats: 2,
 			expected: NewTensor(
 				[]float32{
-					1, 2, 3, 4, // 通道1 重复
-					1, 2, 3, 4, // 重复副本
-					5, 6, 7, 8, // 通道2 重复
-					5, 6, 7, 8, // 重复副本
+					1, 2, 3, 4,
+					1, 2, 3, 4,
+					5, 6, 7, 8,
+					5, 6, 7, 8,
 				},
 				[]int{1, 4, 2, 2},
 			),
@@ -520,8 +520,8 @@ func TestRepeatInterleave(t *testing.T) {
 			name: "4D dim0 repeats3 batch",
 			input: NewTensor(
 				[]float32{
-					1, 1, 1, 1, // 批次1
-					2, 2, 2, 2, // 批次2
+					1, 1, 1, 1,
+					2, 2, 2, 2,
 				},
 				[]int{2, 1, 2, 2},
 			),
@@ -543,8 +543,8 @@ func TestRepeatInterleave(t *testing.T) {
 			name: "4D multi-batch channels repeat",
 			input: NewTensor(
 				[]float32{
-					1, 1, 2, 2, // 通道1 (2x2)
-					3, 3, 4, 4, // 通道2
+					1, 1, 2, 2,
+					3, 3, 4, 4,
 					5, 5, 6, 6,
 					7, 7, 8, 8,
 				},
@@ -554,9 +554,9 @@ func TestRepeatInterleave(t *testing.T) {
 			repeats: 2,
 			expected: NewTensor(
 				[]float32{
-					1, 1, 2, 2, // 通道1 ×2
 					1, 1, 2, 2,
-					3, 3, 4, 4, // 通道2 ×2
+					1, 1, 2, 2,
+					3, 3, 4, 4,
 					3, 3, 4, 4,
 					5, 5, 6, 6,
 					5, 5, 6, 6,
@@ -604,7 +604,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name:      "2D valid index",
 			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3}),
-			indices:   []int{1, 2}, // 第二行第三列
+			indices:   []int{1, 2},
 			expected:  6,
 			wantPanic: false,
 		},
@@ -619,7 +619,7 @@ func TestGetValue(t *testing.T) {
 			name:      "3D valid index",
 			tensor:    NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2}),
 			indices:   []int{1, 0, 1},
-			expected:  6, // 正确值
+			expected:  6,
 			wantPanic: false,
 		},
 	}
@@ -660,12 +660,12 @@ func TestMaskedFill1(t *testing.T) {
 		{
 			name:  "Broadcast with size-1 dimensions",
 			input: NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}),
-			mask:  NewTensor([]float32{0, 1}, []int{1, 2}), // 广播至 [3,2]
+			mask:  NewTensor([]float32{0, 1}, []int{1, 2}),
 			value: -99,
 			expected: []float32{
-				1, -99, // 第一行应用 mask [0,1]
-				3, -99, // 第二行相同
-				5, -99, // 第三行相同
+				1, -99,
+				3, -99,
+				5, -99,
 			},
 		},
 
@@ -692,7 +692,7 @@ func TestTensorRoundTo(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []float32
-		decimals int // 要保留的小数位数
+		decimals int
 		expected []float32
 	}{
 		{
@@ -705,13 +705,13 @@ func TestTensorRoundTo(t *testing.T) {
 			name:     "保留3位小数",
 			input:    []float32{1.2345678, 5.4321098, -0.0004999},
 			decimals: 3,
-			expected: []float32{1.235, 5.432, -0.000}, // 注意负数的进位方向
+			expected: []float32{1.235, 5.432, -0.000},
 		},
 		{
 			name:     "保留8位小数（极限精度）",
 			input:    []float32{0.123456789, 0.000000001},
 			decimals: 8,
-			expected: []float32{0.12345679, 0.00000000}, // float32精度限制
+			expected: []float32{0.12345679, 0.00000000},
 		},
 		{
 			name:     "非法小数位数（自动修正为0）",

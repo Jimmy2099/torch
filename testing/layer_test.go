@@ -40,16 +40,16 @@ func TestGetLayerTestResult(t *testing.T) {
 			name        string
 			inFeatures  int
 			outFeatures int
-			inputShape  []int // 输入张量形状
-			weightShape []int // 权重张量形状
-			biasShape   []int // 偏置张量形状
+			inputShape  []int
+			weightShape []int
+			biasShape   []int
 		}{
 			{
 				name:        "64x64 linear layer",
 				inFeatures:  64,
 				outFeatures: 64,
-				inputShape:  []int{64, 64}, // [batch, in_features]
-				weightShape: []int{64, 64}, // [out_features, in_features]
+				inputShape:  []int{64, 64},
+				weightShape: []int{64, 64},
 				biasShape:   []int{64},
 			},
 			{
@@ -140,8 +140,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		bias := tensor.Random([]int{64}, -1, 1)
 
 		l := torch.NewConvLayer(inChannels, outChannels, kernelSize[0], stride[0], padding[0])
-		l.SetWeightsAndShape(weights.Data, weights.Shape) // 修正为设置权重
-		l.SetBiasAndShape(bias.Data, bias.Shape)          // 设置偏置
+		l.SetWeightsAndShape(weights.Data, weights.Shape)
+		l.SetBiasAndShape(bias.Data, bias.Shape)
 
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
@@ -211,7 +211,7 @@ func TestGetLayerTestResult(t *testing.T) {
 				l := torch.NewConvLayer(
 					tc.inChannels,
 					tc.outChannels,
-					tc.kernelSize[0], // 可能需要调整接口支持不同宽高
+					tc.kernelSize[0],
 					tc.stride[0],
 					tc.padding[0],
 				)
@@ -770,7 +770,7 @@ func TestLayerSafety(t *testing.T) {
 			copy(testData, original.Data)
 			testData[0] = 999.0
 
-			layer.SetWeights(testData) // 需要实现对应方法
+			layer.SetWeights(testData)
 
 			if reflect.DeepEqual(params[0].Data, testData) {
 				t.Error("Parameter data sharing detected")

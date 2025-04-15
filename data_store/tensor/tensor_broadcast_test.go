@@ -31,7 +31,7 @@ func Test_computeStrides(t *testing.T) {
 		{"Empty Shape", []int{}, []int{}},
 		{"Shape with 0", []int{2, 0, 3}, []int{0, 3, 1}},
 		{"Shape with 0 at end", []int{3, 2, 0}, []int{0, 0, 1}},
-		{"Nil Shape", nil, []int{}}, // len(nil) is 0
+		{"Nil Shape", nil, []int{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -54,16 +54,16 @@ func Test_canBroadcast(t *testing.T) {
 		{"Matrix and Scalar", []int{4, 5}, []int{1}, true},
 		{"Vector and Matrix (compatible)", []int{3}, []int{2, 3}, true},
 		{"Matrix and Vector (compatible)", []int{2, 3}, []int{3}, true},
-		{"Matrix and Vector (prefix compatible)", []int{2, 3}, []int{2, 1}, true}, // [2,3] vs [2,1] -> [2,3]
-		{"Shapes need expansion", []int{5, 1, 4}, []int{1, 3, 1}, true},           // -> [5, 3, 4]
-		{"Different Ranks, compatible", []int{4, 1}, []int{3, 4, 5}, false},       // 1 vs 5, 4 vs 4, _ vs 3
-		{"Different Ranks, compatible 2", []int{4, 5}, []int{3, 1, 5}, true},      // 5 vs 5, 4 vs 1, _ vs 3 -> [3,4,5]
+		{"Matrix and Vector (prefix compatible)", []int{2, 3}, []int{2, 1}, true},
+		{"Shapes need expansion", []int{5, 1, 4}, []int{1, 3, 1}, true},
+		{"Different Ranks, compatible", []int{4, 1}, []int{3, 4, 5}, false},
+		{"Different Ranks, compatible 2", []int{4, 5}, []int{3, 1, 5}, true},
 		{"Incompatible dimensions", []int{2, 3}, []int{2, 4}, false},
 		{"Incompatible ranks and dimensions", []int{2, 3}, []int{4, 5, 6}, false},
 		{"Empty and NonEmpty", []int{}, []int{2, 3}, true},
 		{"NonEmpty and Empty", []int{2, 3}, []int{}, true},
 		{"Both Empty", []int{}, []int{}, true},
-		{"Nil and Empty", nil, []int{}, true}, // nil treated as len 0
+		{"Nil and Empty", nil, []int{}, true},
 		{"Nil and NonEmpty", nil, []int{2, 3}, true},
 		{"Both Nil", nil, nil, true},
 	}
@@ -85,7 +85,7 @@ func Test_getBroadcastedShape(t *testing.T) {
 		a         []int
 		b         []int
 		wantShape []int
-		wantErr   bool // Expect panic
+		wantErr   bool
 	}{
 		{"Identical Shapes", []int{2, 3}, []int{2, 3}, []int{2, 3}, false},
 		{"Scalar and Matrix", []int{1}, []int{4, 5}, []int{4, 5}, false},
@@ -100,7 +100,7 @@ func Test_getBroadcastedShape(t *testing.T) {
 		{"Both Empty", []int{}, []int{}, []int{}, false},
 		{"Nil and Empty", nil, []int{}, []int{}, false},
 		{"Nil and NonEmpty", nil, []int{2, 3}, []int{2, 3}, false},
-		{"Both Nil", nil, nil, []int{}, false}, // Result is empty shape
+		{"Both Nil", nil, nil, []int{}, false},
 
 		{"Incompatible dimensions", []int{2, 3}, []int{2, 4}, nil, true},
 		{"Incompatible ranks and dimensions", []int{2, 3}, []int{4, 5, 6}, nil, true},
@@ -128,31 +128,31 @@ func TestTensor_broadcastedIndex(t *testing.T) {
 	tests := []struct {
 		name          string
 		sourceShape   []int
-		targetIndices []int // Indices in the (conceptual) broadcasted target
-		wantIndex     int   // Expected linear index in the source tensor's data
+		targetIndices []int
+		wantIndex     int
 	}{
 		{"Source Dim 1 is 1", []int{1, 3}, []int{0, 0}, 0},
 		{"Source Dim 1 is 1, Idx 1", []int{1, 3}, []int{0, 1}, 1},
 		{"Source Dim 1 is 1, Idx 2", []int{1, 3}, []int{0, 2}, 2},
-		{"Source Dim 1 is 1, Target Idx 0 changed", []int{1, 3}, []int{5, 1}, 1}, // Target index[0] ignored as source dim is 1
+		{"Source Dim 1 is 1, Target Idx 0 changed", []int{1, 3}, []int{5, 1}, 1},
 
 		{"Source Dim 2 is 1", []int{3, 1}, []int{0, 0}, 0},
 		{"Source Dim 2 is 1, Idx 0", []int{3, 1}, []int{1, 0}, 1},
 		{"Source Dim 2 is 1, Idx 1", []int{3, 1}, []int{2, 0}, 2},
-		{"Source Dim 2 is 1, Target Idx 1 changed", []int{3, 1}, []int{1, 5}, 1}, // Target index[1] ignored as source dim is 1
+		{"Source Dim 2 is 1, Target Idx 1 changed", []int{3, 1}, []int{1, 5}, 1},
 
 		{"Source All Dims 1", []int{1, 1}, []int{0, 0}, 0},
-		{"Source All Dims 1, Indices Vary", []int{1, 1}, []int{5, 8}, 0}, // Always maps to index 0
+		{"Source All Dims 1, Indices Vary", []int{1, 1}, []int{5, 8}, 0},
 
 		{"No Broadcasting Needed", []int{2, 3}, []int{0, 0}, 0},
 		{"No Broadcasting Needed 1", []int{2, 3}, []int{0, 2}, 2},
 		{"No Broadcasting Needed 2", []int{2, 3}, []int{1, 0}, 3},
 		{"No Broadcasting Needed 3", []int{2, 3}, []int{1, 2}, 5},
 
-		{"Mixed 1s and >1s", []int{1, 2, 1, 3}, []int{0, 0, 0, 0}, 0},       // Skips dim 0, 2. Adds 0*3(dim1) + 0*1(dim3) = 0
-		{"Mixed 1s and >1s Idx 1", []int{1, 2, 1, 3}, []int{5, 1, 0, 0}, 3}, // Skips 0, 2. Adds 1*3(dim1) + 0*1(dim3) = 3
-		{"Mixed 1s and >1s Idx 2", []int{1, 2, 1, 3}, []int{5, 0, 9, 1}, 1}, // Skips 0, 2. Adds 0*3(dim1) + 1*1(dim3) = 1
-		{"Mixed 1s and >1s Idx 3", []int{1, 2, 1, 3}, []int{5, 1, 9, 2}, 5}, // Skips 0, 2. Adds 1*3(dim1) + 2*1(dim3) = 3+2 = 5
+		{"Mixed 1s and >1s", []int{1, 2, 1, 3}, []int{0, 0, 0, 0}, 0},
+		{"Mixed 1s and >1s Idx 1", []int{1, 2, 1, 3}, []int{5, 1, 0, 0}, 3},
+		{"Mixed 1s and >1s Idx 2", []int{1, 2, 1, 3}, []int{5, 0, 9, 1}, 1},
+		{"Mixed 1s and >1s Idx 3", []int{1, 2, 1, 3}, []int{5, 1, 9, 2}, 5},
 	}
 
 	for _, tt := range tests {
@@ -170,10 +170,10 @@ func TestTensor_broadcastedIndex(t *testing.T) {
 	t.Run("PanicMismatchedLengths", func(t *testing.T) {
 		tensor := &Tensor{Shape: []int{2, 3}}
 		strides := []int{3, 1}
-		badIndices := []int{1, 1, 1} // Length 3 != Length 2
+		badIndices := []int{1, 1, 1}
 		checkPanic(t, func() { tensor.broadcastedIndex(badIndices, strides) }, "")
 
-		badStrides := []int{1} // Length 1 != Length 2
+		badStrides := []int{1}
 		goodIndices := []int{1, 1}
 		checkPanic(t, func() { tensor.broadcastedIndex(goodIndices, badStrides) }, "")
 	})

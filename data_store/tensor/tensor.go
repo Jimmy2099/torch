@@ -7,7 +7,7 @@ import (
 
 type Tensor struct {
 	Data  []float32
-	Shape []int // e.g., [batch_size, channels, height, width]
+	Shape []int
 }
 
 func NewTensor(data []float32, shape []int) *Tensor {

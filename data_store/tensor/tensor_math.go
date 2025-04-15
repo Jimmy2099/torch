@@ -24,7 +24,7 @@ func (t *Tensor) Sub(other *Tensor) *Tensor {
 
 	{
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
-		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
+		result := Zeros(broadcastedShape)
 
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
@@ -63,7 +63,7 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 
 	{
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
-		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
+		result := Zeros(broadcastedShape)
 
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
@@ -95,7 +95,7 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 	}
 
 	broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
-	result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
+	result := Zeros(broadcastedShape)
 
 	tStrides := computeStrides(t.Shape)
 	otherStrides := computeStrides(other.Shape)
@@ -105,7 +105,7 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 		indices := result.Indices(i)
 		tIndex := t.broadcastedIndex(indices, tStrides)
 		otherIndex := other.broadcastedIndex(indices, otherStrides)
-		result.Data[i] = t.Data[tIndex] + other.Data[otherIndex] // 改为加法运算
+		result.Data[i] = t.Data[tIndex] + other.Data[otherIndex]
 	}
 
 	return result
@@ -127,7 +127,7 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 	{
 
 		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
-		result := Zeros(broadcastedShape) // 假设存在创建零张量的函数
+		result := Zeros(broadcastedShape)
 
 		tStrides := computeStrides(t.Shape)
 		otherStrides := computeStrides(other.Shape)
@@ -137,7 +137,7 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 			indices := result.Indices(i)
 			tIndex := t.broadcastedIndex(indices, tStrides)
 			otherIndex := other.broadcastedIndex(indices, otherStrides)
-			result.Data[i] = t.Data[tIndex] * other.Data[otherIndex] // 改为乘法运算
+			result.Data[i] = t.Data[tIndex] * other.Data[otherIndex]
 		}
 
 		return result
@@ -210,7 +210,7 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 		bOffset := dotProduct(bBatchIndices, bStrides[:len(bBatchIndices)])
 
 		aMatrix := a.Data[aOffset : aOffset+m*aLastDim]
-		bMatrix := b.Data[bOffset : bOffset+aLastDim*p] // aLastDim = n = bSecondLastDim
+		bMatrix := b.Data[bOffset : bOffset+aLastDim*p]
 
 		resultMatrix := matrixMultiply(aMatrix, bMatrix, m, aLastDim, p)
 
@@ -264,7 +264,7 @@ func getBroadcastedIndices(bcIndices, origShape, bcShape []int) []int {
 func matrixMultiply(a, b []float32, m, n, p int) []float32 {
 	result := make([]float32, m*p)
 	for i := 0; i < m; i++ {
-		for k := 0; k < n; k++ { // 先遍历k，优化内存访问
+		for k := 0; k < n; k++ {
 			aVal := a[i*n+k]
 			for j := 0; j < p; j++ {
 				result[i*p+j] += aVal * b[k*p+j]

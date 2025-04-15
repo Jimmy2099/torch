@@ -5,7 +5,7 @@ import (
 )
 
 func MSE(predictions, targets *tensor.Tensor) float32 {
-	diff := predictions.Sub(targets)                                // 使用Tensor的Sub方法
-	squared := diff.Apply(func(x float32) float32 { return x * x }) // 使用Tensor的Apply方法
-	return squared.Sum() / float32(squared.Shape[0])                // 使用Tensor的Sum方法和Shape属性
+	diff := predictions.Sub(targets)
+	squared := diff.Apply(func(x float32) float32 { return x * x })
+	return squared.Sum() / float32(squared.Shape[0])
 }

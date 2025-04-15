@@ -24,9 +24,9 @@ func SigmoidDerivative(x float32) float32 {
 func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 	shape := input.Shape
 
-	outputData := make([]float32, len(input.Data)) // 创建一个和输入相同大小的数据切片
+	outputData := make([]float32, len(input.Data))
 	for i := 0; i < len(input.Data); i++ {
-		outputData[i] = Sigmoid(input.Data[i]) // 应用 Sigmoid 激活
+		outputData[i] = Sigmoid(input.Data[i])
 	}
 
 	return tensor.NewTensor(outputData, shape)
@@ -37,7 +37,7 @@ func (s *SigmoidLayer) Backward(gradOutput *tensor.Tensor, learningRate float32)
 
 	gradInputData := make([]float32, len(gradOutput.Data))
 	for i := 0; i < len(gradOutput.Data); i++ {
-		gradInputData[i] = gradOutput.Data[i] * SigmoidDerivative(gradOutput.Data[i]) // 根据 Sigmoid 导数计算梯度
+		gradInputData[i] = gradOutput.Data[i] * SigmoidDerivative(gradOutput.Data[i])
 	}
 
 	return tensor.NewTensor(gradInputData, shape)

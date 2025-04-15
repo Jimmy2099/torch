@@ -16,8 +16,8 @@ type LayerLinearMC struct {
 	*LinearLayer
 	calcChannel chan *CalcStruct
 
-	counter     uint64 // 处理总数
-	totalTime   uint64 // 总耗时（纳秒）
+	counter     uint64
+	totalTime   uint64
 	printTicker *time.Ticker
 }
 
@@ -74,6 +74,6 @@ func (m *LayerLinearMC) RunCalculation() {
 		atomic.AddUint64(&m.counter, size)
 		atomic.AddUint64(&m.totalTime, uint64(elapsed.Nanoseconds()))
 
-		_ = result // 实际使用时需要处理结果
+		_ = result
 	}
 }

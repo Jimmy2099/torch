@@ -29,13 +29,13 @@ type Reader struct {
 func (r *Reader) readString() (string, error) {
 	trim := func(r rune) bool {
 		var asciiSpace = [33]bool{
-			0:    true, // null character
-			'\t': true, // horizontal tab
-			'\n': true, // new line
-			'\v': true, // vertical tab
-			'\f': true, // form feed
-			'\r': true, // carriage return
-			' ':  true, // space
+			0:    true,
+			'\t': true,
+			'\n': true,
+			'\v': true,
+			'\f': true,
+			'\r': true,
+			' ':  true,
 		}
 
 		if int(r) < len(asciiSpace) && asciiSpace[r] {

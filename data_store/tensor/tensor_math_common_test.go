@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-const tolerance = 1e-9 // Tolerance for float comparisons
+const tolerance = 1e-9
 
 func floatsEqual(a, b []float32, tol float32) bool {
 	if len(a) != len(b) {
@@ -22,7 +22,7 @@ func floatsEqual(a, b []float32, tol float32) bool {
 }
 
 func shapesEqual(a, b []int) bool {
-	return reflect.DeepEqual(a, b) // reflect.DeepEqual works well for int slices
+	return reflect.DeepEqual(a, b)
 }
 
 func assertTensorsEqual(t *testing.T, got, want *Tensor, tol float32) {
@@ -36,7 +36,7 @@ func assertTensorsEqual(t *testing.T, got, want *Tensor, tol float32) {
 	}
 	if !shapesEqual(got.Shape, want.Shape) {
 		t.Errorf("Shape mismatch: Got %v, want %v", got.Shape, want.Shape)
-		return // Stop comparison if shapes differ
+		return
 	}
 	if !floatsEqual(got.Data, want.Data, tol) {
 		t.Errorf("Data mismatch:\nGot:  %v\nWant: %v\nShape: %v", got.Data, want.Data, got.Shape)
@@ -63,7 +63,7 @@ func TestFlatten(t *testing.T) {
 	t1 := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
 	want := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{6})
 	got := t1.Flatten()
-	assertTensorsEqual(t, got, want, 0) // Exact comparison
+	assertTensorsEqual(t, got, want, 0)
 
 	t2 := NewTensor([]float32{1, 2, 3, 4}, []int{1, 4})
 	want2 := NewTensor([]float32{1, 2, 3, 4}, []int{4})
@@ -78,20 +78,20 @@ func TestFlatten(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
-	tensor.Set(99.0, 1, 1) // Set element at [1][1]
+	tensor.Set(99.0, 1, 1)
 
 	wantData := []float32{1, 2, 3, 4, 99, 6}
 	if !floatsEqual(tensor.Data, wantData, 0) {
 		t.Errorf("Set failed. Got %v, want %v", tensor.Data, wantData)
 	}
 
-	tensor.Set(-5.0, 0, 0) // Set element at [0][0]
+	tensor.Set(-5.0, 0, 0)
 	wantData = []float32{-5, 2, 3, 4, 99, 6}
 	if !floatsEqual(tensor.Data, wantData, 0) {
 		t.Errorf("Set failed. Got %v, want %v", tensor.Data, wantData)
 	}
 
-	tensor3D := NewTensor(make([]float32, 12), []int{2, 2, 3}) // Zeros
+	tensor3D := NewTensor(make([]float32, 12), []int{2, 2, 3})
 	tensor3D.Set(7.0, 1, 0, 2)
 	wantData3D := make([]float32, 12)
 	wantData3D[8] = 7.0
@@ -102,8 +102,8 @@ func TestSet(t *testing.T) {
 
 func TestMultiply1(t *testing.T) {
 	t.Run("2D Matrix Multiplication", func(t *testing.T) {
-		a := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})    // 2x3
-		b := NewTensor([]float32{7, 8, 9, 10, 11, 12}, []int{3, 2}) // 3x2
+		a := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
+		b := NewTensor([]float32{7, 8, 9, 10, 11, 12}, []int{3, 2})
 		want := NewTensor([]float32{58, 64, 139, 154}, []int{2, 2})
 		got := Multiply(a, b)
 		assertTensorsEqual(t, got, want, tolerance)
@@ -111,26 +111,26 @@ func TestMultiply1(t *testing.T) {
 
 	t.Run("Higher Dimensions (Batch Matrix Multiplication)", func(t *testing.T) {
 		a := NewTensor([]float32{
-			1, 2, 3, // Batch 0, Row 0
-			4, 5, 6, // Batch 0, Row 1
-			7, 8, 9, // Batch 1, Row 0
-			10, 11, 12, // Batch 1, Row 1
-		}, []int{2, 2, 3}) // Shape (Batch=2, Rows=2, Cols=3)
+			1, 2, 3,
+			4, 5, 6,
+			7, 8, 9,
+			10, 11, 12,
+		}, []int{2, 2, 3})
 
 		b := NewTensor([]float32{
-			1, 0, // Batch 0, Col 0
-			0, 1, // Batch 0, Col 1
-			1, 1, // Batch 0, Col 2 (Shape 3x2)
-			2, 1, // Batch 1, Col 0
-			1, 2, // Batch 1, Col 1
-			0, 0, // Batch 1, Col 2 (Shape 3x2)
-		}, []int{2, 3, 2}) // Shape (Batch=2, Rows=3, Cols=2)
+			1, 0,
+			0, 1,
+			1, 1,
+			2, 1,
+			1, 2,
+			0, 0,
+		}, []int{2, 3, 2})
 
 		wantData := []float32{
-			4, 5, 10, 11, // Batch 0 result (2x2)
-			22, 23, 31, 32, // Batch 1 result (2x2)
+			4, 5, 10, 11,
+			22, 23, 31, 32,
 		}
-		wantShape := []int{2, 2, 2} // Shape (Batch=2, Rows=2, Cols=2)
+		wantShape := []int{2, 2, 2}
 		want := NewTensor(wantData, wantShape)
 
 		got := Multiply(a, b)
@@ -139,24 +139,24 @@ func TestMultiply1(t *testing.T) {
 
 	t.Run("Panic on Dimension Mismatch", func(t *testing.T) {
 		a := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-		b := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2}) // Inner dims mismatch (2 vs 3)
+		b := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{3, 2})
 		assertPanic(t, func() { Multiply(a, b) }, "Tensor dimensions don't match")
 	})
 
 	t.Run("Panic on Leading Dimension Mismatch (Higher Dims)", func(t *testing.T) {
-		a := NewTensor(make([]float32, 12), []int{2, 2, 3}) // Batch=2
-		b := NewTensor(make([]float32, 18), []int{3, 3, 2}) // Batch=3
+		a := NewTensor(make([]float32, 12), []int{2, 2, 3})
+		b := NewTensor(make([]float32, 18), []int{3, 3, 2})
 		assertPanic(t, func() { Multiply(a, b) }, "Leading tensor dimensions don't match")
 	})
 
 	t.Run("Panic on Insufficient Dimensions", func(t *testing.T) {
-		a := NewTensor([]float32{1, 2, 3}, []int{3}) // 1D
-		b := NewTensor([]float32{4, 5, 6}, []int{3}) // 1D
+		a := NewTensor([]float32{1, 2, 3}, []int{3})
+		b := NewTensor([]float32{4, 5, 6}, []int{3})
 		assertPanic(t, func() { Multiply(a, b) }, "Tensors must have at least 2 dimensions")
 
-		c := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})                                   // 2D
-		assertPanic(t, func() { Multiply(a, c) }, "Tensors must have at least 2 dimensions") // a is 1D
-		assertPanic(t, func() { Multiply(c, a) }, "Tensors must have at least 2 dimensions") // a is 1D
+		c := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
+		assertPanic(t, func() { Multiply(a, c) }, "Tensors must have at least 2 dimensions")
+		assertPanic(t, func() { Multiply(c, a) }, "Tensors must have at least 2 dimensions")
 	})
 }
 
@@ -201,13 +201,13 @@ func TestTranspose1(t *testing.T) {
 		assertTensorsEqual(t, got, want, 0)
 
 		bData := []float32{
-			1, 2, 3, 4, 5, 6, // Slice 0
-			7, 8, 9, 10, 11, 12, // Slice 1
+			1, 2, 3, 4, 5, 6,
+			7, 8, 9, 10, 11, 12,
 		}
 		b := NewTensor(bData, []int{2, 2, 3})
 		wantData := []float32{
-			1, 4, 2, 5, 3, 6, // Transposed Slice 0
-			7, 10, 8, 11, 9, 12, // Transposed Slice 1
+			1, 4, 2, 5, 3, 6,
+			7, 10, 8, 11, 9, 12,
 		}
 		wantB := NewTensor(wantData, []int{2, 3, 2})
 		gotB := Transpose(b)
@@ -221,9 +221,9 @@ func TestTranspose1(t *testing.T) {
 		}
 		a := NewTensor(data, []int{2, 3, 4})
 		wantData := []float32{
-			0, 12, 1, 13, 2, 14, 3, 15, // j=0
-			4, 16, 5, 17, 6, 18, 7, 19, // j=1
-			8, 20, 9, 21, 10, 22, 11, 23, // j=2
+			0, 12, 1, 13, 2, 14, 3, 15,
+			4, 16, 5, 17, 6, 18, 7, 19,
+			8, 20, 9, 21, 10, 22, 11, 23,
 		}
 		wantShape := []int{3, 4, 2}
 		want := NewTensor(wantData, wantShape)
@@ -233,7 +233,7 @@ func TestTranspose1(t *testing.T) {
 
 	t.Run("1D Tensor", func(t *testing.T) {
 		a := NewTensor([]float32{1, 2, 3}, []int{3})
-		got := Transpose(a) // Should return a copy
+		got := Transpose(a)
 		assertTensorsEqual(t, got, a, 0)
 		got.Data[0] = 99
 		if a.Data[0] == 99 {
@@ -243,14 +243,14 @@ func TestTranspose1(t *testing.T) {
 
 	t.Run("Panic Invalid Dimensions", func(t *testing.T) {
 		a := NewTensor([]float32{1, 2, 3, 4, 5, 6}, []int{2, 3})
-		assertPanic(t, func() { Transpose(a, 0) }, "Invalid transpose dimensions")    // Wrong number of dims
-		assertPanic(t, func() { Transpose(a, 1, 2) }, "Invalid transpose dimensions") // Wrong number of dims
+		assertPanic(t, func() { Transpose(a, 0) }, "Invalid transpose dimensions")
+		assertPanic(t, func() { Transpose(a, 1, 2) }, "Invalid transpose dimensions")
 	})
 }
 
 func TestApply(t *testing.T) {
 	a := NewTensor([]float32{1, -2, 3, -4}, []int{2, 2})
-	fn := func(x float32) float32 { return x * x } // Square function
+	fn := func(x float32) float32 { return x * x }
 	want := NewTensor([]float32{1, 4, 9, 16}, []int{2, 2})
 	got := a.Apply(fn)
 	assertTensorsEqual(t, got, want, tolerance)
@@ -284,15 +284,15 @@ func TestCopy(t *testing.T) {
 	a := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	b := a.Copy()
 
-	assertTensorsEqual(t, a, b, 0) // Should be identical initially
+	assertTensorsEqual(t, a, b, 0)
 
 	b.Set(99.0, 0, 1)
-	b.Shape[0] = 5 // Modify shape (though Set doesn't use it after creation)
+	b.Shape[0] = 5
 
 	wantA := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	assertTensorsEqual(t, a, wantA, 0)
 
-	wantB := NewTensor([]float32{1, 99, 3, 4}, []int{5, 2}) // Note modified shape
+	wantB := NewTensor([]float32{1, 99, 3, 4}, []int{5, 2})
 	if !floatsEqual(b.Data, wantB.Data, 0) {
 		t.Errorf("Copy data modification failed: Got %v, want %v", b.Data, wantB.Data)
 	}
@@ -322,8 +322,8 @@ func TestSoftmax(t *testing.T) {
 
 	t.Run("2D Softmax (along last dim)", func(t *testing.T) {
 		a := NewTensor([]float32{
-			1, 2, 3, // Row 0
-			4, 1, 1, // Row 1
+			1, 2, 3,
+			4, 1, 1,
 		}, []int{2, 3})
 
 		wantData := []float32{
@@ -342,28 +342,28 @@ func TestSoftmax(t *testing.T) {
 func TestArgMax(t *testing.T) {
 	t.Run("1D ArgMax", func(t *testing.T) {
 		a := NewTensor([]float32{1, 5, 2, 5, 3}, []int{5})
-		want := NewTensor([]float32{1}, []int{}) // ArgMax reduces dimension
+		want := NewTensor([]float32{1}, []int{})
 		got := a.ArgMax()
-		assertTensorsEqual(t, got, want, 0) // Index is integer
+		assertTensorsEqual(t, got, want, 0)
 	})
 
 	t.Run("2D ArgMax (along last dim)", func(t *testing.T) {
 		a := NewTensor([]float32{
-			1, 9, 2, // Row 0, max at index 1
-			8, 5, 7, // Row 1, max at index 0
-			3, 4, 6, // Row 2, max at index 2
+			1, 9, 2,
+			8, 5, 7,
+			3, 4, 6,
 		}, []int{3, 3})
-		want := NewTensor([]float32{1, 0, 2}, []int{3}) // Shape is [3]
+		want := NewTensor([]float32{1, 0, 2}, []int{3})
 		got := a.ArgMax()
 		assertTensorsEqual(t, got, want, 0)
 	})
 
 	t.Run("3D ArgMax", func(t *testing.T) {
 		a := NewTensor([]float32{
-			1, 9, 2, 8, 5, 7, // Slice 0 (2x3) -> ArgMax -> [1, 0]
-			3, 4, 6, 0, 1, -1, // Slice 1 (2x3) -> ArgMax -> [2, 1]
+			1, 9, 2, 8, 5, 7,
+			3, 4, 6, 0, 1, -1,
 		}, []int{2, 2, 3})
-		want := NewTensor([]float32{1, 0, 2, 1}, []int{2, 2}) // Shape [2, 2]
+		want := NewTensor([]float32{1, 0, 2, 1}, []int{2, 2})
 		got := a.ArgMax()
 		assertTensorsEqual(t, got, want, 0)
 	})
@@ -385,7 +385,7 @@ func TestMaxPool(t *testing.T) {
 		stride := 2
 
 		wantPool := NewTensor([]float32{7, 8, 15, 16}, []int{2, 2})
-		wantArgmax := NewTensor([]float32{5, 7, 13, 15}, []int{2, 2}) // Indices in flattened original data
+		wantArgmax := NewTensor([]float32{5, 7, 13, 15}, []int{2, 2})
 
 		gotPool, gotArgmax := a.MaxPool(poolSize, stride)
 		assertTensorsEqual(t, gotPool, wantPool, 0)
@@ -436,7 +436,7 @@ func TestMaxPool(t *testing.T) {
 	})
 
 	t.Run("Panic on Insufficient Dimensions", func(t *testing.T) {
-		a := NewTensor([]float32{1, 2, 3}, []int{3}) // 1D
+		a := NewTensor([]float32{1, 2, 3}, []int{3})
 		assertPanic(t, func() { a.MaxPool(2, 1) }, "at least 2 dimensions")
 	})
 }
@@ -464,6 +464,6 @@ func TestShapesMatch(t *testing.T) {
 		t.Error("Expected ShapesMatch to return false when receiver is nil")
 	}
 	if tNil.ShapesMatch(nil) {
-		t.Error("Expected ShapesMatch to return false when both are nil") // Or true depending on desired semantics, false seems safer
+		t.Error("Expected ShapesMatch to return false when both are nil")
 	}
 }

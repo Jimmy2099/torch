@@ -8,8 +8,8 @@ const (
 	MostlyQ4_0        Filetype = 2
 	MostlyQ4_1        Filetype = 3
 	MostlyQ4_1SomeF16 Filetype = 4
-	MostlyQ4_2        Filetype = 5 // support removed from llama.cpp/ggml
-	MostlyQ4_3        Filetype = 6 // support removed from llama.cpp/ggml
+	MostlyQ4_2        Filetype = 5
+	MostlyQ4_3        Filetype = 6
 	MostlyQ8_0        Filetype = 7
 	MostlyQ5_0        Filetype = 8
 	MostlyQ5_1        Filetype = 9

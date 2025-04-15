@@ -105,8 +105,8 @@ func (t *Tensor) Slice(start, end, dim int) *Tensor {
 	newData := make([]float32, newSize)
 
 	sliceDimSize := t.Shape[dim]
-	outerDims := product(t.Shape[:dim])   // 外层维度乘积
-	innerDims := product(t.Shape[dim+1:]) // 内层维度乘积
+	outerDims := product(t.Shape[:dim])
+	innerDims := product(t.Shape[dim+1:])
 
 	for outer := 0; outer < outerDims; outer++ {
 		outerOffset := outer * sliceDimSize * innerDims
@@ -170,7 +170,7 @@ func (t *Tensor) Concat(other *Tensor, dim int) *Tensor {
 		} else {
 			src = other
 			srcStrides = otherStrides
-			indices[dim] -= t.Shape[dim] // 调整other的索引
+			indices[dim] -= t.Shape[dim]
 		}
 
 		srcPos := 0
@@ -325,7 +325,7 @@ func (t *Tensor) MaskedFill(mask *Tensor, value float32) *Tensor {
 	copy(outData, t.Data)
 
 	for i := range outData {
-		idx := t.getIndices(i) // 获取当前元素的原始索引
+		idx := t.getIndices(i)
 		maskIndices := make([]int, len(mask.Shape))
 		startIdx := len(idx) - len(mask.Shape)
 		if startIdx < 0 {
@@ -340,7 +340,7 @@ func (t *Tensor) MaskedFill(mask *Tensor, value float32) *Tensor {
 			}
 		}
 		maskVal := mask.GetValue(maskIndices)
-		if maskVal != 0 { // 假设非零值表示需要替换
+		if maskVal != 0 {
 			outData[i] = value
 		}
 	}
@@ -460,9 +460,9 @@ func (t *Tensor) RepeatInterleave(dim int, repeats int) *Tensor {
 }
 
 func (t *Tensor) RoundTo(decimals int) *Tensor {
-	if decimals < 0 { // 处理负数位数的输入
+	if decimals < 0 {
 		decimals = 0
-	} else if decimals > 8 { // Go的float32精度极限约为6-7位，这里限制到8位
+	} else if decimals > 8 {
 		decimals = 8
 	}
 

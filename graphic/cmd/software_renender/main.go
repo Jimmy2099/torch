@@ -136,9 +136,9 @@ func main() {
 }
 
 func (m *Render) AddVecData(data []*tensor.Tensor) {
-	fill := color.RGBA{R: 255, G: 0, B: 0, A: 255} // 设置绘制颜色为红色
+	fill := color.RGBA{R: 255, G: 0, B: 0, A: 255}
 	for i := 0; i < len(data); i++ {
-		m.frameBuff.Set(int(data[i].X()), int(data[i].Y()), fill) // 绘制点到缓冲区
+		m.frameBuff.Set(int(data[i].X()), int(data[i].Y()), fill)
 	}
 }
 

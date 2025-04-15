@@ -71,7 +71,7 @@ func RandomNormal(shape []int) *Tensor {
 
 	data := make([]float32, size)
 	for i := range data {
-		data[i] = float32(rand.NormFloat64()) // 标准正态分布：均值0，标准差1
+		data[i] = float32(rand.NormFloat64())
 	}
 
 	return &Tensor{Data: data, Shape: shape}
@@ -91,7 +91,7 @@ func Random(shape []int, min, max float32) *Tensor {
 
 	data := make([]float32, size)
 	for i := range data {
-		data[i] = min + rand.Float32()*(max-min) // Scale to [min, max]
+		data[i] = min + rand.Float32()*(max-min)
 	}
 
 	return &Tensor{Data: data, Shape: shape}
