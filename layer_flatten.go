@@ -1,6 +1,6 @@
 package torch
 
-import "github.com/Jimmy2099/torch/data_struct/tensor"
+import "github.com/Jimmy2099/torch/data_store/tensor"
 
 // FlattenLayer 展平层实现
 type FlattenLayer struct {

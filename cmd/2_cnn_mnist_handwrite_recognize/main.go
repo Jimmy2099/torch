@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/csv"
 	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/data_struct/matrix"
-	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/data_store/matrix"
+	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
 	"github.com/Jimmy2099/torch/testing"

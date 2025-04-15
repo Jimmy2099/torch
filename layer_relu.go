@@ -1,7 +1,7 @@
 package torch
 
 import (
-	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
 // ReLULayer 实现带泄漏的ReLU激活层

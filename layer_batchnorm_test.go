@@ -1,7 +1,7 @@
 package torch
 
 import (
-	"github.com/Jimmy2099/torch/data_struct/tensor" // 假设这个库存在
+	"github.com/Jimmy2099/torch/data_store/tensor" // 假设这个库存在
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
 	"reflect"

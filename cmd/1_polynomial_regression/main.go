@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
 	"math/rand"
 	"time"
 )
+
 type NeuralNetwork struct {
 	Layers []torch.Layer
 }

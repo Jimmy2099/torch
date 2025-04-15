@@ -1,7 +1,7 @@
 package torch
 
 import (
-	"github.com/Jimmy2099/torch/data_struct/tensor"
+	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
 // MSE 均方误差损失函数
