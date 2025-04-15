@@ -65,7 +65,7 @@ func getBroadcastedShape(a, b []int) []int {
 		} else if dimA == dimB {
 			shape[maxLen-1-i] = dimA
 		} else {
-			panic("无法广播形状")
+			panic("cannot broadcast shapes")
 		}
 	}
 	return shape

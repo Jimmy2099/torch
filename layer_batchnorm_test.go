@@ -28,14 +28,14 @@ func TestMeanCalculation(t *testing.T) {
 	mean := bn.computeMean(x)
 
 	if !reflect.DeepEqual(mean.Shape, []int{3}) {
-		t.Fatalf("形状错误: 期望 [3]，实际 %v", mean.Shape)
+		t.Fatalf("Shape error: Expected [3], Actual %v", mean.Shape)
 	}
 
 	tolerance := float32(1e-6)
 	for i := 0; i < 3; i++ {
 		expected := float32(i)
 		if math.Abs(mean.Data[i]-expected) > tolerance {
-			t.Errorf("通道 %d 均值错误: 期望 %.2f，实际 %.2f", i, expected, mean.Data[i])
+			t.Errorf("Channel %d mean error: Expected %.2f, Actual %.2f", i, expected, mean.Data[i])
 		}
 	}
 }
@@ -50,7 +50,7 @@ func TestBatchNormShapeMismatch(t *testing.T) {
 	inputData := make([]float32, batchSize*numFeatures*8*8)
 	x := tensor.NewTensor(inputData, inputShape)
 
-	fmt.Println("=== 触发形状不匹配测试 ===")
+	fmt.Println("=== Triggering shape mismatch test ===")
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Expected panic captured: %v\n", r)

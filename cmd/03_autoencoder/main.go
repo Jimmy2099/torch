@@ -286,14 +286,14 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 	labelFilePath := filepath.Join(directory, "labels.csv")
 	labelFile, err := os.Open(labelFilePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("无法打开标签文件: %v", err)
+		return nil, nil, fmt.Errorf("failed to open label file: %v", err)
 	}
 	defer labelFile.Close()
 
 	reader := csv.NewReader(labelFile)
 	labelRecords, err := reader.ReadAll()
 	if err != nil {
-		return nil, nil, fmt.Errorf("读取标签CSV失败: %v", err)
+		return nil, nil, fmt.Errorf("failed to read label CSV: %v", err)
 	}
 
 	labelMap := make(map[string]string)
@@ -307,7 +307,7 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		return nil, nil, fmt.Errorf("读取目录失败: %v", err)
+		return nil, nil, fmt.Errorf("failed to read directory: %v", err)
 	}
 
 	for _, file := range files {
@@ -321,7 +321,7 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 		imagePath := filepath.Join(directory, file.Name())
 		image, err := ReadCSV(imagePath)
 		if err != nil {
-			log.Printf("读取图像文件 %s 失败: %v", file.Name(), err)
+			log.Printf("failed to read image file %s: %v", file.Name(), err)
 			continue
 		}
 

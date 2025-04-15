@@ -80,7 +80,7 @@ func randn() float32 {
 
 func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
 	if len(inputTensor.Shape) != 4 {
-		panic(fmt.Sprintf("输入必须是4D张量 [batch, in_channels, height, width], 实际维度: %v", inputTensor.Shape))
+		panic(fmt.Sprintf("Input must be a 4D tensor [batch, in_channels, height, width], actual dimensions: %v", inputTensor.Shape))
 	}
 	batchSize := inputTensor.Shape[0]
 	inChannels := inputTensor.Shape[1]
@@ -88,13 +88,13 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 	inputWidth := inputTensor.Shape[3]
 
 	if inChannels != ct.InChannels {
-		panic(fmt.Sprintf("输入通道数不匹配: 预期 %d 实际 %d", ct.InChannels, inChannels))
+		panic(fmt.Sprintf("Input channel mismatch: Expected %d Actual %d", ct.InChannels, inChannels))
 	}
 
 	outputHeight := (inputHeight-1)*ct.StrideRow - 2*ct.PaddingRow + ct.KernelSizeRow + ct.OutputPaddingRow
 	outputWidth := (inputWidth-1)*ct.StrideCol - 2*ct.PaddingCol + ct.KernelSizeCol + ct.OutputPaddingCol
 	if outputHeight <= 0 || outputWidth <= 0 {
-		panic(fmt.Sprintf("非法输出尺寸: %dx%d (参数: stride=%dx%d padding=%dx%d kernel=%dx%d output_padding=%dx%d)",
+		panic(fmt.Sprintf("Illegal output size: %dx%d (parameters: stride=%dx%d padding=%dx%d kernel=%dx%d output_padding=%dx%d)",
 			outputHeight, outputWidth, ct.StrideRow, ct.StrideCol, ct.PaddingRow, ct.PaddingCol,
 			ct.KernelSizeRow, ct.KernelSizeCol, ct.OutputPaddingRow, ct.OutputPaddingCol))
 	}
@@ -133,10 +133,10 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 											inputCol
 
 										if inputIndex < 0 || inputIndex >= len(inputTensor.Data) {
-											panic(fmt.Sprintf("输入索引越界: %d (范围 0-%d)", inputIndex, len(inputTensor.Data)))
+											panic(fmt.Sprintf("Input index out of bounds: %d (range 0-%d)", inputIndex, len(inputTensor.Data)))
 										}
 										if weightIndex < 0 || weightIndex >= len(ct.Weights.Data) {
-											panic(fmt.Sprintf("权重索引越界: %d (范围 0-%d)", weightIndex, len(ct.Weights.Data)))
+											panic(fmt.Sprintf("Weight index out of bounds: %d (range 0-%d)", weightIndex, len(ct.Weights.Data)))
 										}
 
 										sum += inputTensor.Data[inputIndex] * ct.Weights.Data[weightIndex]
@@ -152,7 +152,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 						j
 
 					if outC >= len(ct.Bias.Data) {
-						panic(fmt.Sprintf("偏置索引越界: %d (总数 %d)", outC, len(ct.Bias.Data)))
+						panic(fmt.Sprintf("Bias index out of bounds: %d (total %d)", outC, len(ct.Bias.Data)))
 					}
 					output.Data[outputIndex] = sum + ct.Bias.Data[outC]
 				}
@@ -166,7 +166,7 @@ func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tens
 
 func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	if ct.inputCache == nil {
-		panic("需要先执行前向传播")
+		panic("Need to execute forward propagation first")
 	}
 	inputTensor := ct.inputCache
 

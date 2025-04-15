@@ -261,14 +261,14 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 	labelFilePath := filepath.Join(directory, "labels.csv")
 	labelFile, err := os.Open(labelFilePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("无法打开标签文件: %v", err)
+		return nil, nil, fmt.Errorf("failed to open label file: %v", err)
 	}
 	defer labelFile.Close()
 
 	reader := csv.NewReader(labelFile)
 	labelRecords, err := reader.ReadAll()
 	if err != nil {
-		return nil, nil, fmt.Errorf("读取标签CSV失败: %v", err)
+		return nil, nil, fmt.Errorf("failed to read label CSV: %v", err)
 	}
 
 	labelMap := make(map[string]string)
@@ -282,7 +282,7 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		return nil, nil, fmt.Errorf("读取目录失败: %v", err)
+		return nil, nil, fmt.Errorf("failed to read directory: %v", err)
 	}
 
 	for _, file := range files {
@@ -296,7 +296,7 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 		imagePath := filepath.Join(directory, file.Name())
 		image, err := ReadCSV(imagePath)
 		if err != nil {
-			log.Printf("读取图像文件 %s 失败: %v", file.Name(), err)
+			log.Printf("failed to read image file %s: %v", file.Name(), err)
 			continue
 		}
 
@@ -352,7 +352,7 @@ def predict_plot(data_file):
     image_paths, predictions = load_data(data_file)
     num = len(image_paths)
     fig, axes = plt.subplots(1, num, figsize=(15, 1.5))
-    # 如果只有一张图，则将 axes 转换为列表
+    # If there is only one image, convert axes to a list
     if num == 1:
         axes = [axes]
     for i, (img_path, pred) in enumerate(zip(image_paths, predictions)):

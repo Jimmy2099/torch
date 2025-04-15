@@ -112,15 +112,15 @@ func main() {
 
 	degree := 3
 	X_train_poly := polynomialFeatures(X_train, degree)
-	fmt.Printf("训练数据形状: %v\n", X_train_poly.Shape)
+	fmt.Printf("Training data shape: %v\n", X_train_poly.Shape)
 
 	model := NewNeuralNetwork([]int{6, 10, 1})
 
-	fmt.Println("\n=== 形状验证 ===")
-	fmt.Printf("输入形状: %v\n", X_train_poly.Shape)
-	fmt.Printf("目标形状: %v\n", y_train.Shape)
+	fmt.Println("\n=== Shape Verification ===")
+	fmt.Printf("Input shape: %v\n", X_train_poly.Shape)
+	fmt.Printf("Target shape: %v\n", y_train.Shape)
 	sampleOutput := model.Forward(X_train_poly)
-	fmt.Printf("模型输出形状: %v\n", sampleOutput.Shape)
+	fmt.Printf("Model output shape: %v\n", sampleOutput.Shape)
 
 	trainer := torch.NewBasicTrainer(torch.MSE)
 	epochs := 500
@@ -133,7 +133,7 @@ func main() {
 	test_poly := polynomialFeatures(test_sample, degree)
 	prediction := model.Forward(test_poly)
 
-	fmt.Printf("\n预测值: %.4f\n", prediction.Data[0])
-	fmt.Printf("真实值: %.4f\n", targetFunc(test_data[0], test_data[1]))
-	fmt.Printf("误差: %.4f\n", math.Abs(prediction.Data[0]-targetFunc(test_data[0], test_data[1])))
+	fmt.Printf("\nPrediction: %.4f\n", prediction.Data[0])
+	fmt.Printf("Actual value: %.4f\n", targetFunc(test_data[0], test_data[1]))
+	fmt.Printf("Error: %.4f\n", math.Abs(prediction.Data[0]-targetFunc(test_data[0], test_data[1])))
 }

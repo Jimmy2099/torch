@@ -13,7 +13,7 @@ func TestTensorSub(t *testing.T) {
 
 	result := a.Sub(b)
 	if !reflect.DeepEqual(result.Data, expected.Data) {
-		t.Errorf("Sub 计算错误: 期望 %v, 但得到 %v", expected.Data, result.Data)
+		t.Errorf("Sub calculation error: Expected %v, but got %v", expected.Data, result.Data)
 	}
 
 	c := NewTensor([]float32{1, 2}, []int{1, 2})
@@ -21,7 +21,7 @@ func TestTensorSub(t *testing.T) {
 
 	resultBroadcast := a.Sub(c)
 	if !reflect.DeepEqual(resultBroadcast.Data, expectedBroadcast.Data) {
-		t.Errorf("广播减法计算错误: 期望 %v, 但得到 %v", expectedBroadcast.Data, resultBroadcast.Data)
+		t.Errorf("Broadcast subtraction calculation error: Expected %v, but got %v", expectedBroadcast.Data, resultBroadcast.Data)
 	}
 
 	d := NewTensor([]float32{1, 2}, []int{2, 1})
@@ -29,7 +29,7 @@ func TestTensorSub(t *testing.T) {
 
 	resultBroadcast2 := a.Sub(d)
 	if !reflect.DeepEqual(resultBroadcast2.Data, expectedBroadcast2.Data) {
-		t.Errorf("广播减法计算错误: 期望 %v, 但得到 %v", expectedBroadcast2.Data, resultBroadcast2.Data)
+		t.Errorf("Broadcast subtraction calculation error: Expected %v, but got %v", expectedBroadcast2.Data, resultBroadcast2.Data)
 	}
 }
 
@@ -159,12 +159,12 @@ func TestTensorAdd1(t *testing.T) {
 
 		expectedShape := []int{3, 4, 5}
 		if !reflect.DeepEqual(result.Shape, expectedShape) {
-			t.Errorf("3D广播形状错误: 预期 %v, 得到 %v", expectedShape, result.Shape)
+			t.Errorf("3D broadcast shape error: Expected %v, got %v", expectedShape, result.Shape)
 		}
 
 		for _, val := range result.TensorData() {
 			if val != 2 {
-				t.Error("3D广播结果值错误: 预期所有元素为2")
+				t.Error("3D broadcast result value error: Expected all elements to be 2")
 				break
 			}
 		}
@@ -177,12 +177,12 @@ func TestTensorAdd1(t *testing.T) {
 
 		expectedShape := []int{1, 16, 1, 8}
 		if !reflect.DeepEqual(result.Shape, expectedShape) {
-			t.Errorf("4D广播形状错误: 预期 %v, 得到 %v", expectedShape, result.Shape)
+			t.Errorf("4D broadcast shape error: Expected %v, got %v", expectedShape, result.Shape)
 		}
 
 		for _, val := range result.TensorData() {
 			if val != 2 {
-				t.Error("4D广播结果值错误: 预期所有元素为2")
+				t.Error("4D broadcast result value error: Expectedall elements to be 2")
 				break
 			}
 		}
@@ -289,14 +289,14 @@ func TestMatMul99(t *testing.T) {
 func assertTensorEqual(t *testing.T, actual *Tensor, expectedData []float32, expectedShape []int) {
 	t.Helper()
 	if !shapeEqual(actual.Shape, expectedShape) {
-		t.Errorf("形状不匹配\n期望: %v\n实际: %v", expectedShape, actual.Shape)
+		t.Errorf("Shape mismatch\nExpected: %v\nActual: %v", expectedShape, actual.Shape)
 	}
 	if len(actual.Data) != len(expectedData) {
-		t.Fatalf("数据长度不匹配: 期望 %d 实际 %d", len(expectedData), len(actual.Data))
+		t.Fatalf("Data length mismatch: Expected %d Actual %d", len(expectedData), len(actual.Data))
 	}
 	for i := range actual.Data {
 		if actual.Data[i] != expectedData[i] {
-			t.Errorf("数据不匹配在索引 %d\n期望: %v\n实际: %v", i, expectedData[i], actual.Data[i])
+			t.Errorf("Data mismatch at index %d\nExpected: %v\nActual: %v", i, expectedData[i], actual.Data[i])
 			break
 		}
 	}

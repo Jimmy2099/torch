@@ -18,7 +18,7 @@ func (t *Tensor) Sub(other *Tensor) *Tensor {
 			}
 		}
 		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
 		}
 	}
 
@@ -57,7 +57,7 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 			}
 		}
 		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
 		}
 	}
 
@@ -90,7 +90,7 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 			}
 		}
 		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
 		}
 	}
 
@@ -121,7 +121,7 @@ func (t *Tensor) Mul(other *Tensor) *Tensor {
 			}
 		}
 		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("无法广播形状 %v 和 %v", t.Shape, other.Shape))
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
 		}
 	}
 	{

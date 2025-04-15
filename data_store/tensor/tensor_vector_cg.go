@@ -272,11 +272,11 @@ func Viewport(x, y, w, h float32) *Tensor {
 
 func (m *Tensor) MulPosition(v *Tensor) *Tensor {
 	if !m.IsMatrix() || m.Shape[0] != 4 || m.Shape[1] != 4 {
-		panic("MulPosition需要4x4矩阵")
+		panic("MulPosition requires a 4x4 matrix")
 	}
 
 	if !v.IsVector() || len(v.Data) != 3 {
-		panic("输入向量需要是3D向量")
+		panic("Input vector needs to be a 3D vector")
 	}
 
 	homoData := make([]float32, 4)

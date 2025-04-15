@@ -108,7 +108,7 @@ func Test_getBroadcastedShape(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantErr {
-				checkPanic(t, func() { getBroadcastedShape(tt.a, tt.b) }, "无法广播形状")
+				checkPanic(t, func() { getBroadcastedShape(tt.a, tt.b) }, "cannot broadcast shapes")
 			} else {
 				gotShape := getBroadcastedShape(tt.a, tt.b)
 				if !reflect.DeepEqual(gotShape, tt.wantShape) {

@@ -47,11 +47,11 @@ func (t *Tensor) TransposeByDim(dim1, dim2 int) *Tensor {
 
 func (t *Tensor) SplitLastDim(splitPoint, part int) *Tensor {
 	if len(t.Shape) == 0 {
-		panic("无法分割空维度")
+		panic("cannot split an empty dimension")
 	}
 	lastDim := t.Shape[len(t.Shape)-1]
 	if splitPoint <= 0 || splitPoint >= lastDim {
-		panic("无效分割点")
+		panic("invalid split point")
 	}
 
 	newShape := make([]int, len(t.Shape))
@@ -83,14 +83,14 @@ func (t *Tensor) SplitLastDim(splitPoint, part int) *Tensor {
 
 func (t *Tensor) Slice(start, end, dim int) *Tensor {
 	if t == nil {
-		panic("尝试切片空张量")
+		panic("attempting to slice an empty tensor")
 	}
 	ndim := len(t.Shape)
 	if dim < 0 || dim >= ndim {
-		panic(fmt.Sprintf("无效切片维度 %d (总维度 %d)", dim, ndim))
+		panic(fmt.Sprintf("invalid slice dimension %d (total dimensions %d)", dim, ndim))
 	}
 	if start < 0 || end > t.Shape[dim] || start >= end {
-		panic(fmt.Sprintf("无效切片范围 [%d:%d] 在维度 %d (长度 %d)",
+		panic(fmt.Sprintf("invalid slice range [%d:%d] in dimension %d (length %d)",
 			start, end, dim, t.Shape[dim]))
 	}
 
@@ -126,20 +126,20 @@ func (t *Tensor) Slice(start, end, dim int) *Tensor {
 
 func (t *Tensor) Concat(other *Tensor, dim int) *Tensor {
 	if t == nil || other == nil {
-		panic("输入张量不能为空")
+		panic("input tensor cannot be empty")
 	}
 	if len(t.Shape) != len(other.Shape) {
-		panic(fmt.Sprintf("维度数不匹配：%d vs %d",
+		panic(fmt.Sprintf("number of dimensions mismatch: %d vs %d",
 			len(t.Shape), len(other.Shape)))
 	}
 	ndim := len(t.Shape)
 	if dim < 0 || dim >= ndim {
-		panic(fmt.Sprintf("无效维度 %d（总维度 %d）", dim, ndim))
+		panic(fmt.Sprintf("invalid dimension %d (total dimensions %d)", dim, ndim))
 	}
 
 	for i := 0; i < ndim; i++ {
 		if i != dim && t.Shape[i] != other.Shape[i] {
-			panic(fmt.Sprintf("维度 %d 大小不匹配：%d vs %d",
+			panic(fmt.Sprintf("dimension %d size mismatch: %d vs %d",
 				i, t.Shape[i], other.Shape[i]))
 		}
 	}
@@ -191,7 +191,7 @@ func (t *Tensor) Concat(other *Tensor, dim int) *Tensor {
 
 func (t *Tensor) MaxByDim(dim int, keepdim bool) *Tensor {
 	if dim < 0 || dim >= len(t.Shape) {
-		panic(fmt.Sprintf("无效维度 %d，张量维度为 %d", dim, len(t.Shape)))
+		panic(fmt.Sprintf("invalid dimension %d, tensor dimension is %d", dim, len(t.Shape)))
 	}
 
 	outputShape := make([]int, len(t.Shape))

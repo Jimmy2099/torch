@@ -74,7 +74,7 @@ func (t *Tensor) SqueezeSpecific(dims []int) *Tensor {
 		for _, d := range dims {
 			if i == d {
 				if dim != 1 {
-					panic(fmt.Sprintf("无法压缩维度 %d (size=%d != 1)", i, dim))
+					panic(fmt.Sprintf("cannot squeeze dimension %d (size=%d != 1)", i, dim))
 				}
 				shouldKeep = false
 				break

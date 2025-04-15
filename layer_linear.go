@@ -112,7 +112,7 @@ func (l *LinearLayer) NumParams() int {
 
 func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Tensor {
 	if l.Input == nil || l.Input.Data == nil {
-		panic("前向传播未正确保存输入数据")
+		panic("Forward propagation did not correctly save input data")
 	}
 
 	batchSize := gradOutput.Shape[0]
@@ -124,7 +124,7 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 		for out := 0; out < l.OutputDim; out++ {
 			grad := gradOutput.Data[b*l.OutputDim+out]
 			if out >= l.OutputDim || b >= batchSize {
-				panic("梯度索引越界")
+				panic("Gradient index out of bounds")
 			}
 			for in := 0; in < l.InputDim; in++ {
 				dWeights[out*l.InputDim+in] += l.Input.Data[b*l.InputDim+in] * grad
@@ -168,11 +168,11 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
-		panic("输入张量形状不能为空")
+		panic("Input tensor shape cannot be empty")
 	}
 	inputDim := originalShape[len(originalShape)-1]
 	if inputDim != l.InputDim {
-		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+		panic(fmt.Sprintf("Input dimension mismatch: last dimension is %d, expected %d", inputDim, l.InputDim))
 	}
 
 	flattenedBatch := 1
@@ -255,11 +255,11 @@ func LinearCompute(Bias, Weights, OutputData []float32, inputLength int, inputFl
 func (l *LinearLayer) ForwardSignalThreadCompute(x *tensor.Tensor) *tensor.Tensor {
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
-		panic("输入张量形状不能为空")
+		panic("Input tensor shape cannot be empty")
 	}
 	inputDim := originalShape[len(originalShape)-1]
 	if inputDim != l.InputDim {
-		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+		panic(fmt.Sprintf("Input dimension mismatch: last dimension is %d, expected %d", inputDim, l.InputDim))
 	}
 
 	flattenedBatch := 1
@@ -288,11 +288,11 @@ func (l *LinearLayer) ForwardSignalThreadCompute(x *tensor.Tensor) *tensor.Tenso
 func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
-		panic("输入张量形状不能为空")
+		panic("Input tensor shape cannot be empty")
 	}
 	inputDim := originalShape[len(originalShape)-1]
 	if inputDim != l.InputDim {
-		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+		panic(fmt.Sprintf("Input dimension mismatch: last dimension is %d, expected %d", inputDim, l.InputDim))
 	}
 
 	flattenedBatch := 1
@@ -345,11 +345,11 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	originalShape := x.ShapeCopy()
 	if len(originalShape) == 0 {
-		panic("输入张量形状不能为空")
+		panic("Input tensor shape cannot be empty")
 	}
 	inputDim := originalShape[len(originalShape)-1]
 	if inputDim != l.InputDim {
-		panic(fmt.Sprintf("输入维度不匹配：最后一维为%d，期望%d", inputDim, l.InputDim))
+		panic(fmt.Sprintf("Input dimension mismatch: last dimension is %d, expected %d", inputDim, l.InputDim))
 	}
 
 	flattenedBatch := 1
