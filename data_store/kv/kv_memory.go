@@ -2,31 +2,31 @@ package kv_memory
 
 import "sync"
 
-type Float32Pool struct {
+type MemoryPool struct {
 	mu    sync.RWMutex
 	pools map[string][]float32
 }
 
-func NewFloat32Pool() *Float32Pool {
-	return &Float32Pool{
+func NewFloat32Pool() *MemoryPool {
+	return &MemoryPool{
 		pools: make(map[string][]float32),
 	}
 }
 
-func (p *Float32Pool) Put(key string, data []float32) {
+func (p *MemoryPool) Put(key string, data []float32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pools[key] = data
 }
 
-func (p *Float32Pool) Get(key string) ([]float32, bool) {
+func (p *MemoryPool) Get(key string) ([]float32, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	data, exists := p.pools[key]
 	return data, exists
 }
 
-func (p *Float32Pool) Delete(key string) []float32 {
+func (p *MemoryPool) Delete(key string) []float32 {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	data := p.pools[key]
@@ -34,7 +34,7 @@ func (p *Float32Pool) Delete(key string) []float32 {
 	return data
 }
 
-func (p *Float32Pool) Clear() {
+func (p *MemoryPool) Clear() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pools = make(map[string][]float32)
