@@ -53,6 +53,25 @@ func (t *Tensor) EqualFloat16(other *Tensor) bool {
 	return true
 }
 
+func (t *Tensor) EqualFloat32WithShape(other *Tensor) bool {
+	if t == nil || other == nil {
+		return t == nil && other == nil
+	}
+
+	if len(t.Data) != len(other.Data) {
+		return false
+	}
+
+	for i := range t.Data {
+		if float32(t.Data[i]) != float32(other.Data[i]) {
+			log.Println(i, t.Data[i], " != ", other.Data[i])
+			return false
+		}
+	}
+
+	return true
+}
+
 func (t *Tensor) EqualFloat32(other *Tensor) bool {
 	if t == nil || other == nil {
 		return t == nil && other == nil
@@ -127,4 +146,47 @@ func (t *Tensor) EqualWithTolerance(other *Tensor, epsilon float32) bool {
 	}
 
 	return true
+}
+
+func (t *Tensor) Contain(other *Tensor) bool {
+	if other == nil {
+		return false
+	}
+
+	tDataLen := len(t.Data)
+	otherDataLen := len(other.Data)
+
+	if tDataLen == otherDataLen {
+		return other.EqualFloat32WithShape(t)
+	}
+
+	if tDataLen == otherDataLen {
+		for i := 0; i < tDataLen; i++ {
+			if t.Data[i] != other.Data[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	if otherDataLen == 0 {
+		return true
+	}
+	if tDataLen < otherDataLen {
+		return false
+	}
+
+	for i := 0; i <= tDataLen-otherDataLen; i++ {
+		match := true
+		for j := 0; j < otherDataLen; j++ {
+			if t.Data[i+j] != other.Data[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
 }
