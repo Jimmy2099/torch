@@ -63,8 +63,10 @@ func (t *Tensor) EqualFloat32WithShape(other *Tensor) bool {
 	}
 
 	for i := range t.Data {
-		if float32(t.Data[i]) != float32(other.Data[i]) {
+		if t.Data[i] != other.Data[i] {
 			log.Println(i, t.Data[i], " != ", other.Data[i])
+			t.SaveToCSV("target.csv")
+			other.SaveToCSV("other.csv")
 			return false
 		}
 	}

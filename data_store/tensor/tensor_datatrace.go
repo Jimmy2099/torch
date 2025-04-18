@@ -46,7 +46,7 @@ func WriteDataTraceLog() {
 }
 
 func (t *Tensor) TraceLogToggle() {
-	logData = append(logData, t)
+	logData = append(logData, t.Clone())
 }
 
 var matchNum = 0
