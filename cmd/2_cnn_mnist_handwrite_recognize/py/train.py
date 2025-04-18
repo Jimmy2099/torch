@@ -4,20 +4,17 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-# 数据预处理
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
 
-# 加载数据集
 batch_size = 64
 trainset = datasets.MNIST(root='./dataset', train=True, download=True, transform=transform)
 train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
 testset = datasets.MNIST(root='./dataset', train=False, download=True, transform=transform)
 test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False)
 
-# CNN 模型
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
@@ -38,13 +35,11 @@ class CNN(nn.Module):
         x = self.fc2(x)
         return x
 
-# 初始化模型、损失函数和优化器
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# 训练模型
 epochs = 10
 for epoch in range(epochs):
     model.train()
@@ -62,11 +57,9 @@ for epoch in range(epochs):
 
     print(f'Epoch [{epoch + 1}/{epochs}], Loss: {running_loss / len(train_loader):.4f}')
 
-# 保存模型
 torch.save(model.state_dict(), 'mnist_cnn.pth')
 print('Model saved as mnist_cnn.pth')
 
-# 测试模型
 model.eval()
 correct = 0
 total = 0

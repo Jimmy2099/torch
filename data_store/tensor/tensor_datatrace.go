@@ -82,7 +82,7 @@ func (t *Tensor) ContainPanic() bool {
 		tt := t.Reshape([]int{len(t.Data), 1})
 		tt.SaveToCSV("target.csv")
 		panic("ERROR: ContainPanic")
-		//breakpoint here
+		//set a breakpoint here
 	}
 	return ok
 }
