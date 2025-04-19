@@ -7,17 +7,12 @@ type FlattenLayer struct {
 }
 
 func (r *FlattenLayer) GetWeights() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
+
 }
 
 func (r *FlattenLayer) GetBias() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func NewFlattenLayer() *FlattenLayer {
@@ -25,11 +20,11 @@ func NewFlattenLayer() *FlattenLayer {
 }
 
 func (f *FlattenLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	f.inputShape = make([]int, len(x.Shape))
-	copy(f.inputShape, x.Shape)
+	f.inputShape = make([]int, len(x.GetShape()))
+	copy(f.inputShape, x.GetShape())
 
 	totalElements := 1
-	for _, dim := range x.Shape {
+	for _, dim := range x.GetShape() {
 		totalElements *= dim
 	}
 

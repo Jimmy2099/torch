@@ -3,9 +3,9 @@ package tensor
 func (t *Tensor) broadcastedIndex(indices []int, strides []int) int {
 	index := 0
 	for i := 0; i < len(indices); i++ {
-		pos := len(t.Shape) - len(indices) + i
-		if pos >= 0 && pos < len(t.Shape) {
-			dimSize := t.Shape[pos]
+		pos := len(t.shape) - len(indices) + i
+		if pos >= 0 && pos < len(t.shape) {
+			dimSize := t.shape[pos]
 			if dimSize > 1 {
 				index += indices[i] * strides[pos]
 			}

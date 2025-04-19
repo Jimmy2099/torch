@@ -79,13 +79,13 @@ func randn() float32 {
 }
 
 func (ct *ConvTranspose2dLayer) Forward(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) != 4 {
-		panic(fmt.Sprintf("Input must be a 4D tensor [batch, in_channels, height, width], actual dimensions: %v", inputTensor.Shape))
+	if len(inputTensor.GetShape()) != 4 {
+		panic(fmt.Sprintf("Input must be a 4D tensor [batch, in_channels, height, width], actual dimensions: %v", inputTensor.GetShape()))
 	}
-	batchSize := inputTensor.Shape[0]
-	inChannels := inputTensor.Shape[1]
-	inputHeight := inputTensor.Shape[2]
-	inputWidth := inputTensor.Shape[3]
+	batchSize := inputTensor.GetShapeByNum(0)
+	inChannels := inputTensor.GetShapeByNum(1)
+	inputHeight := inputTensor.GetShapeByNum(2)
+	inputWidth := inputTensor.GetShapeByNum(3)
 
 	if inChannels != ct.InChannels {
 		panic(fmt.Sprintf("Input channel mismatch: Expected %d Actual %d", ct.InChannels, inChannels))
@@ -170,16 +170,16 @@ func (ct *ConvTranspose2dLayer) Backward(gradOutput *tensor.Tensor, learningRate
 	}
 	inputTensor := ct.inputCache
 
-	batchSize := gradOutput.Shape[0]
-	outChannels := gradOutput.Shape[1]
-	outputHeight := gradOutput.Shape[2]
-	outputWidth := gradOutput.Shape[3]
+	batchSize := gradOutput.GetShape()[0]
+	outChannels := gradOutput.GetShape()[1]
+	outputHeight := gradOutput.GetShape()[2]
+	outputWidth := gradOutput.GetShape()[3]
 
 	inChannels := ct.InChannels
-	inputHeight := inputTensor.Shape[2]
-	inputWidth := inputTensor.Shape[3]
+	inputHeight := inputTensor.GetShape()[2]
+	inputWidth := inputTensor.GetShape()[3]
 
-	gradInputShape := inputTensor.Shape
+	gradInputShape := inputTensor.GetShape()
 	gradInputData := make([]float32, product(gradInputShape))
 	gradInput := tensor.NewTensor(gradInputData, gradInputShape)
 
@@ -265,7 +265,7 @@ func (ct *ConvTranspose2dLayer) SetWeights(data [][]float32) {
 		flattenedData = append(flattenedData, row...)
 	}
 
-	ct.Weights = tensor.NewTensor(flattenedData, ct.Weights.Shape)
+	ct.Weights = tensor.NewTensor(flattenedData, ct.Weights.GetShape())
 }
 
 func (ct *ConvTranspose2dLayer) SetBias(data [][]float32) {
@@ -273,7 +273,7 @@ func (ct *ConvTranspose2dLayer) SetBias(data [][]float32) {
 	for _, row := range data {
 		flattenedData = append(flattenedData, row...)
 	}
-	ct.Bias = tensor.NewTensor(flattenedData, ct.Bias.Shape)
+	ct.Bias = tensor.NewTensor(flattenedData, ct.Bias.GetShape())
 }
 
 func (l *ConvTranspose2dLayer) SetWeightsAndShape(data []float32, shape []int) {

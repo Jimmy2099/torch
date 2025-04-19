@@ -15,36 +15,36 @@ func (t *Tensor) Set(value float32, indices ...int) {
 	for i := len(indices) - 1; i >= 0; i-- {
 		pos += indices[i] * stride
 		if i > 0 {
-			stride *= t.Shape[i]
+			stride *= t.shape[i]
 		}
 	}
 	t.Data[pos] = value
 }
 
 func Multiply(a, b *Tensor) *Tensor {
-	if len(a.Shape) < 2 || len(b.Shape) < 2 {
+	if len(a.shape) < 2 || len(b.shape) < 2 {
 		panic("Tensors must have at least 2 dimensions for multiplication")
 	}
 
-	if a.Shape[len(a.Shape)-1] != b.Shape[len(b.Shape)-2] {
+	if a.shape[len(a.shape)-1] != b.shape[len(b.shape)-2] {
 		panic(fmt.Sprintf("Tensor dimensions don't match for multiplication: %v * %v",
-			a.Shape, b.Shape))
+			a.shape, b.shape))
 	}
 
-	if len(a.Shape) > 2 && len(b.Shape) > 2 {
-		if !equal(a.Shape[:len(a.Shape)-2], b.Shape[:len(b.Shape)-2]) {
+	if len(a.shape) > 2 && len(b.shape) > 2 {
+		if !equal(a.shape[:len(a.shape)-2], b.shape[:len(b.shape)-2]) {
 			panic(fmt.Sprintf("Leading tensor dimensions don't match: %v vs %v",
-				a.Shape[:len(a.Shape)-2], b.Shape[:len(b.Shape)-2]))
+				a.shape[:len(a.shape)-2], b.shape[:len(b.shape)-2]))
 		}
 	}
 
-	outShape := make([]int, max(len(a.Shape), len(b.Shape)))
-	copy(outShape, a.Shape)
-	outShape[len(outShape)-1] = b.Shape[len(b.Shape)-1]
+	outShape := make([]int, max(len(a.shape), len(b.shape)))
+	copy(outShape, a.shape)
+	outShape[len(outShape)-1] = b.shape[len(b.shape)-1]
 
-	aRows := a.Shape[len(a.Shape)-2]
-	aCols := a.Shape[len(a.Shape)-1]
-	bCols := b.Shape[len(b.Shape)-1]
+	aRows := a.shape[len(a.shape)-2]
+	aCols := a.shape[len(a.shape)-1]
+	bCols := b.shape[len(b.shape)-1]
 
 	totalElements := 1
 	for i := 0; i < len(outShape); i++ {
@@ -61,7 +61,7 @@ func Multiply(a, b *Tensor) *Tensor {
 		for i := len(indices) - 1; i >= 0; i-- {
 			aOffset += indices[i] * stride
 			bOffset += indices[i] * stride
-			stride *= a.Shape[i]
+			stride *= a.shape[i]
 		}
 
 		for i := 0; i < aRows; i++ {
@@ -90,7 +90,7 @@ func Multiply(a, b *Tensor) *Tensor {
 			}
 		}
 
-		if !incrementIndices(indices, a.Shape[:len(a.Shape)-2]) {
+		if !incrementIndices(indices, a.shape[:len(a.shape)-2]) {
 			break
 		}
 	}
@@ -99,8 +99,8 @@ func Multiply(a, b *Tensor) *Tensor {
 }
 
 func Add(a, b *Tensor) *Tensor {
-	if !equal(a.Shape, b.Shape) {
-		panic(fmt.Sprintf("Tensor shapes don't match for addition: %v + %v", a.Shape, b.Shape))
+	if !equal(a.shape, b.shape) {
+		panic(fmt.Sprintf("Tensor shapes don't match for addition: %v + %v", a.shape, b.shape))
 	}
 
 	resultData := make([]float32, len(a.Data))
@@ -108,12 +108,12 @@ func Add(a, b *Tensor) *Tensor {
 		resultData[i] = a.Data[i] + b.Data[i]
 	}
 
-	return NewTensor(resultData, a.Shape)
+	return NewTensor(resultData, a.shape)
 }
 
 func Subtract(a, b *Tensor) *Tensor {
-	if !equal(a.Shape, b.Shape) {
-		panic(fmt.Sprintf("Tensor shapes don't match for subtraction: %v - %v", a.Shape, b.Shape))
+	if !equal(a.shape, b.shape) {
+		panic(fmt.Sprintf("Tensor shapes don't match for subtraction: %v - %v", a.shape, b.shape))
 	}
 
 	resultData := make([]float32, len(a.Data))
@@ -121,12 +121,12 @@ func Subtract(a, b *Tensor) *Tensor {
 		resultData[i] = a.Data[i] - b.Data[i]
 	}
 
-	return NewTensor(resultData, a.Shape)
+	return NewTensor(resultData, a.shape)
 }
 
 func HadamardProduct(a, b *Tensor) *Tensor {
-	if !equal(a.Shape, b.Shape) {
-		panic(fmt.Sprintf("Tensor shapes don't match for Hadamard product: %v * %v", a.Shape, b.Shape))
+	if !equal(a.shape, b.shape) {
+		panic(fmt.Sprintf("Tensor shapes don't match for Hadamard product: %v * %v", a.shape, b.shape))
 	}
 
 	resultData := make([]float32, len(a.Data))
@@ -134,40 +134,40 @@ func HadamardProduct(a, b *Tensor) *Tensor {
 		resultData[i] = a.Data[i] * b.Data[i]
 	}
 
-	return NewTensor(resultData, a.Shape)
+	return NewTensor(resultData, a.shape)
 }
 
 func Transpose(t *Tensor, dims ...int) *Tensor {
 	if len(dims) == 0 {
-		if len(t.Shape) < 2 {
+		if len(t.shape) < 2 {
 			return t.Copy()
 		}
-		dims = make([]int, len(t.Shape))
+		dims = make([]int, len(t.shape))
 		for i := range dims {
 			dims[i] = i
 		}
 		dims[len(dims)-1], dims[len(dims)-2] = dims[len(dims)-2], dims[len(dims)-1]
 	}
 
-	if len(dims) != len(t.Shape) {
-		panic(fmt.Sprintf("Invalid transpose dimensions: got %d, expected %d", len(dims), len(t.Shape)))
+	if len(dims) != len(t.shape) {
+		panic(fmt.Sprintf("Invalid transpose dimensions: got %d, expected %d", len(dims), len(t.shape)))
 	}
 
-	newShape := make([]int, len(t.Shape))
+	newShape := make([]int, len(t.shape))
 	for i, dim := range dims {
-		newShape[i] = t.Shape[dim]
+		newShape[i] = t.shape[dim]
 	}
 
 	resultData := make([]float32, len(t.Data))
 
-	oldIndices := make([]int, len(t.Shape))
+	oldIndices := make([]int, len(t.shape))
 	for {
 		oldPos := 0
 		stride := 1
 		for i := len(oldIndices) - 1; i >= 0; i-- {
 			oldPos += oldIndices[i] * stride
 			if i > 0 {
-				stride *= t.Shape[i]
+				stride *= t.shape[i]
 			}
 		}
 
@@ -187,7 +187,7 @@ func Transpose(t *Tensor, dims ...int) *Tensor {
 
 		resultData[newPos] = t.Data[oldPos]
 
-		if !incrementIndices(oldIndices, t.Shape) {
+		if !incrementIndices(oldIndices, t.shape) {
 			break
 		}
 	}
@@ -200,7 +200,7 @@ func (t *Tensor) Apply(fn func(float32) float32) *Tensor {
 	for i, val := range t.Data {
 		resultData[i] = fn(val)
 	}
-	return NewTensor(resultData, t.Shape)
+	return NewTensor(resultData, t.shape)
 }
 
 func (t *Tensor) Sum() float32 {
@@ -238,7 +238,7 @@ func (t *Tensor) Min() float32 {
 func (t *Tensor) Copy() *Tensor {
 	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
-	return NewTensor(data, t.Shape)
+	return NewTensor(data, t.shape)
 }
 
 func (t *Tensor) ReLU() *Tensor {
@@ -248,17 +248,17 @@ func (t *Tensor) ReLU() *Tensor {
 }
 
 func (t *Tensor) Softmax() *Tensor {
-	if len(t.Shape) < 1 {
+	if len(t.shape) < 1 {
 		panic("Tensor must have at least 1 dimension for softmax")
 	}
 
-	lastDim := t.Shape[len(t.Shape)-1]
+	lastDim := t.shape[len(t.shape)-1]
 	otherDims := 1
-	for i := 0; i < len(t.Shape)-1; i++ {
-		otherDims *= t.Shape[i]
+	for i := 0; i < len(t.shape)-1; i++ {
+		otherDims *= t.shape[i]
 	}
 
-	result := NewTensor(make([]float32, len(t.Data)), t.Shape)
+	result := NewTensor(make([]float32, len(t.Data)), t.shape)
 
 	for i := 0; i < otherDims; i++ {
 		maxVal := math.Inf(-1)
@@ -285,18 +285,18 @@ func (t *Tensor) Softmax() *Tensor {
 }
 
 func (t *Tensor) ArgMax() *Tensor {
-	if len(t.Shape) < 1 {
+	if len(t.shape) < 1 {
 		panic("Tensor must have at least 1 dimension for argmax")
 	}
 
-	lastDim := t.Shape[len(t.Shape)-1]
+	lastDim := t.shape[len(t.shape)-1]
 	otherDims := 1
-	for i := 0; i < len(t.Shape)-1; i++ {
-		otherDims *= t.Shape[i]
+	for i := 0; i < len(t.shape)-1; i++ {
+		otherDims *= t.shape[i]
 	}
 
-	resultShape := make([]int, len(t.Shape)-1)
-	copy(resultShape, t.Shape[:len(t.Shape)-1])
+	resultShape := make([]int, len(t.shape)-1)
+	copy(resultShape, t.shape[:len(t.shape)-1])
 	result := NewTensor(make([]float32, otherDims), resultShape)
 
 	for i := 0; i < otherDims; i++ {
@@ -315,17 +315,17 @@ func (t *Tensor) ArgMax() *Tensor {
 }
 
 func (t *Tensor) MaxPool(poolSize, stride int) (*Tensor, *Tensor) {
-	if len(t.Shape) < 2 {
+	if len(t.shape) < 2 {
 		panic("Tensor must have at least 2 dimensions for max pooling")
 	}
 
-	rows := t.Shape[len(t.Shape)-2]
-	cols := t.Shape[len(t.Shape)-1]
+	rows := t.shape[len(t.shape)-2]
+	cols := t.shape[len(t.shape)-1]
 	outRows := (rows-poolSize)/stride + 1
 	outCols := (cols-poolSize)/stride + 1
 
-	outShape := make([]int, len(t.Shape))
-	copy(outShape, t.Shape)
+	outShape := make([]int, len(t.shape))
+	copy(outShape, t.shape)
 	outShape[len(outShape)-2] = outRows
 	outShape[len(outShape)-1] = outCols
 
@@ -337,13 +337,13 @@ func (t *Tensor) MaxPool(poolSize, stride int) (*Tensor, *Tensor) {
 	resultData := make([]float32, totalElements)
 	argmaxData := make([]float32, totalElements)
 
-	indices := make([]int, len(t.Shape)-2)
+	indices := make([]int, len(t.shape)-2)
 	for {
 		offset := 0
 		stride := 1
 		for i := len(indices) - 1; i >= 0; i-- {
 			offset += indices[i] * stride
-			stride *= t.Shape[i]
+			stride *= t.shape[i]
 		}
 
 		for i := 0; i < outRows; i++ {
@@ -385,14 +385,13 @@ func (t *Tensor) MaxPool(poolSize, stride int) (*Tensor, *Tensor) {
 			}
 		}
 
-		if !incrementIndices(indices, t.Shape[:len(t.Shape)-2]) {
+		if !incrementIndices(indices, t.shape[:len(t.shape)-2]) {
 			break
 		}
 	}
 
 	return NewTensor(resultData, outShape), NewTensor(argmaxData, outShape)
 }
-
 
 func equal(a, b []int) bool {
 	if len(a) != len(b) {
@@ -421,12 +420,12 @@ func (t *Tensor) ShapesMatch(other *Tensor) bool {
 	if t == nil || other == nil {
 		return false
 	}
-	if len(t.Shape) != len(other.Shape) {
+	if len(t.shape) != len(other.shape) {
 		return false
 	}
 
-	for i := range t.Shape {
-		if t.Shape[i] != other.Shape[i] {
+	for i := range t.shape {
+		if t.shape[i] != other.shape[i] {
 			return false
 		}
 	}

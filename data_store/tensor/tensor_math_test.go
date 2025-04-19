@@ -77,8 +77,8 @@ func TestTensorAdd1(t *testing.T) {
 		a := Ones([]int{2, 1, 4})
 		b := Ones([]int{2, 3, 4})
 		result := a.Add(b)
-		if result.Shape[1] != 3 {
-			t.Errorf("Expected broadcasted shape [2 3 4], got %v", result.Shape)
+		if result.shape[1] != 3 {
+			t.Errorf("Expected broadcasted shape [2 3 4], got %v", result.shape)
 		}
 	})
 
@@ -86,8 +86,8 @@ func TestTensorAdd1(t *testing.T) {
 		a := Ones([]int{1, 256, 1, 1})
 		b := Ones([]int{256})
 		result := a.Add(b)
-		if !reflect.DeepEqual(result.Shape, []int{1, 256, 1, 256}) {
-			t.Errorf("Shape mismatch: expected [1 256 1 256], got %v", result.Shape)
+		if !reflect.DeepEqual(result.shape, []int{1, 256, 1, 256}) {
+			t.Errorf("shape mismatch: expected [1 256 1 256], got %v", result.shape)
 		}
 	})
 
@@ -131,8 +131,8 @@ func TestTensorAdd1(t *testing.T) {
 			}
 
 			expectedShape := getBroadcastedShape(tc.aShape, tc.bShape)
-			if !reflect.DeepEqual(result.Shape, expectedShape) {
-				t.Errorf("Shape mismatch: expected %v, got %v", expectedShape, result.Shape)
+			if !reflect.DeepEqual(result.shape, expectedShape) {
+				t.Errorf("shape mismatch: expected %v, got %v", expectedShape, result.shape)
 			}
 		}
 	})
@@ -147,8 +147,8 @@ func TestTensorAdd1(t *testing.T) {
 		result := a.Add(b)
 		elapsed := time.Since(start)
 		t.Logf("Large tensor add took %v", elapsed)
-		if result.Shape[0] != 1000 || result.Shape[1] != 1000 {
-			t.Error("Shape mismatch in large tensor add")
+		if result.shape[0] != 1000 || result.shape[1] != 1000 {
+			t.Error("shape mismatch in large tensor add")
 		}
 	})
 
@@ -158,8 +158,8 @@ func TestTensorAdd1(t *testing.T) {
 		result := a.Add(b)
 
 		expectedShape := []int{3, 4, 5}
-		if !reflect.DeepEqual(result.Shape, expectedShape) {
-			t.Errorf("3D broadcast shape error: Expected %v, got %v", expectedShape, result.Shape)
+		if !reflect.DeepEqual(result.shape, expectedShape) {
+			t.Errorf("3D broadcast shape error: Expected %v, got %v", expectedShape, result.shape)
 		}
 
 		for _, val := range result.TensorData() {
@@ -176,8 +176,8 @@ func TestTensorAdd1(t *testing.T) {
 		result := a.Add(b)
 
 		expectedShape := []int{1, 16, 1, 8}
-		if !reflect.DeepEqual(result.Shape, expectedShape) {
-			t.Errorf("4D broadcast shape error: Expected %v, got %v", expectedShape, result.Shape)
+		if !reflect.DeepEqual(result.shape, expectedShape) {
+			t.Errorf("4D broadcast shape error: Expected %v, got %v", expectedShape, result.shape)
 		}
 
 		for _, val := range result.TensorData() {
@@ -288,8 +288,8 @@ func TestMatMul99(t *testing.T) {
 
 func assertTensorEqual(t *testing.T, actual *Tensor, expectedData []float32, expectedShape []int) {
 	t.Helper()
-	if !shapeEqual(actual.Shape, expectedShape) {
-		t.Errorf("Shape mismatch\nExpected: %v\nActual: %v", expectedShape, actual.Shape)
+	if !shapeEqual(actual.shape, expectedShape) {
+		t.Errorf("shape mismatch\nExpected: %v\nActual: %v", expectedShape, actual.shape)
 	}
 	if len(actual.Data) != len(expectedData) {
 		t.Fatalf("Data length mismatch: Expected %d Actual %d", len(expectedData), len(actual.Data))

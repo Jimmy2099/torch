@@ -6,14 +6,13 @@ import (
 	"testing"
 )
 
-
 const epsilon = 1e-9
 
 func tensorsEqual(t1, t2 *Tensor, tol float32) bool {
 	if t1 == nil || t2 == nil {
 		return t1 == t2
 	}
-	if !reflect.DeepEqual(t1.Shape, t2.Shape) {
+	if !reflect.DeepEqual(t1.shape, t2.shape) {
 		return false
 	}
 	return floatsEqual(t1.Data, t2.Data, tol)
@@ -56,7 +55,7 @@ func TestTensor_Size(t *testing.T) {
 				if !zeroFound {
 					t.Fatalf("Test setup error: shape %v results in size 0 but has no zero dimension", tt.shape)
 				}
-				tensor := &Tensor{Data: []float32{}, Shape: tt.shape}
+				tensor := &Tensor{Data: []float32{}, shape: tt.shape}
 				if got := tensor.Size(); got != tt.want {
 					t.Errorf("Size() = %v, want %v", got, tt.want)
 				}
@@ -290,9 +289,9 @@ func TestTensor_SumByDim1(t *testing.T) {
 		wantShape []int
 	}{
 		{
-			name:     "Sum dim 0, keep",
-			dims:     []int{0},
-			keepDims: true,
+			name:      "Sum dim 0, keep",
+			dims:      []int{0},
+			keepDims:  true,
 			wantData:  []float32{10, 12, 14, 16, 18, 20, 22, 24},
 			wantShape: []int{1, 2, 4},
 		},
@@ -304,9 +303,9 @@ func TestTensor_SumByDim1(t *testing.T) {
 			wantShape: []int{2, 4},
 		},
 		{
-			name:     "Sum dim 1, keep",
-			dims:     []int{1},
-			keepDims: true,
+			name:      "Sum dim 1, keep",
+			dims:      []int{1},
+			keepDims:  true,
 			wantData:  []float32{6, 8, 10, 12, 22, 24, 26, 28},
 			wantShape: []int{2, 1, 4},
 		},
@@ -318,9 +317,9 @@ func TestTensor_SumByDim1(t *testing.T) {
 			wantShape: []int{2, 4},
 		},
 		{
-			name:     "Sum dim 2, keep",
-			dims:     []int{2},
-			keepDims: true,
+			name:      "Sum dim 2, keep",
+			dims:      []int{2},
+			keepDims:  true,
 			wantData:  []float32{10, 26, 42, 58},
 			wantShape: []int{2, 2, 1},
 		},
@@ -332,9 +331,9 @@ func TestTensor_SumByDim1(t *testing.T) {
 			wantShape: []int{2, 2},
 		},
 		{
-			name:     "Sum dims 0, 2, keep",
-			dims:     []int{0, 2},
-			keepDims: true,
+			name:      "Sum dims 0, 2, keep",
+			dims:      []int{0, 2},
+			keepDims:  true,
 			wantData:  []float32{52, 84},
 			wantShape: []int{1, 2, 1},
 		},
@@ -366,7 +365,7 @@ func TestTensor_SumByDim1(t *testing.T) {
 			result := tensor.SumByDim1(tt.dims, tt.keepDims)
 			wantTensor := NewTensor(tt.wantData, tt.wantShape)
 			if len(tt.wantShape) == 0 && len(tt.wantData) == 1 {
-				wantTensor = &Tensor{Data: tt.wantData, Shape: []int{}}
+				wantTensor = &Tensor{Data: tt.wantData, shape: []int{}}
 			}
 
 			if !tensorsEqual(result, wantTensor, epsilon) {
@@ -567,15 +566,13 @@ func TestTensor_Max1(t *testing.T) {
 	}
 
 	t.Run("Empty Tensor", func(t *testing.T) {
-		emptyTensor := &Tensor{Data: []float32{}, Shape: []int{0}}
+		emptyTensor := &Tensor{Data: []float32{}, shape: []int{0}}
 		got := emptyTensor.Max1()
 		if got != 0.0 {
 			t.Errorf("Max1() for empty tensor = %v, want 0.0", got)
 		}
 	})
 }
-
-
 
 func TestTensor_Sub1(t *testing.T) {
 	t1 := NewTensor([]float32{10, 20, 30, 40}, []int{2, 2})
@@ -631,7 +628,7 @@ func TestTensor_Sum1(t *testing.T) {
 		{"Single Element", []float32{42}, []int{1}, 42.0},
 		{"Empty Tensor", []float32{}, []int{0}, 0.0},
 		{"Empty Tensor High Dim", []float32{}, []int{2, 0, 3}, 0.0},
-		{"Empty Tensor Empty Shape", []float32{}, []int{}, 0.0},
+		{"Empty Tensor Empty shape", []float32{}, []int{}, 0.0},
 	}
 
 	for _, tt := range tests {
@@ -770,25 +767,25 @@ func TestTensor_Clone1(t *testing.T) {
 	if len(original.Data) > 0 && &original.Data[0] == &cloned.Data[0] {
 		t.Errorf("Clone1 did not create a deep copy of Data slice")
 	}
-	if original.Shape != nil && &original.Shape == &cloned.Shape {
-		t.Errorf("Clone1 did not create a deep copy of Shape slice")
+	if original.shape != nil && &original.shape == &cloned.shape {
+		t.Errorf("Clone1 did not create a deep copy of shape slice")
 	}
 
 	original.Data[0] = 99.0
-	if original.Shape != nil && len(original.Shape) > 0 {
-		original.Shape[0] = 55
+	if original.shape != nil && len(original.shape) > 0 {
+		original.shape[0] = 55
 	}
 
 	if cloned.Data[0] == 99.0 {
 		t.Errorf("Modifying original tensor affected the cloned tensor's data")
 	}
-	if cloned.Shape != nil && len(cloned.Shape) > 0 && cloned.Shape[0] == 55 {
+	if cloned.shape != nil && len(cloned.shape) > 0 && cloned.shape[0] == 55 {
 		t.Errorf("Modifying original tensor's shape slice affected the cloned tensor's shape slice")
 	}
 
 	wantShape := []int{2, 2}
-	if !reflect.DeepEqual(cloned.Shape, wantShape) {
-		t.Errorf("Cloned tensor shape changed unexpectedly. Got %v, want %v", cloned.Shape, wantShape)
+	if !reflect.DeepEqual(cloned.shape, wantShape) {
+		t.Errorf("Cloned tensor shape changed unexpectedly. Got %v, want %v", cloned.shape, wantShape)
 	}
 
 	empty := NewTensor([]float32{}, []int{0, 2})

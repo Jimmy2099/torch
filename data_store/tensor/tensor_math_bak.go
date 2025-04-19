@@ -5,7 +5,7 @@ import "github.com/Jimmy2099/torch/pkg/log"
 func (t *Tensor) Sub_bak(other *Tensor) *Tensor {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println("t.Shape:", t.Shape, " other Shape:", other.Shape)
+			log.Println("t.shape:", t.shape, " other shape:", other.shape)
 			panic(err)
 		}
 	}()
@@ -13,7 +13,7 @@ func (t *Tensor) Sub_bak(other *Tensor) *Tensor {
 	for i := range t.Data {
 		result[i] = t.Data[i] - other.Data[i]
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Div_bak(other *Tensor) *Tensor {
@@ -21,7 +21,7 @@ func (t *Tensor) Div_bak(other *Tensor) *Tensor {
 	for i := range t.Data {
 		result[i] = t.Data[i] / other.Data[i]
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Mul_bak(other *Tensor) *Tensor {
@@ -29,7 +29,7 @@ func (t *Tensor) Mul_bak(other *Tensor) *Tensor {
 	for i := range t.Data {
 		result[i] = t.Data[i] * other.Data[i]
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Add_bak(other *Tensor) *Tensor {
@@ -37,5 +37,5 @@ func (t *Tensor) Add_bak(other *Tensor) *Tensor {
 	for i := range t.Data {
 		result[i] = t.Data[i] + other.Data[i]
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }

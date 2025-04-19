@@ -67,7 +67,7 @@ func (l *BatchNormLayer) SetBias(data []float32) {
 
 func (bn *BatchNormLayer) computeMean(x *tensor.Tensor) *tensor.Tensor {
 	sumResult := x.SumByDim1([]int{0, 2, 3}, true)
-	elementCount := float32(x.Shape[0] * x.Shape[2] * x.Shape[3])
+	elementCount := float32(x.GetShape()[0] * x.GetShape()[2] * x.GetShape()[3])
 	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})
 }
 
@@ -75,7 +75,7 @@ func (bn *BatchNormLayer) computeVariance(x *tensor.Tensor, mean *tensor.Tensor)
 	x_mu := x.Sub(mean.Reshape([]int{1, bn.numFeatures, 1, 1}))
 	sq_diff := x_mu.Pow(2)
 	sumResult := sq_diff.SumByDim1([]int{0, 2, 3}, true)
-	elementCount := float32(x.Shape[0] * x.Shape[2] * x.Shape[3])
+	elementCount := float32(x.GetShape()[0] * x.GetShape()[2] * x.GetShape()[3])
 
 	return sumResult.DivScalar(elementCount).Reshape([]int{bn.numFeatures})
 }
@@ -86,9 +86,9 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 		batchVar := bn.computeVariance(x, batchMean)
 
 		fmt.Printf("Training mode - batchMean shape: %v, batchVar shape: %v\n",
-			batchMean.Shape, batchVar.Shape)
+			batchMean.GetShape(), batchVar.GetShape())
 		fmt.Printf("Running stats - mean shape: %v, var shape: %v\n",
-			bn.RunningMean.Shape, bn.runningVar.Shape)
+			bn.RunningMean.GetShape(), bn.runningVar.GetShape())
 
 		bn.updateRunningStats(batchMean, batchVar)
 
@@ -109,11 +109,11 @@ func (bn *BatchNormLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 func (bn *BatchNormLayer) updateRunningStats(batchMean, batchVar *tensor.Tensor) {
 	if !bn.RunningMean.ShapesMatch(batchMean) {
 		log.Println(fmt.Sprintf("running mean shape mismatch: expect %v, got %v",
-			bn.RunningMean.Shape, batchMean.Shape))
+			bn.RunningMean.GetShape(), batchMean.GetShape()))
 	}
 	if !bn.runningVar.ShapesMatch(batchVar) {
 		log.Println(fmt.Sprintf("running var shape mismatch: expect %v, got %v",
-			bn.runningVar.Shape, batchVar.Shape))
+			bn.runningVar.GetShape(), batchVar.GetShape()))
 	}
 	newRunningMean := bn.RunningMean.MulScalar(1.0 - bn.momentum).Add(
 		batchMean.MulScalar(bn.momentum),

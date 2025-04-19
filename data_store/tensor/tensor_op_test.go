@@ -21,18 +21,18 @@ func TestNewTensorWithShape(t *testing.T) {
 		{"Matrix", []int{2, 3}, []int{2, 3}, []float32{0, 0, 0, 0, 0, 0}},
 		{"Vector", []int{4}, []int{4}, []float32{0, 0, 0, 0}},
 		{"Scalar", []int{1}, []int{1}, []float32{0}},
-		{"Empty Shape", []int{}, []int{}, []float32{}},
+		{"Empty shape", []int{}, []int{}, []float32{}},
 		{"Zero Dim", []int{2, 0, 3}, []int{2, 0, 3}, []float32{}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tensor := NewTensorWithShape(tt.shape)
-			wantTensor := &Tensor{Data: tt.wantData, Shape: tt.wantShape}
+			wantTensor := &Tensor{Data: tt.wantData, shape: tt.wantShape}
 
-			if !reflect.DeepEqual(tensor.Shape, wantTensor.Shape) {
-				if !((tensor.Shape == nil && len(wantTensor.Shape) == 0) || (wantTensor.Shape == nil && len(tensor.Shape) == 0)) {
-					t.Errorf("NewTensorWithShape(%v) shape = %v, want %v", tt.shape, tensor.Shape, wantTensor.Shape)
+			if !reflect.DeepEqual(tensor.shape, wantTensor.shape) {
+				if !((tensor.shape == nil && len(wantTensor.shape) == 0) || (wantTensor.shape == nil && len(tensor.shape) == 0)) {
+					t.Errorf("NewTensorWithShape(%v) shape = %v, want %v", tt.shape, tensor.shape, wantTensor.shape)
 				}
 			}
 			if !floatsEqual(tensor.Data, wantTensor.Data, epsilon) {
@@ -40,10 +40,10 @@ func TestNewTensorWithShape(t *testing.T) {
 			}
 			size := 1
 			isZeroSize := false
-			if len(tensor.Shape) == 0 {
+			if len(tensor.shape) == 0 {
 				size = 0
 			} else {
-				for _, d := range tensor.Shape {
+				for _, d := range tensor.shape {
 					if d == 0 {
 						isZeroSize = true
 						break
@@ -62,8 +62,8 @@ func TestNewTensorWithShape(t *testing.T) {
 	}
 	t.Run("NilShape", func(t *testing.T) {
 		tensor := NewTensorWithShape(nil)
-		if tensor.Shape != nil {
-			t.Errorf("NewTensorWithShape(nil) shape = %v, want nil", tensor.Shape)
+		if tensor.shape != nil {
+			t.Errorf("NewTensorWithShape(nil) shape = %v, want nil", tensor.shape)
 		}
 		if len(tensor.Data) != 0 {
 			t.Errorf("NewTensorWithShape(nil) data = %v, want []", tensor.Data)
@@ -79,9 +79,9 @@ func TestNewRandomTensor(t *testing.T) {
 		{"Matrix", []int{2, 3}},
 		{"Vector", []int{10}},
 		{"Scalar", []int{1}},
-		{"Empty Shape", []int{}},
+		{"Empty shape", []int{}},
 		{"Zero Dim", []int{3, 0, 2}},
-		{"Nil Shape", nil},
+		{"Nil shape", nil},
 	}
 
 	for _, tt := range tests {
@@ -95,24 +95,24 @@ func TestNewRandomTensor(t *testing.T) {
 				wantShape = []int{}
 			}
 
-			if !reflect.DeepEqual(tensor.Shape, wantShape) {
-				if !((tensor.Shape == nil && wantShape == nil) || (len(tensor.Shape) == 0 && len(wantShape) == 0 && tensor.Shape != nil && wantShape != nil)) {
-					t.Errorf("NewRandomTensor(%v) shape = %v, want %v", tt.shape, tensor.Shape, wantShape)
+			if !reflect.DeepEqual(tensor.shape, wantShape) {
+				if !((tensor.shape == nil && wantShape == nil) || (len(tensor.shape) == 0 && len(wantShape) == 0 && tensor.shape != nil && wantShape != nil)) {
+					t.Errorf("NewRandomTensor(%v) shape = %v, want %v", tt.shape, tensor.shape, wantShape)
 				}
 			}
 
 			expectedSize := 0
-			if tensor.Shape != nil {
+			if tensor.shape != nil {
 				isZeroSize := false
 				tempSize := 1
-				for _, d := range tensor.Shape {
+				for _, d := range tensor.shape {
 					if d == 0 {
 						isZeroSize = true
 						break
 					}
 					tempSize *= d
 				}
-				if !isZeroSize && len(tensor.Shape) > 0 {
+				if !isZeroSize && len(tensor.shape) > 0 {
 					expectedSize = tempSize
 				} else if isZeroSize {
 					expectedSize = 0
@@ -221,7 +221,7 @@ func TestNewTensorFromSlice(t *testing.T) {
 				checkPanic(t, func() { NewTensorFromSlice(tt.input) }, "")
 			} else {
 				tensor := NewTensorFromSlice(tt.input)
-				wantTensor := &Tensor{Data: tt.wantData, Shape: tt.wantShape}
+				wantTensor := &Tensor{Data: tt.wantData, shape: tt.wantShape}
 				if !tensorsEqual(tensor, wantTensor, epsilon) {
 					t.Errorf("NewTensorFromSlice() got %v, want %v", tensor, wantTensor)
 				}
@@ -250,7 +250,6 @@ func TestTensor_Reshape(t *testing.T) {
 		{"Invalid Reshape Size Mismatch Vector", []int{6}, []int{5}, nil, true},
 		{"Invalid Reshape Zero Dim Input", []int{2, 0, 3}, []int{6}, nil, true},
 		{"Valid Reshape Zero Dim Output", []int{2, 0, 3}, []int{3, 2, 0}, []int{3, 2, 0}, false},
-
 	}
 
 	for _, tt := range tests {
@@ -280,8 +279,8 @@ func TestTensor_Reshape(t *testing.T) {
 
 			if tt.wantErr {
 				checkPanic(t, func() { tensor.Reshape(tt.reshapeTo) }, "")
-				if !reflect.DeepEqual(tensor.Shape, tt.startShape) {
-					t.Errorf("Tensor shape changed after Reshape panic: got %v, expected original %v", tensor.Shape, tt.startShape)
+				if !reflect.DeepEqual(tensor.shape, tt.startShape) {
+					t.Errorf("Tensor shape changed after Reshape panic: got %v, expected original %v", tensor.shape, tt.startShape)
 				}
 			} else {
 				reshapedTensor := tensor.Reshape(tt.reshapeTo)
@@ -289,8 +288,8 @@ func TestTensor_Reshape(t *testing.T) {
 				if reshapedTensor != originalTensorPtr {
 					t.Errorf("Reshape should return the same tensor pointer, but got a different one.")
 				}
-				if !reflect.DeepEqual(tensor.Shape, tt.wantShape) {
-					t.Errorf("Reshape(%v) resulted in shape %v, want %v", tt.reshapeTo, tensor.Shape, tt.wantShape)
+				if !reflect.DeepEqual(tensor.shape, tt.wantShape) {
+					t.Errorf("Reshape(%v) resulted in shape %v, want %v", tt.reshapeTo, tensor.shape, tt.wantShape)
 				}
 				if len(currentData) > 0 && len(tensor.Data) > 0 && currentData[0] != tensor.Data[0] {
 					t.Logf("Warning: Data slice pointers differ after reshape (original=%p, tensor=%p). This might be okay if NewTensor copies data, but Reshape itself should not reallocate.", &currentData[0], &tensor.Data[0])
@@ -303,7 +302,7 @@ func TestTensor_Reshape(t *testing.T) {
 	}
 	t.Run("Reshape 1 to Empty", func(t *testing.T) {
 		tensor1 := NewTensor([]float32{5.0}, []int{1})
-		tempTargetTensor := &Tensor{Shape: []int{}}
+		tempTargetTensor := &Tensor{shape: []int{}}
 		sizeEmpty := tempTargetTensor.Size()
 		sizeTensor1 := tensor1.Size()
 
@@ -312,8 +311,8 @@ func TestTensor_Reshape(t *testing.T) {
 		} else {
 			tensor1.Reshape([]int{})
 			wantShape := []int{}
-			if !reflect.DeepEqual(tensor1.Shape, wantShape) {
-				t.Errorf("Reshape([1]) to []int{} resulted in shape %v, want %v", tensor1.Shape, wantShape)
+			if !reflect.DeepEqual(tensor1.shape, wantShape) {
+				t.Errorf("Reshape([1]) to []int{} resulted in shape %v, want %v", tensor1.shape, wantShape)
 			}
 		}
 	})
@@ -332,9 +331,9 @@ func TestTensor_Squeeze(t *testing.T) {
 		{"All 1s", []int{1, 1, 1}, []int{}},
 		{"Single 1", []int{1}, []int{}},
 		{"No 1s", []int{2, 3}, []int{2, 3}},
-		{"Empty Shape", []int{}, []int{}},
-		{"Nil Shape", nil, nil},
-		{"Shape with 0", []int{1, 0, 1}, []int{0}},
+		{"Empty shape", []int{}, []int{}},
+		{"Nil shape", nil, nil},
+		{"shape with 0", []int{1, 0, 1}, []int{0}},
 	}
 
 	for _, tt := range tests {
@@ -363,7 +362,7 @@ func TestTensor_Squeeze(t *testing.T) {
 				startData = []float32{}
 			}
 
-			tensor := &Tensor{Data: startData, Shape: tt.startShape}
+			tensor := &Tensor{Data: startData, shape: tt.startShape}
 			originalTensorPtr := tensor
 			var originalDataPtr *float32
 
@@ -377,9 +376,9 @@ func TestTensor_Squeeze(t *testing.T) {
 				t.Errorf("Squeeze should return the same tensor pointer, but got a different one.")
 			}
 
-			if !reflect.DeepEqual(tensor.Shape, tt.wantShape) {
-				if !((tensor.Shape == nil && tt.wantShape == nil) || (len(tensor.Shape) == 0 && len(tt.wantShape) == 0 && tensor.Shape != nil && tt.wantShape != nil)) {
-					t.Errorf("Squeeze() resulted in shape %v, want %v", tensor.Shape, tt.wantShape)
+			if !reflect.DeepEqual(tensor.shape, tt.wantShape) {
+				if !((tensor.shape == nil && tt.wantShape == nil) || (len(tensor.shape) == 0 && len(tt.wantShape) == 0 && tensor.shape != nil && tt.wantShape != nil)) {
+					t.Errorf("Squeeze() resulted in shape %v, want %v", tensor.shape, tt.wantShape)
 				}
 			}
 
@@ -436,7 +435,7 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 				startData = []float32{}
 			}
 
-			tensor := &Tensor{Data: startData, Shape: tt.startShape}
+			tensor := &Tensor{Data: startData, shape: tt.startShape}
 			originalTensorPtr := tensor
 			var originalDataPtr *float32
 			if len(startData) > 0 {
@@ -445,8 +444,8 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 
 			if tt.wantErr {
 				checkPanic(t, func() { tensor.SqueezeSpecific(tt.squeezeDims) }, "")
-				if !reflect.DeepEqual(tensor.Shape, tt.startShape) {
-					t.Errorf("Tensor shape changed after panic: got %v, expected %v", tensor.Shape, tt.startShape)
+				if !reflect.DeepEqual(tensor.shape, tt.startShape) {
+					t.Errorf("Tensor shape changed after panic: got %v, expected %v", tensor.shape, tt.startShape)
 				}
 			} else {
 				squeezedTensor := tensor.SqueezeSpecific(tt.squeezeDims)
@@ -455,8 +454,8 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 					t.Errorf("SqueezeSpecific should return the same tensor pointer, but got a different one.")
 				}
 
-				if !reflect.DeepEqual(tensor.Shape, tt.wantShape) {
-					t.Errorf("SqueezeSpecific(%v) resulted in shape %v, want %v", tt.squeezeDims, tensor.Shape, tt.wantShape)
+				if !reflect.DeepEqual(tensor.shape, tt.wantShape) {
+					t.Errorf("SqueezeSpecific(%v) resulted in shape %v, want %v", tt.squeezeDims, tensor.shape, tt.wantShape)
 				}
 
 				if len(startData) > 0 && len(tensor.Data) > 0 && originalDataPtr != &tensor.Data[0] {
@@ -471,10 +470,10 @@ func TestTensor_SqueezeSpecific(t *testing.T) {
 	}
 
 	t.Run("NilShape", func(t *testing.T) {
-		tensor := &Tensor{Data: nil, Shape: nil}
+		tensor := &Tensor{Data: nil, shape: nil}
 		res := tensor.SqueezeSpecific([]int{0})
-		if res.Shape != nil {
-			t.Errorf("SqueezeSpecific on nil shape tensor resulted in shape %v, want nil", res.Shape)
+		if res.shape != nil {
+			t.Errorf("SqueezeSpecific on nil shape tensor resulted in shape %v, want nil", res.shape)
 		}
 	})
 }
@@ -500,16 +499,16 @@ func TestTensor_Indices(t *testing.T) {
 
 		{"Scalar", []int{1}, 0, []int{0}},
 
-		{"Empty Shape", []int{}, 0, []int{}},
+		{"Empty shape", []int{}, 0, []int{}},
 
-		{"Zero Dim Shape", []int{2, 0, 3}, 0, []int{0, 0, 0}},
+		{"Zero Dim shape", []int{2, 0, 3}, 0, []int{0, 0, 0}},
 
-		{"Zero Dim Shape End", []int{3, 2, 0}, 0, []int{0, 0, 0}},
+		{"Zero Dim shape End", []int{3, 2, 0}, 0, []int{0, 0, 0}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tensor := &Tensor{Shape: tt.shape}
+			tensor := &Tensor{shape: tt.shape}
 			gotIndices := tensor.Indices(tt.linearIdx)
 
 			if !reflect.DeepEqual(gotIndices, tt.wantIndices) {
@@ -519,7 +518,7 @@ func TestTensor_Indices(t *testing.T) {
 	}
 
 	t.Run("OutOfBoundsIndex", func(t *testing.T) {
-		tensor := &Tensor{Shape: []int{2, 3}}
+		tensor := &Tensor{shape: []int{2, 3}}
 		got := tensor.Indices(6)
 		want := []int{2, 0}
 		if !reflect.DeepEqual(got, want) {

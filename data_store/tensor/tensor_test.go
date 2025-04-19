@@ -19,7 +19,7 @@ func TestNewTensor2(t *testing.T) {
 			inputShape: []int{3},
 			expectedTensor: &Tensor{
 				Data:  []float32{1.0, 2.0, 3.0},
-				Shape: []int{3},
+				shape: []int{3},
 			},
 			expectPanic: false,
 		},
@@ -29,37 +29,37 @@ func TestNewTensor2(t *testing.T) {
 			inputShape: []int{2, 3},
 			expectedTensor: &Tensor{
 				Data:  []float32{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
-				Shape: []int{2, 3},
+				shape: []int{2, 3},
 			},
 			expectPanic: false,
 		},
 		{
-			name:       "Empty Data and Shape",
+			name:       "Empty Data and shape",
 			inputData:  []float32{},
 			inputShape: []int{},
 			expectedTensor: &Tensor{
 				Data:  []float32{},
-				Shape: []int{},
+				shape: []int{},
 			},
 			expectPanic: false,
 		},
 		{
-			name:       "Nil Data and Shape",
+			name:       "Nil Data and shape",
 			inputData:  nil,
 			inputShape: nil,
 			expectedTensor: &Tensor{
 				Data:  nil,
-				Shape: nil,
+				shape: nil,
 			},
 			expectPanic: false,
 		},
 		{
-			name:       "Shape with Zero Dimension",
+			name:       "shape with Zero Dimension",
 			inputData:  []float32{},
 			inputShape: []int{2, 0, 3},
 			expectedTensor: &Tensor{
 				Data:  []float32{},
-				Shape: []int{2, 0, 3},
+				shape: []int{2, 0, 3},
 			},
 			expectPanic: false,
 		},
@@ -69,7 +69,7 @@ func TestNewTensor2(t *testing.T) {
 			inputShape: []int{2, 2, 2},
 			expectedTensor: &Tensor{
 				Data:  []float32{1, 2, 3, 4, 5, 6, 7, 8},
-				Shape: []int{2, 2, 2},
+				shape: []int{2, 2, 2},
 			},
 			expectPanic: false,
 		},
@@ -101,14 +101,13 @@ func TestNewTensor2(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(actualTensor.Shape, tc.expectedTensor.Shape) {
-				isActualShapeNilOrEmpty := actualTensor.Shape == nil || len(actualTensor.Shape) == 0
-				isExpectedShapeNilOrEmpty := tc.expectedTensor.Shape == nil || len(tc.expectedTensor.Shape) == 0
+			if !reflect.DeepEqual(actualTensor.shape, tc.expectedTensor.shape) {
+				isActualShapeNilOrEmpty := actualTensor.shape == nil || len(actualTensor.shape) == 0
+				isExpectedShapeNilOrEmpty := tc.expectedTensor.shape == nil || len(tc.expectedTensor.shape) == 0
 				if !(isActualShapeNilOrEmpty && isExpectedShapeNilOrEmpty) {
-					t.Errorf("Shape mismatch: expected %v, got %v", tc.expectedTensor.Shape, actualTensor.Shape)
+					t.Errorf("shape mismatch: expected %v, got %v", tc.expectedTensor.shape, actualTensor.shape)
 				}
 			}
-
 
 		})
 	}

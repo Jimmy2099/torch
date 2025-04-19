@@ -44,14 +44,14 @@ func (r *RMSNorm) Backward(gradOutput *tensor.Tensor, learningRate float32) *ten
 	}
 	inputTensor := r.inputCache
 
-	gradInputShape := inputTensor.Shape
+	gradInputShape := inputTensor.GetShape()
 	gradInputData := make([]float32, len(inputTensor.Data))
 	gradInput := tensor.NewTensor(gradInputData, gradInputShape)
 
 	gradWeightsData := make([]float32, len(r.Weights.Data))
 
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
-	featureSize := r.Weights.Shape[0]
+	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
+	featureSize := r.Weights.GetShape()[0]
 
 	for b := 0; b < batchSize; b++ {
 		start := b * featureSize
@@ -91,7 +91,7 @@ func (r *RMSNorm) Parameters() []*tensor.Tensor {
 }
 
 func (r *RMSNorm) SetWeights(data []float32) {
-	r.Weights = tensor.NewTensor(data, r.Weights.Shape)
+	r.Weights = tensor.NewTensor(data, r.Weights.GetShape())
 }
 
 func (r *RMSNorm) SetWeightsAndShape(data []float32, shape []int) {
@@ -111,25 +111,25 @@ func (r *RMSNorm) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	if len(inputTensor.GetShape()) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.GetShape()[0]})
 	}
-	if len(inputTensor.Shape) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	if len(inputTensor.GetShape()) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.GetShape()))
 	}
 
-	features := inputTensor.Shape[len(inputTensor.Shape)-1]
-	if features != r.Weights.Shape[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	features := inputTensor.GetShape()[len(inputTensor.GetShape())-1]
+	if features != r.Weights.GetShape()[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.GetShape()[0]))
 	}
 
 	r.inputCache = inputTensor
 
-	outputShape := inputTensor.Shape
+	outputShape := inputTensor.GetShape()
 	outputData := make([]float32, len(inputTensor.Data))
 	output := tensor.NewTensor(outputData, outputShape)
 
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
 	featureSize := features
 
 	for b := 0; b < batchSize; b++ {
@@ -154,28 +154,27 @@ func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor
 }
 
 func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	if len(inputTensor.GetShape()) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.GetShape()[0]})
 	}
 
-	if len(inputTensor.Shape) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	if len(inputTensor.GetShape()) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.GetShape()))
 	}
 
-	features := inputTensor.Shape[len(inputTensor.Shape)-1]
-	if features != r.Weights.Shape[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	features := inputTensor.GetShape()[len(inputTensor.GetShape())-1]
+	if features != r.Weights.GetShape()[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.GetShape()[0]))
 	}
 
 	r.inputCache = inputTensor
 
-	outputShape := inputTensor.Shape
+	outputShape := inputTensor.GetShape()
 	outputData := make([]float32, len(inputTensor.Data))
 	output := tensor.NewTensor(outputData, outputShape)
 
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
 	featureSize := features
-
 
 	chunkSize := (batchSize + numCPU - 1) / numCPU
 	var wg sync.WaitGroup
@@ -225,24 +224,24 @@ func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor 
 }
 
 func (r *RMSNorm) ForwardSIMD(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.Shape) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.Shape[0]})
+	if len(inputTensor.GetShape()) == 1 {
+		inputTensor = inputTensor.Reshape([]int{1, inputTensor.GetShape()[0]})
 	}
-	if len(inputTensor.Shape) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.Shape))
+	if len(inputTensor.GetShape()) < 2 {
+		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.GetShape()))
 	}
 
-	features := inputTensor.Shape[len(inputTensor.Shape)-1]
-	if features != r.Weights.Shape[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.Shape[0]))
+	features := inputTensor.GetShape()[len(inputTensor.GetShape())-1]
+	if features != r.Weights.GetShape()[0] {
+		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.GetShape()[0]))
 	}
 
 	r.inputCache = inputTensor
-	outputShape := inputTensor.Shape
+	outputShape := inputTensor.GetShape()
 	outputData := make([]float32, len(inputTensor.Data))
 	output := tensor.NewTensor(outputData, outputShape)
 
-	batchSize := product(inputTensor.Shape[:len(inputTensor.Shape)-1])
+	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
 	featureSize := features
 
 	weightsData := r.Weights.Data

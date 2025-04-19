@@ -11,17 +11,11 @@ type ReLULayer struct {
 }
 
 func (r *ReLULayer) GetWeights() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func (r *ReLULayer) GetBias() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func NewReLULayer() *ReLULayer {
@@ -64,7 +58,6 @@ func (r *ReLULayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	})
 }
 
-
 func shapeEqual(a, b []int) bool {
 	if len(a) != len(b) {
 		return false
@@ -95,7 +88,7 @@ func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 	if gradOutput == nil {
 		panic("gradient tensor cannot be nil")
 	}
-	if !shapeEqual(r.input.Shape, gradOutput.Shape) {
+	if !shapeEqual(r.input.GetShape(), gradOutput.GetShape()) {
 		panic("input and gradient shapes must match")
 	}
 

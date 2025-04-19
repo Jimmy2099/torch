@@ -94,7 +94,7 @@ func NewAutoEncoder() *AutoEncoder {
 			panic(fmt.Sprintf("Weight tensor is nil after SetWeights for %s", info.pyTorchName))
 		}
 		info.goLayer.Weights.Reshape(info.weightShape)
-		fmt.Printf("Loaded weights for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Weights.Shape)
+		fmt.Printf("Loaded weights for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Weights.GetShape())
 
 		biasFileName := info.pyTorchName + ".bias.csv"
 		biasFilePath := filepath.Join(dataPath, biasFileName)
@@ -111,7 +111,7 @@ func NewAutoEncoder() *AutoEncoder {
 			panic(fmt.Sprintf("Bias tensor is nil after SetBias for %s", info.pyTorchName))
 		}
 		info.goLayer.Bias.Reshape(info.biasShape)
-		fmt.Printf("Loaded biases for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Bias.Shape)
+		fmt.Printf("Loaded biases for %s, shape set to: %v\n", info.pyTorchName, info.goLayer.Bias.GetShape())
 	}
 
 	fmt.Println("\n--- AutoEncoder model parameters loaded successfully. ---")
@@ -120,62 +120,62 @@ func NewAutoEncoder() *AutoEncoder {
 }
 
 func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
-	if len(x.Shape) != 2 || x.Shape[1] != 784 {
+	if len(x.GetShape()) != 2 || x.GetShape()[1] != 784 {
 		if x.Size() == 784 {
-			fmt.Printf("Input shape %v is not [N, 784], attempting to flatten.\n", x.Shape)
+			fmt.Printf("Input shape %v is not [N, 784], attempting to flatten.\n", x.GetShape())
 			x = x.Flatten()
-			fmt.Printf("Flattened input shape: %v\n", x.Shape)
+			fmt.Printf("Flattened input shape: %v\n", x.GetShape())
 		} else {
-			panic(fmt.Sprintf("Input tensor shape %v is incompatible with AutoEncoder input (expected [N, 784])", x.Shape))
+			panic(fmt.Sprintf("Input tensor shape %v is incompatible with AutoEncoder input (expected [N, 784])", x.GetShape()))
 		}
 	}
 
 	fmt.Println("\n=== Starting AutoEncoder Forward Pass ===")
-	fmt.Printf("Input shape: %v\n", x.Shape)
+	fmt.Printf("Input shape: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder FC1:")
 	x = ae.fc1.Forward(x)
-	fmt.Printf("After fc1: %v\n", x.Shape)
+	fmt.Printf("After fc1: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU1:")
 	x = ae.relu1.Forward(x)
-	fmt.Printf("After relu1: %v\n", x.Shape)
+	fmt.Printf("After relu1: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder FC2:")
 	x = ae.fc2.Forward(x)
-	fmt.Printf("After fc2: %v\n", x.Shape)
+	fmt.Printf("After fc2: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU2:")
 	x = ae.relu2.Forward(x)
-	fmt.Printf("After relu2: %v\n", x.Shape)
+	fmt.Printf("After relu2: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder FC3 (Latent Space):")
 	x = ae.fc3.Forward(x)
-	fmt.Printf("After fc3 (latent): %v\n", x.Shape)
+	fmt.Printf("After fc3 (latent): %v\n", x.GetShape())
 
 	fmt.Println("\nDecoder FC4:")
 	x = ae.fc4.Forward(x)
-	fmt.Printf("After fc4: %v\n", x.Shape)
+	fmt.Printf("After fc4: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU3:")
 	x = ae.relu3.Forward(x)
-	fmt.Printf("After relu3: %v\n", x.Shape)
+	fmt.Printf("After relu3: %v\n", x.GetShape())
 
 	fmt.Println("\nDecoder FC5:")
 	x = ae.fc5.Forward(x)
-	fmt.Printf("After fc5: %v\n", x.Shape)
+	fmt.Printf("After fc5: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU4:")
 	x = ae.relu4.Forward(x)
-	fmt.Printf("After relu4: %v\n", x.Shape)
+	fmt.Printf("After relu4: %v\n", x.GetShape())
 
 	fmt.Println("\nDecoder FC6:")
 	x = ae.fc6.Forward(x)
-	fmt.Printf("After fc6: %v\n", x.Shape)
+	fmt.Printf("After fc6: %v\n", x.GetShape())
 
 	fmt.Println("\nSigmoid (Output):")
 	x = ae.Sigmoid1.Forward(x)
-	fmt.Printf("After sigmoid (output): %v\n", x.Shape)
+	fmt.Printf("After sigmoid (output): %v\n", x.GetShape())
 
 	fmt.Println("\n=== AutoEncoder Forward Pass Complete ===")
 	return x
@@ -360,7 +360,7 @@ import numpy as np
 def load_numpy_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))

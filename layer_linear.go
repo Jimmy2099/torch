@@ -70,7 +70,6 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 	weightsData := make([]float32, outputDim*inputDim)
 	biasData := make([]float32, outputDim)
 
-
 	return &LinearLayer{
 		InputDim:          inputDim,
 		OutputDim:         outputDim,
@@ -85,16 +84,16 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 }
 
 func (l *LinearLayer) updateParameters(dWeights, dBias *tensor.Tensor, learningRate float32) {
-	for i := 0; i < l.Weights.Shape[0]; i++ {
-		for j := 0; j < l.Weights.Shape[1]; j++ {
-			regGrad := l.WeightDecay * l.Weights.Data[i*l.Weights.Shape[1]+j]
-			l.VWeights.Data[i*l.VWeights.Shape[1]+j] = l.Momentum*l.VWeights.Data[i*l.VWeights.Shape[1]+j] -
-				learningRate*(dWeights.Data[i*dWeights.Shape[1]+j]+regGrad)
-			l.Weights.Data[i*l.Weights.Shape[1]+j] += l.VWeights.Data[i*l.VWeights.Shape[1]+j]
+	for i := 0; i < l.Weights.GetShape()[0]; i++ {
+		for j := 0; j < l.Weights.GetShape()[1]; j++ {
+			regGrad := l.WeightDecay * l.Weights.Data[i*l.Weights.GetShape()[1]+j]
+			l.VWeights.Data[i*l.VWeights.GetShape()[1]+j] = l.Momentum*l.VWeights.Data[i*l.VWeights.GetShape()[1]+j] -
+				learningRate*(dWeights.Data[i*dWeights.GetShape()[1]+j]+regGrad)
+			l.Weights.Data[i*l.Weights.GetShape()[1]+j] += l.VWeights.Data[i*l.VWeights.GetShape()[1]+j]
 		}
 	}
 
-	for i := 0; i < l.Bias.Shape[0]; i++ {
+	for i := 0; i < l.Bias.GetShape()[0]; i++ {
 		l.VBias.Data[i] = l.Momentum*l.VBias.Data[i] - learningRate*dBias.Data[i]
 		l.Bias.Data[i] += l.VBias.Data[i]
 	}
@@ -107,7 +106,7 @@ func (l *LinearLayer) ZeroGrad() {
 }
 
 func (l *LinearLayer) NumParams() int {
-	return l.Weights.Shape[0]*l.Weights.Shape[1] + l.Bias.Shape[0]
+	return l.Weights.GetShape()[0]*l.Weights.GetShape()[1] + l.Bias.GetShape()[0]
 }
 
 func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Tensor {
@@ -115,7 +114,7 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 		panic("Forward propagation did not correctly save input data")
 	}
 
-	batchSize := gradOutput.Shape[0]
+	batchSize := gradOutput.GetShape()[0]
 	dWeights := make([]float32, l.InputDim*l.OutputDim)
 	dBias := make([]float32, l.OutputDim)
 	gradInput := make([]float32, batchSize*l.InputDim)
@@ -144,8 +143,8 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 	}
 
 	if l.VWeights == nil || l.VBias == nil {
-		l.VWeights = tensor.NewTensor(make([]float32, len(l.Weights.Data)), l.Weights.Shape)
-		l.VBias = tensor.NewTensor(make([]float32, len(l.Bias.Data)), l.Bias.Shape)
+		l.VWeights = tensor.NewTensor(make([]float32, len(l.Weights.Data)), l.Weights.GetShape())
+		l.VBias = tensor.NewTensor(make([]float32, len(l.Bias.Data)), l.Bias.GetShape())
 	}
 
 	for i := range l.Weights.Data {
@@ -182,9 +181,8 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
 	l.Input = reshapedX.Clone()
-	batchSize := reshapedX.Shape[0]
+	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
-
 
 	for i := 0; i < batchSize*l.OutputDim*l.InputDim; i++ {
 		b := i / (l.OutputDim * l.InputDim)
@@ -269,7 +267,7 @@ func (l *LinearLayer) ForwardSignalThreadCompute(x *tensor.Tensor) *tensor.Tenso
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
 	l.Input = reshapedX.Clone()
-	batchSize := reshapedX.Shape[0]
+	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
 	for i := 0; i < len(l.Input.Data); i++ {
@@ -302,7 +300,7 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
 	l.Input = reshapedX.Clone()
-	batchSize := reshapedX.Shape[0]
+	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
 	workers := 15
@@ -359,7 +357,7 @@ func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
 	l.Input = reshapedX.Clone()
-	batchSize := reshapedX.Shape[0]
+	batchSize := reshapedX.GetShape()[0]
 
 	if l.WeightsTransposed == false {
 		l.Weights = l.Weights.Transpose()

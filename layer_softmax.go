@@ -21,7 +21,7 @@ func (s *SoftmaxLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	if x == nil {
 		panic("input tensor cannot be nil")
 	}
-	if s.axis < 0 || s.axis >= len(x.Shape) {
+	if s.axis < 0 || s.axis >= len(x.GetShape()) {
 		panic("invalid axis for softmax computation")
 	}
 
@@ -47,7 +47,7 @@ func (s *SoftmaxLayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
 	if dout == nil {
 		panic("gradient tensor cannot be nil")
 	}
-	if !shapeEqual(s.output.Shape, dout.Shape) {
+	if !shapeEqual(s.output.GetShape(), dout.GetShape()) {
 		panic("output and gradient shapes must match")
 	}
 

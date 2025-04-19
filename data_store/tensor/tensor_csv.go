@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	shapeHeaderPrefix = "Shape"
+	shapeHeaderPrefix = "shape"
 )
 
 func (t *Tensor) SaveToCSV(filename string) error {
@@ -28,9 +28,9 @@ func (t *Tensor) SaveToCSV(filename string) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	shapeRecord := make([]string, len(t.Shape)+1)
+	shapeRecord := make([]string, len(t.shape)+1)
 	shapeRecord[0] = shapeHeaderPrefix
-	for i, dim := range t.Shape {
+	for i, dim := range t.shape {
 		shapeRecord[i+1] = strconv.Itoa(dim)
 	}
 	if err := writer.Write(shapeRecord); err != nil {
@@ -38,8 +38,8 @@ func (t *Tensor) SaveToCSV(filename string) error {
 	}
 
 	var numCols, numRows int
-	if len(t.Shape) > 0 {
-		numCols = t.Shape[len(t.Shape)-1]
+	if len(t.shape) > 0 {
+		numCols = t.shape[len(t.shape)-1]
 	} else {
 		numCols = 1
 	}
@@ -95,27 +95,27 @@ func (t *Tensor) SaveToCSVWithoutShape(filename string) error {
 	numRows := 1
 	numCols := 1
 
-	if len(t.Shape) == 0 {
+	if len(t.shape) == 0 {
 		if len(t.Data) == 1 {
 			numRows = 1
 			numCols = 1
 		} else {
 			return fmt.Errorf("invalid tensor state: empty shape but %d data elements", len(t.Data))
 		}
-	} else if len(t.Shape) == 1 {
+	} else if len(t.shape) == 1 {
 		numRows = 1
-		numCols = t.Shape[0]
+		numCols = t.shape[0]
 		if numCols == 0 && len(t.Data) == 0 {
 		} else if len(t.Data) != numCols {
 			return fmt.Errorf("data length (%d) does not match shape[0] (%d)", len(t.Data), numCols)
 		}
 	} else {
-		numCols = t.Shape[len(t.Shape)-1]
+		numCols = t.shape[len(t.shape)-1]
 		if numCols <= 0 {
 			return fmt.Errorf("invalid tensor shape: last dimension is non-positive (%d)", numCols)
 		}
 		expectedSize := 1
-		for _, dim := range t.Shape {
+		for _, dim := range t.shape {
 			expectedSize *= dim
 		}
 		if len(t.Data) != expectedSize {

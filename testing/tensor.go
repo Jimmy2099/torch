@@ -59,7 +59,7 @@ from torchvision.utils import save_image
 
 def sv_image(image_data, NUM_IMAGES=64):
     image_data = image_data.reshape(NUM_IMAGES, 3, 64, 64)
-    print(f"Shape: {image_data.shape}, dim: {image_data.ndim}")
+    print(f"shape: {image_data.shape}, dim: {image_data.ndim}")
     nrow = int(NUM_IMAGES ** 0.5)
     if nrow * nrow < NUM_IMAGES:
         nrow += 1
@@ -67,14 +67,14 @@ def sv_image(image_data, NUM_IMAGES=64):
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
-        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        f.write("shape," + ",".join(map(str, tensor.shape)) + "\n")
         tensor = tensor.reshape(-1, tensor.shape[0])
         np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
 
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))

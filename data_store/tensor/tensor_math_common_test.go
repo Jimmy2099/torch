@@ -34,12 +34,12 @@ func assertTensorsEqual(t *testing.T, got, want *Tensor, tol float32) {
 		t.Errorf("One tensor is nil, the other is not. Got: %v, Want: %v", got, want)
 		return
 	}
-	if !shapesEqual(got.Shape, want.Shape) {
-		t.Errorf("Shape mismatch: Got %v, want %v", got.Shape, want.Shape)
+	if !shapesEqual(got.shape, want.shape) {
+		t.Errorf("shape mismatch: Got %v, want %v", got.shape, want.shape)
 		return
 	}
 	if !floatsEqual(got.Data, want.Data, tol) {
-		t.Errorf("Data mismatch:\nGot:  %v\nWant: %v\nShape: %v", got.Data, want.Data, got.Shape)
+		t.Errorf("Data mismatch:\nGot:  %v\nWant: %v\nshape: %v", got.Data, want.Data, got.shape)
 	}
 }
 
@@ -287,7 +287,7 @@ func TestCopy(t *testing.T) {
 	assertTensorsEqual(t, a, b, 0)
 
 	b.Set(99.0, 0, 1)
-	b.Shape[0] = 5
+	b.shape[0] = 5
 
 	wantA := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 	assertTensorsEqual(t, a, wantA, 0)
@@ -296,8 +296,8 @@ func TestCopy(t *testing.T) {
 	if !floatsEqual(b.Data, wantB.Data, 0) {
 		t.Errorf("Copy data modification failed: Got %v, want %v", b.Data, wantB.Data)
 	}
-	if !shapesEqual(b.Shape, wantB.Shape) {
-		t.Errorf("Copy shape modification failed: Got %v, want %v", b.Shape, wantB.Shape)
+	if !shapesEqual(b.shape, wantB.shape) {
+		t.Errorf("Copy shape modification failed: Got %v, want %v", b.shape, wantB.shape)
 	}
 }
 

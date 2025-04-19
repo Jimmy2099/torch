@@ -35,47 +35,47 @@ func (c *CNN) Parameters() []*matrix.Matrix {
 
 func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting Forward Pass ===")
-	fmt.Printf("Input shape: %v\n", x.Shape)
+	fmt.Printf("Input shape: %v\n", x.GetShape())
 
 	fmt.Println("\nConv1:")
 	x = c.conv1.Forward(x)
-	fmt.Printf("After conv1: %v\n", x.Shape)
+	fmt.Printf("After conv1: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU1:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu1: %v\n", x.Shape)
+	fmt.Printf("After relu1: %v\n", x.GetShape())
 
 	fmt.Println("\nPool1:")
 	x = c.pool.Forward(x)
-	fmt.Printf("After pool1: %v\n", x.Shape)
+	fmt.Printf("After pool1: %v\n", x.GetShape())
 
 	fmt.Println("\nConv2:")
 	x = c.conv2.Forward(x)
-	fmt.Printf("After conv2: %v\n", x.Shape)
+	fmt.Printf("After conv2: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU2:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu2: %v\n", x.Shape)
+	fmt.Printf("After relu2: %v\n", x.GetShape())
 
 	fmt.Println("\nPool2:")
 	x = c.pool.Forward(x)
-	fmt.Printf("After pool2: %v\n", x.Shape)
+	fmt.Printf("After pool2: %v\n", x.GetShape())
 
 	fmt.Println("\nFlatten:")
 	x = x.Flatten()
-	fmt.Printf("After flatten: %v\n", x.Shape)
+	fmt.Printf("After flatten: %v\n", x.GetShape())
 
 	fmt.Println("\nFC1:")
 	x = c.fc1.Forward(x)
-	fmt.Printf("After fc1: %v\n", x.Shape)
+	fmt.Printf("After fc1: %v\n", x.GetShape())
 
 	fmt.Println("\nReLU3:")
 	x = c.relu.Forward(x)
-	fmt.Printf("After relu3: %v\n", x.Shape)
+	fmt.Printf("After relu3: %v\n", x.GetShape())
 
 	fmt.Println("\nFC2:")
 	x = c.fc2.Forward(x)
-	fmt.Printf("After fc2: %v\n", x.Shape)
+	fmt.Printf("After fc2: %v\n", x.GetShape())
 
 	fmt.Println("\n=== Forward Pass Complete ===")
 	return x

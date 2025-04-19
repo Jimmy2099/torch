@@ -12,7 +12,7 @@ func NewTensorWithShape(shape []int) *Tensor {
 	}
 	return &Tensor{
 		Data:  make([]float32, size),
-		Shape: shape,
+		shape: shape,
 	}
 }
 
@@ -40,7 +40,7 @@ func NewTensorFromSlice(data [][]float32) *Tensor {
 	}
 	return &Tensor{
 		Data:  flatData,
-		Shape: []int{rows, cols},
+		shape: []int{rows, cols},
 	}
 }
 
@@ -53,13 +53,13 @@ func (t *Tensor) Reshape(shape []int) *Tensor {
 		panic("New shape is not compatible with existing size, " + fmt.Sprint("size:", size, " t.Size():", t.Size()))
 	}
 
-	t.Shape = shape
+	t.shape = shape
 	return t
 }
 
 func (t *Tensor) Squeeze() *Tensor {
 	newShape := make([]int, 0)
-	for _, dim := range t.Shape {
+	for _, dim := range t.shape {
 		if dim != 1 {
 			newShape = append(newShape, dim)
 		}
@@ -69,7 +69,7 @@ func (t *Tensor) Squeeze() *Tensor {
 
 func (t *Tensor) SqueezeSpecific(dims []int) *Tensor {
 	newShape := make([]int, 0)
-	for i, dim := range t.Shape {
+	for i, dim := range t.shape {
 		shouldKeep := true
 		for _, d := range dims {
 			if i == d {
@@ -88,9 +88,9 @@ func (t *Tensor) SqueezeSpecific(dims []int) *Tensor {
 }
 
 func (t *Tensor) Indices(i int) []int {
-	indices := make([]int, len(t.Shape))
-	strides := computeStrides(t.Shape)
-	for k := 0; k < len(t.Shape); k++ {
+	indices := make([]int, len(t.shape))
+	strides := computeStrides(t.shape)
+	for k := 0; k < len(t.shape); k++ {
 		if strides[k] == 0 {
 			indices[k] = 0
 			continue

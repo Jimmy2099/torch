@@ -24,7 +24,7 @@ func createTensor(shape []int) *Tensor {
 	for i := range data {
 		data[i] = float32(i)
 	}
-	return &Tensor{Data: data, Shape: shape}
+	return &Tensor{Data: data, shape: shape}
 }
 
 func TestSplitLastDim(t *testing.T) {
@@ -33,7 +33,7 @@ func TestSplitLastDim(t *testing.T) {
 		split := tensor.SplitLastDim(2, 0)
 		expected := &Tensor{
 			Data:  []float32{0, 1, 4, 5},
-			Shape: []int{2, 2},
+			shape: []int{2, 2},
 		}
 		if !split.Equal(expected) {
 			t.Errorf("Split result error\nExpected: %v\nActual: %v", expected, split)
@@ -45,7 +45,7 @@ func TestSplitLastDim(t *testing.T) {
 		split := tensor.SplitLastDim(3, 1)
 		expected := &Tensor{
 			Data:  []float32{3, 4, 0, 8, 9, 0},
-			Shape: []int{2, 3},
+			shape: []int{2, 3},
 		}
 		if !split.Equal(expected) {
 			t.Errorf("Insufficient split error\nExpected: %v\nActual: %v", expected, split)
@@ -58,7 +58,7 @@ func TestSplitLastDim(t *testing.T) {
 				t.Error("Empty tensor panic not triggered")
 			}
 		}()
-		(&Tensor{Shape: []int{}}).SplitLastDim(1, 0)
+		(&Tensor{shape: []int{}}).SplitLastDim(1, 0)
 	})
 
 	t.Run("Invalid split point panic", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestSlice(t *testing.T) {
 		tensor := createTensor([]int{3, 4, 5})
 		sliced := tensor.Slice(1, 3, 1)
 		expected := &Tensor{
-			Shape: []int{3, 2, 5},
+			shape: []int{3, 2, 5},
 			Data:  make([]float32, 3*2*5),
 		}
 		for i := 0; i < 3; i++ {
@@ -92,7 +92,7 @@ func TestSlice(t *testing.T) {
 		tensor := createTensor([]int{2, 3})
 		sliced := tensor.Slice(0, 2, 1)
 		expected := &Tensor{
-			Shape: []int{2, 2},
+			shape: []int{2, 2},
 			Data:  []float32{0, 1, 3, 4},
 		}
 
@@ -118,7 +118,7 @@ func TestConcat(t *testing.T) {
 		t2 := createTensor([]int{3, 3})
 		concatenated := t1.Concat(t2, 0)
 		expected := &Tensor{
-			Shape: []int{5, 3},
+			shape: []int{5, 3},
 			Data:  make([]float32, 5*3),
 		}
 		copy(expected.Data[:6], t1.Data)
@@ -144,7 +144,7 @@ func TestConcat(t *testing.T) {
 		t2 := createTensor([]int{2, 3})
 		concatenated := t1.Concat(t2, 1)
 		expected := &Tensor{
-			Shape: []int{2, 5},
+			shape: []int{2, 5},
 			Data: []float32{
 				0, 1, 0, 1, 2,
 				2, 3, 3, 4, 5,
@@ -167,8 +167,8 @@ func TestMaxByDim(t *testing.T) {
 
 		max1 := input.MaxByDim(1, true)
 		expectedShape := []int{2, 1}
-		if !shapeEqual(max1.Shape, expectedShape) {
-			t.Errorf("Shape error, expected %v, got %v", expectedShape, max1.Shape)
+		if !shapeEqual(max1.shape, expectedShape) {
+			t.Errorf("shape error, expected %v, got %v", expectedShape, max1.shape)
 		}
 		expectedData := []float32{5, 6}
 		if !sliceEqual(max1.Data, expectedData, 1e-6) {
@@ -177,8 +177,8 @@ func TestMaxByDim(t *testing.T) {
 
 		max0 := input.MaxByDim(0, false)
 		expectedShape = []int{3}
-		if !shapeEqual(max0.Shape, expectedShape) {
-			t.Errorf("Shape error, expected %v, got %v", expectedShape, max0.Shape)
+		if !shapeEqual(max0.shape, expectedShape) {
+			t.Errorf("shape error, expected %v, got %v", expectedShape, max0.shape)
 		}
 		expectedData = []float32{4, 5, 6}
 		if !sliceEqual(max0.Data, expectedData, 1e-6) {
@@ -368,10 +368,10 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		}
 	}
 
-	t.Run("Nil Shape", func(t *testing.T) {
+	t.Run("Nil shape", func(t *testing.T) {
 		tsr := &Tensor{
 			Data:  []float32{1, 2, 3},
-			Shape: nil,
+			shape: nil,
 		}
 		copyShape := tsr.ShapeCopy()
 		if copyShape != nil {
@@ -379,19 +379,19 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		}
 	})
 
-	t.Run("Empty Shape", func(t *testing.T) {
+	t.Run("Empty shape", func(t *testing.T) {
 		tsr := NewTensor([]float32{}, []int{})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{})
 	})
 
-	t.Run("Standard 2D Shape", func(t *testing.T) {
+	t.Run("Standard 2D shape", func(t *testing.T) {
 		tsr := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{2, 2})
 	})
 
-	t.Run("High Dimension Shape", func(t *testing.T) {
+	t.Run("High Dimension shape", func(t *testing.T) {
 		tsr := NewTensor(make([]float32, 24), []int{2, 3, 4})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{2, 3, 4})
@@ -405,7 +405,7 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		copyShape[0] = 99
 		copyShape[1] = 100
 
-		assertShapeEqual(t, tsr.Shape, originalShape)
+		assertShapeEqual(t, tsr.shape, originalShape)
 	})
 
 	t.Run("Zero Value Dimensions", func(t *testing.T) {
@@ -414,7 +414,7 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		assertShapeEqual(t, copyShape, []int{0})
 	})
 
-	t.Run("Complex Shape with Zeros", func(t *testing.T) {
+	t.Run("Complex shape with Zeros", func(t *testing.T) {
 		tsr := NewTensor(make([]float32, 0), []int{0, 2, 0})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{0, 2, 0})
@@ -573,7 +573,7 @@ func TestRepeatInterleave(t *testing.T) {
 			result := tt.input.RepeatInterleave(tt.dim, tt.repeats)
 
 			if !result.Equal(tt.expected) {
-				t.Errorf("Data mismatch\nExpected: %v %v Actual: %v %v", tt.expected.Data[:5], result.Data[:5], tt.expected.Shape, result.Shape)
+				t.Errorf("Data mismatch\nExpected: %v %v Actual: %v %v", tt.expected.Data[:5], result.Data[:5], tt.expected.shape, result.shape)
 			}
 		})
 	}
@@ -655,7 +655,6 @@ func TestMaskedFill1(t *testing.T) {
 			value:    -99,
 			expected: []float32{1, -99, -99, 4},
 		},
-
 
 		{
 			name:  "Broadcast with size-1 dimensions",

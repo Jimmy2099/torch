@@ -10,7 +10,7 @@ import (
 func Copy(t *Tensor) *Tensor {
 	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
-	return NewTensor(data, append([]int{}, t.Shape...))
+	return NewTensor(data, append([]int{}, t.shape...))
 }
 
 func (t *Tensor) Size() int {
@@ -18,18 +18,18 @@ func (t *Tensor) Size() int {
 }
 
 func (t *Tensor) At(indices ...int) float32 {
-	if len(indices) != len(t.Shape) {
+	if len(indices) != len(t.shape) {
 		panic("number of indices must match tensor rank")
 	}
 
 	pos := 0
 	stride := 1
-	for i := len(t.Shape) - 1; i >= 0; i-- {
-		if indices[i] < 0 || indices[i] >= t.Shape[i] {
+	for i := len(t.shape) - 1; i >= 0; i-- {
+		if indices[i] < 0 || indices[i] >= t.shape[i] {
 			panic("tensor: index out of range")
 		}
 		pos += indices[i] * stride
-		stride *= t.Shape[i]
+		stride *= t.shape[i]
 	}
 
 	return t.Data[pos]
@@ -44,7 +44,7 @@ func Ones(shape []int) *Tensor {
 	for i := range data {
 		data[i] = 1.0
 	}
-	return &Tensor{Data: data, Shape: shape}
+	return &Tensor{Data: data, shape: shape}
 }
 
 func (t *Tensor) Clamp(min, max float32) *Tensor {
@@ -58,7 +58,7 @@ func (t *Tensor) Clamp(min, max float32) *Tensor {
 			clampedData[i] = float32(val)
 		}
 	}
-	return &Tensor{Data: clampedData, Shape: t.Shape}
+	return &Tensor{Data: clampedData, shape: t.shape}
 }
 
 func RandomNormal(shape []int) *Tensor {
@@ -74,7 +74,7 @@ func RandomNormal(shape []int) *Tensor {
 		data[i] = float32(rand.NormFloat64())
 	}
 
-	return &Tensor{Data: data, Shape: shape}
+	return &Tensor{Data: data, shape: shape}
 }
 
 func Random(shape []int, min, max float32) *Tensor {
@@ -94,7 +94,7 @@ func Random(shape []int, min, max float32) *Tensor {
 		data[i] = min + rand.Float32()*(max-min)
 	}
 
-	return &Tensor{Data: data, Shape: shape}
+	return &Tensor{Data: data, shape: shape}
 }
 
 func Zeros(shape []int) *Tensor {
@@ -103,7 +103,7 @@ func Zeros(shape []int) *Tensor {
 		size *= dim
 	}
 	data := make([]float32, size)
-	return &Tensor{Data: data, Shape: shape}
+	return &Tensor{Data: data, shape: shape}
 }
 
 func ZerosLike(t *Tensor) *Tensor {
@@ -111,10 +111,10 @@ func ZerosLike(t *Tensor) *Tensor {
 		panic("tensor.ZerosLike: input tensor cannot be nil")
 	}
 
-	if t.Shape == nil {
+	if t.shape == nil {
 		panic(fmt.Sprintf("tensor.ZerosLike: input tensor (value: %p) has a nil shape", t))
 	}
-	shape := t.Shape
+	shape := t.shape
 	zeroTensor := Zeros(shape)
 	return zeroTensor
 }
@@ -124,7 +124,7 @@ func (t *Tensor) AddScalar(scalar float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = v + scalar
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) MulScalar(scalar float32) *Tensor {
@@ -132,7 +132,7 @@ func (t *Tensor) MulScalar(scalar float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = v * scalar
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Sqrt() *Tensor {
@@ -140,7 +140,7 @@ func (t *Tensor) Sqrt() *Tensor {
 	for i, v := range t.Data {
 		result[i] = math.Sqrt(v)
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Pow(exponent float32) *Tensor {
@@ -148,18 +148,18 @@ func (t *Tensor) Pow(exponent float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = math.Pow(v, exponent)
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 	for _, dim := range dims {
-		if dim < 0 || dim >= len(t.Shape) {
-			panic(fmt.Sprintf("invalid dimension %d for shape %v", dim, t.Shape))
+		if dim < 0 || dim >= len(t.shape) {
+			panic(fmt.Sprintf("invalid dimension %d for shape %v", dim, t.shape))
 		}
 	}
 
-	newShape := make([]int, len(t.Shape))
-	copy(newShape, t.Shape)
+	newShape := make([]int, len(t.shape))
+	copy(newShape, t.shape)
 
 	reduceDims := make(map[int]bool)
 	for _, dim := range dims {
@@ -177,11 +177,11 @@ func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 	resultData := make([]float32, product(newShape))
 
 	for i := 0; i < len(t.Data); i++ {
-		originalIndices := make([]int, len(t.Shape))
+		originalIndices := make([]int, len(t.shape))
 		remainder := i
-		for dim := len(t.Shape) - 1; dim >= 0; dim-- {
-			originalIndices[dim] = remainder % t.Shape[dim]
-			remainder /= t.Shape[dim]
+		for dim := len(t.shape) - 1; dim >= 0; dim-- {
+			originalIndices[dim] = remainder % t.shape[dim]
+			remainder /= t.shape[dim]
 		}
 
 		resultIndices := make([]int, len(newShape))
@@ -213,7 +213,7 @@ func (t *Tensor) SumByDim1(dims []int, keepDims bool) *Tensor {
 
 	return &Tensor{
 		Data:  resultData,
-		Shape: newShape,
+		shape: newShape,
 	}
 }
 
@@ -222,7 +222,7 @@ func (t *Tensor) DivScalar(scalar float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = v / scalar
 	}
-	return &Tensor{Data: result, Shape: t.Shape}
+	return &Tensor{Data: result, shape: t.shape}
 }
 
 func (t *Tensor) Sum111() *Tensor {
@@ -230,15 +230,15 @@ func (t *Tensor) Sum111() *Tensor {
 	for _, v := range t.Data {
 		sum += v
 	}
-	return &Tensor{Data: []float32{sum}, Shape: []int{1}}
+	return &Tensor{Data: []float32{sum}, shape: []int{1}}
 }
 
 func (t *Tensor) Get(indices []int) float32 {
 	idx := 0
 	stride := 1
-	for i := len(t.Shape) - 1; i >= 0; i-- {
+	for i := len(t.shape) - 1; i >= 0; i-- {
 		idx += indices[i] * stride
-		stride *= t.Shape[i]
+		stride *= t.shape[i]
 	}
 	return t.Data[idx]
 }
@@ -246,9 +246,9 @@ func (t *Tensor) Get(indices []int) float32 {
 func (t *Tensor) Set1(indices []int, value float32) {
 	idx := 0
 	stride := 1
-	for i := len(t.Shape) - 1; i >= 0; i-- {
+	for i := len(t.shape) - 1; i >= 0; i-- {
 		idx += indices[i] * stride
-		stride *= t.Shape[i]
+		stride *= t.shape[i]
 	}
 	t.Data[idx] = value
 }
@@ -267,14 +267,14 @@ func (t *Tensor) Max1() float32 {
 }
 
 func (t *Tensor) Sub1(other *Tensor) *Tensor {
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		panic("shape mismatch in tensor subtraction")
 	}
 	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] - other.Data[i]
 	}
-	return NewTensor(result, t.Shape)
+	return NewTensor(result, t.shape)
 }
 
 func (t *Tensor) Sum1() float32 {
@@ -286,25 +286,25 @@ func (t *Tensor) Sum1() float32 {
 }
 
 func (t *Tensor) Div1(other *Tensor) *Tensor {
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		panic("shape mismatch in tensor division")
 	}
 	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] / other.Data[i]
 	}
-	return NewTensor(result, t.Shape)
+	return NewTensor(result, t.shape)
 }
 
 func (t *Tensor) Multiply1(other *Tensor) *Tensor {
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		panic("shape mismatch in tensor multiplication")
 	}
 	result := make([]float32, len(t.Data))
 	for i := range t.Data {
 		result[i] = t.Data[i] * other.Data[i]
 	}
-	return NewTensor(result, t.Shape)
+	return NewTensor(result, t.shape)
 }
 
 func (t *Tensor) Apply1(f func(float32) float32) *Tensor {
@@ -312,13 +312,13 @@ func (t *Tensor) Apply1(f func(float32) float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = f(v)
 	}
-	return NewTensor(result, t.Shape)
+	return NewTensor(result, t.shape)
 }
 
 func (t *Tensor) Clone1() *Tensor {
 	data := make([]float32, len(t.Data))
 	copy(data, t.Data)
-	return NewTensor(data, t.Shape)
+	return NewTensor(data, t.shape)
 }
 
 func ShapeEqual(shape1, shape2 []int) bool {
@@ -338,5 +338,5 @@ func (t *Tensor) SubScalar(scalar float32) *Tensor {
 	for i, v := range t.Data {
 		result[i] = v - scalar
 	}
-	return NewTensor(result, t.Shape)
+	return NewTensor(result, t.shape)
 }

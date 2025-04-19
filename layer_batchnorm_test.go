@@ -27,8 +27,8 @@ func TestMeanCalculation(t *testing.T) {
 
 	mean := bn.computeMean(x)
 
-	if !reflect.DeepEqual(mean.Shape, []int{3}) {
-		t.Fatalf("Shape error: Expected [3], Actual %v", mean.Shape)
+	if !reflect.DeepEqual(mean.shape, []int{3}) {
+		t.Fatalf("shape error: Expected [3], Actual %v", mean.shape)
 	}
 
 	tolerance := float32(1e-6)
@@ -73,16 +73,16 @@ func TestComputeMeanShape(t *testing.T) {
 
 	expectedShape := []int{numFeatures}
 
-	if len(batchMean.Shape) != len(expectedShape) {
+	if len(batchMean.shape) != len(expectedShape) {
 		t.Errorf("Batch mean shape length mismatch! Expected %v, Got %v",
-			expectedShape, batchMean.Shape)
+			expectedShape, batchMean.shape)
 
 	}
 
-	for i := range batchMean.Shape {
-		if batchMean.Shape[i] != expectedShape[i] {
+	for i := range batchMean.shape {
+		if batchMean.shape[i] != expectedShape[i] {
 			t.Errorf("Batch mean shape length mismatch! Expected %v, Got %v",
-				expectedShape, batchMean.Shape)
+				expectedShape, batchMean.shape)
 		}
 	}
 }

@@ -61,12 +61,12 @@ func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float32) {
 	lastLayer := nn.Layers[len(nn.Layers)-1].(*torch.LinearLayer)
 	output := lastLayer.Output
 
-	if !tensor.ShapeEqual(output.Shape, targets.Shape) {
-		targets = targets.Reshape(output.Shape)
+	if !tensor.ShapeEqual(output.GetShape(), targets.GetShape()) {
+		targets = targets.Reshape(output.GetShape())
 	}
 
 	gradOutput := output.Sub(targets)
-	gradOutput = gradOutput.MulScalar(2.0 / float32(targets.Shape[0]))
+	gradOutput = gradOutput.MulScalar(2.0 / float32(targets.GetShape()[0]))
 
 	for i := len(nn.Layers) - 1; i >= 0; i-- {
 		gradOutput = nn.Layers[i].Backward(gradOutput, lr)
@@ -74,7 +74,7 @@ func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float32) {
 }
 
 func polynomialFeatures(X *tensor.Tensor, degree int) *tensor.Tensor {
-	numSamples, numFeatures := X.Shape[0], X.Shape[1]
+	numSamples, numFeatures := X.GetShape()[0], X.GetShape()[1]
 	newFeatures := numFeatures * degree
 	features := make([]float32, numSamples*newFeatures)
 
@@ -112,15 +112,15 @@ func main() {
 
 	degree := 3
 	X_train_poly := polynomialFeatures(X_train, degree)
-	fmt.Printf("Training data shape: %v\n", X_train_poly.Shape)
+	fmt.Printf("Training data shape: %v\n", X_train_poly.GetShape())
 
 	model := NewNeuralNetwork([]int{6, 10, 1})
 
-	fmt.Println("\n=== Shape Verification ===")
-	fmt.Printf("Input shape: %v\n", X_train_poly.Shape)
-	fmt.Printf("Target shape: %v\n", y_train.Shape)
+	fmt.Println("\n=== shape Verification ===")
+	fmt.Printf("Input shape: %v\n", X_train_poly.GetShape())
+	fmt.Printf("Target shape: %v\n", y_train.GetShape())
 	sampleOutput := model.Forward(X_train_poly)
-	fmt.Printf("Model output shape: %v\n", sampleOutput.Shape)
+	fmt.Printf("Model output shape: %v\n", sampleOutput.GetShape())
 
 	trainer := torch.NewBasicTrainer(torch.MSE)
 	epochs := 500

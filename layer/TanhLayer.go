@@ -11,17 +11,11 @@ type TanhLayer struct {
 }
 
 func (r *TanhLayer) GetWeights() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func (r *TanhLayer) GetBias() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func NewTanhLayer() *TanhLayer {
@@ -33,7 +27,7 @@ func (t *TanhLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 	for i, val := range input.Data {
 		outputData[i] = math.Tanh(val)
 	}
-	output := tensor.NewTensor(outputData, input.Shape)
+	output := tensor.NewTensor(outputData, input.GetShape())
 
 	t.outputCache = output
 
@@ -46,7 +40,7 @@ func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 		panic("Backward called before Forward or output cache is nil for TanhLayer")
 	}
 	if !gradOutput.ShapesMatch(t.outputCache) {
-		panic(fmt.Sprintf("Shapes of gradOutput %v and cached output %v do not match in TanhLayer Backward", gradOutput.Shape, t.outputCache.Shape))
+		panic(fmt.Sprintf("Shapes of gradOutput %v and cached output %v do not match in TanhLayer Backward", gradOutput.GetShape(), t.outputCache.GetShape()))
 	}
 
 	gradInputData := make([]float32, len(gradOutput.Data))
@@ -55,7 +49,7 @@ func (t *TanhLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *t
 		gradInputData[i] = gradOutput.Data[i] * (1.0 - tanhOutput*tanhOutput)
 	}
 
-	gradInput := tensor.NewTensor(gradInputData, gradOutput.Shape)
+	gradInput := tensor.NewTensor(gradInputData, gradOutput.GetShape())
 	return gradInput
 }
 

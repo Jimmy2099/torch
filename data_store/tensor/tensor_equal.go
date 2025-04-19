@@ -11,7 +11,7 @@ func (t *Tensor) EqualFloat5(other *Tensor) bool {
 		return t == nil && other == nil
 	}
 
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		return false
 	}
 
@@ -35,7 +35,7 @@ func (t *Tensor) EqualFloat16(other *Tensor) bool {
 		return t == nil && other == nil
 	}
 
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		return false
 	}
 
@@ -79,7 +79,7 @@ func (t *Tensor) EqualFloat32(other *Tensor) bool {
 		return t == nil && other == nil
 	}
 
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		return false
 	}
 
@@ -102,7 +102,7 @@ func (t *Tensor) Equal(other *Tensor) bool {
 		return t == nil && other == nil
 	}
 
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		return false
 	}
 
@@ -137,7 +137,7 @@ func (t *Tensor) EqualWithTolerance(other *Tensor, epsilon float32) bool {
 		return t == nil && other == nil
 	}
 
-	if !shapeEqual(t.Shape, other.Shape) {
+	if !shapeEqual(t.shape, other.shape) {
 		return false
 	}
 

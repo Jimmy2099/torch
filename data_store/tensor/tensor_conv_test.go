@@ -27,7 +27,7 @@ func tensorsAreEqual(t1, t2 *Tensor, tolerance float32) bool {
 	if t1 == nil || t2 == nil {
 		return false
 	}
-	if !reflect.DeepEqual(t1.Shape, t2.Shape) {
+	if !reflect.DeepEqual(t1.shape, t2.shape) {
 		return false
 	}
 	return floatSlicesAreEqual(t1.Data, t2.Data, tolerance)
@@ -65,7 +65,6 @@ func contains(s, substr string) bool {
 	return false
 }
 
-
 func TestNewTensor(t *testing.T) {
 	data := []float32{1, 2, 3, 4, 5, 6}
 	shape := []int{2, 3}
@@ -74,8 +73,8 @@ func TestNewTensor(t *testing.T) {
 	if tensor == nil {
 		t.Fatal("NewTensor returned nil")
 	}
-	if !reflect.DeepEqual(tensor.Shape, shape) {
-		t.Errorf("Expected shape %v, got %v", shape, tensor.Shape)
+	if !reflect.DeepEqual(tensor.shape, shape) {
+		t.Errorf("Expected shape %v, got %v", shape, tensor.shape)
 	}
 	if !floatSlicesAreEqual(tensor.Data, data, float32EqualityThreshold) {
 		t.Errorf("Expected data %v, got %v", data, tensor.Data)
@@ -185,7 +184,7 @@ func TestString(t *testing.T) {
 	tensor := NewTensor([]float32{1.5, 2.0}, []int{1, 2})
 	str := tensor.String()
 
-	if !contains(str, "Data: [1.5 2]") || !contains(str, "Shape: [1 2]") {
+	if !contains(str, "Data: [1.5 2]") || !contains(str, "shape: [1 2]") {
 		t.Errorf("String() output format unexpected: %s", str)
 	}
 }
@@ -414,8 +413,8 @@ func TestFlattenByDim(t *testing.T) {
 	tensorToFlatten1 := input.Clone()
 	expectedShape1 := []int{2, 12}
 	tensorToFlatten1.FlattenByDim(1, 2)
-	if !reflect.DeepEqual(tensorToFlatten1.Shape, expectedShape1) {
-		t.Errorf("FlattenByDim(1, -1) failed. Expected shape %v, got %v", expectedShape1, tensorToFlatten1.Shape)
+	if !reflect.DeepEqual(tensorToFlatten1.shape, expectedShape1) {
+		t.Errorf("FlattenByDim(1, -1) failed. Expected shape %v, got %v", expectedShape1, tensorToFlatten1.shape)
 	}
 	if !floatSlicesAreEqual(originalData, tensorToFlatten1.Data, float32EqualityThreshold) {
 		t.Errorf("FlattenByDim(1, -1) data was modified unexpectedly.")
@@ -424,8 +423,8 @@ func TestFlattenByDim(t *testing.T) {
 	tensorToFlatten2 := input.Clone()
 	expectedShape2 := []int{6, 4}
 	tensorToFlatten2.FlattenByDim(0, 1)
-	if !reflect.DeepEqual(tensorToFlatten2.Shape, expectedShape2) {
-		t.Errorf("FlattenByDim(0, 1) failed. Expected shape %v, got %v", expectedShape2, tensorToFlatten2.Shape)
+	if !reflect.DeepEqual(tensorToFlatten2.shape, expectedShape2) {
+		t.Errorf("FlattenByDim(0, 1) failed. Expected shape %v, got %v", expectedShape2, tensorToFlatten2.shape)
 	}
 	if !floatSlicesAreEqual(originalData, tensorToFlatten2.Data, float32EqualityThreshold) {
 		t.Errorf("FlattenByDim(0, 1) data was modified unexpectedly.")
@@ -434,8 +433,8 @@ func TestFlattenByDim(t *testing.T) {
 	tensorToFlatten3 := input.Clone()
 	expectedShape3 := []int{24, 1}
 	tensorToFlatten3.FlattenByDim(0, -1)
-	if !reflect.DeepEqual(tensorToFlatten3.Shape, expectedShape3) {
-		t.Errorf("FlattenByDim(0, -1) failed. Expected shape %v, got %v", expectedShape3, tensorToFlatten3.Shape)
+	if !reflect.DeepEqual(tensorToFlatten3.shape, expectedShape3) {
+		t.Errorf("FlattenByDim(0, -1) failed. Expected shape %v, got %v", expectedShape3, tensorToFlatten3.shape)
 	}
 	if !floatSlicesAreEqual(originalData, tensorToFlatten3.Data, float32EqualityThreshold) {
 		t.Errorf("FlattenByDim(0, -1) data was modified unexpectedly.")
@@ -667,11 +666,10 @@ func TestSigmoid(t *testing.T) {
 
 	input2D := NewTensor([]float32{0, 1, 2, 3}, []int{2, 2})
 	result2D := input2D.Sigmoid()
-	if !reflect.DeepEqual(input2D.Shape, result2D.Shape) {
-		t.Errorf("Sigmoid did not preserve shape. Input %v, Output %v", input2D.Shape, result2D.Shape)
+	if !reflect.DeepEqual(input2D.shape, result2D.shape) {
+		t.Errorf("Sigmoid did not preserve shape. Input %v, Output %v", input2D.shape, result2D.shape)
 	}
 }
-
 
 func TestConv2D_Simple(t *testing.T) {
 	input := NewTensor([]float32{

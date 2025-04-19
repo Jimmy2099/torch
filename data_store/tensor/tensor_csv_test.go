@@ -30,7 +30,7 @@ func newTestTensor(t *testing.T, shape []int, data []float32) *Tensor {
 	}
 
 	return &Tensor{
-		Shape: shape,
+		shape: shape,
 		Data:  data,
 	}
 }
@@ -75,7 +75,6 @@ func compareCSVData(t *testing.T, expected, actual [][]string) {
 	}
 }
 
-
 func TestSaveToCSV_SuccessCases(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -113,13 +112,13 @@ func TestSaveToCSV_SuccessCases(t *testing.T) {
 			},
 		},
 		{
-			name:        "Empty Tensor (Shape [0])",
+			name:        "Empty Tensor (shape [0])",
 			tensorShape: []int{0},
 			tensorData:  []float32{},
 			expectedCSV: [][]string{},
 		},
 		{
-			name:        "Empty Tensor (Shape [3, 0])",
+			name:        "Empty Tensor (shape [3, 0])",
 			tensorShape: []int{3, 0},
 			tensorData:  []float32{},
 			expectedCSV: [][]string{},
@@ -179,43 +178,43 @@ func TestSaveToCSV_ErrorCases(t *testing.T) {
 		},
 		{
 			name:        "Tensor with Nil Data",
-			tensor:      &Tensor{Shape: []int{2}, Data: nil},
+			tensor:      &Tensor{shape: []int{2}, Data: nil},
 			filename:    validFilename,
 			expectedErr: "tensor with nil data",
 		},
 		{
 			name:        "Scalar shape with incorrect data length",
-			tensor:      &Tensor{Shape: []int{}, Data: []float32{1, 2}},
+			tensor:      &Tensor{shape: []int{}, Data: []float32{1, 2}},
 			filename:    validFilename,
 			expectedErr: "invalid tensor state: empty shape but 2 data elements",
 		},
 		{
-			name:        "1D Shape/Data Mismatch (Data too short)",
+			name:        "1D shape/Data Mismatch (Data too short)",
 			tensor:      newTestTensor(t, []int{5}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match shape[0] (5)",
 		},
 		{
-			name:        "1D Shape/Data Mismatch (Data too long)",
+			name:        "1D shape/Data Mismatch (Data too long)",
 			tensor:      newTestTensor(t, []int{2}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match shape[0] (2)",
 		},
 		{
-			name:        "ND Shape/Data Mismatch",
+			name:        "ND shape/Data Mismatch",
 			tensor:      newTestTensor(t, []int{2, 2}, []float32{1, 2, 3}),
 			filename:    validFilename,
 			expectedErr: "data length (3) does not match product of shape dimensions (4)",
 		},
 		{
-			name: "ND Invalid Shape (Last dim zero with data)",
-			tensor:      &Tensor{Shape: []int{2, 0}, Data: []float32{1.0}},
+			name:        "ND Invalid shape (Last dim zero with data)",
+			tensor:      &Tensor{shape: []int{2, 0}, Data: []float32{1.0}},
 			filename:    validFilename,
 			expectedErr: "data length (1) does not match product of shape dimensions (0)",
 		},
 		{
-			name:   "Invalid Filename (causes create error)",
-			tensor: newTestTensor(t, []int{1}, []float32{1}),
+			name:        "Invalid Filename (causes create error)",
+			tensor:      newTestTensor(t, []int{1}, []float32{1}),
 			filename:    tempDir,
 			expectedErr: "failed to create file",
 		},
@@ -268,7 +267,7 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 
 			original := &Tensor{
 				Data:  tt.data,
-				Shape: tt.shape,
+				shape: tt.shape,
 			}
 
 			if err = original.SaveToCSV(tmpfile.Name()); err != nil {
@@ -280,8 +279,8 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 				t.Fatalf("LoadDataAndShapeFromCSV failed: %v", err)
 			}
 
-			if !reflect.DeepEqual(original.Shape, loaded.Shape) {
-				t.Errorf("Shape mismatch\nOriginal: %v\nLoaded:   %v", original.Shape, loaded.Shape)
+			if !reflect.DeepEqual(original.shape, loaded.shape) {
+				t.Errorf("shape mismatch\nOriginal: %v\nLoaded:   %v", original.shape, loaded.shape)
 			}
 
 			if !reflect.DeepEqual(original.Data, loaded.Data) {

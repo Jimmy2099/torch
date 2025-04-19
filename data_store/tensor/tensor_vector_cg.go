@@ -9,7 +9,6 @@ func NewVec3(x, y, z float32) *Tensor {
 	return NewTensor([]float32{x, y, z}, []int{3})
 }
 
-
 func (m *Tensor) X() float32 {
 	return m.Data[0]
 }
@@ -22,13 +21,12 @@ func (m *Tensor) Z() float32 {
 	return m.Data[2]
 }
 
-
 func (t *Tensor) IsMatrix() bool {
-	return len(t.Shape) == 2
+	return len(t.shape) == 2
 }
 
 func (t *Tensor) IsVector() bool {
-	return len(t.Shape) == 1
+	return len(t.shape) == 1
 }
 
 func (t *Tensor) checkMatrix() {
@@ -39,7 +37,7 @@ func (t *Tensor) checkMatrix() {
 
 func (t *Tensor) checkSquareMatrix() {
 	t.checkMatrix()
-	if t.Shape[0] != t.Shape[1] {
+	if t.shape[0] != t.shape[1] {
 		panic("Operation requires square matrix")
 	}
 }
@@ -52,7 +50,7 @@ func (t *Tensor) checkVector() {
 
 func (t *Tensor) Determinant() float32 {
 	t.checkSquareMatrix()
-	if t.Shape[0] != 4 {
+	if t.shape[0] != 4 {
 		panic("Determinant currently only supported for 4x4 matrices")
 	}
 
@@ -73,7 +71,7 @@ func (t *Tensor) Determinant() float32 {
 
 func (t *Tensor) Inverse() *Tensor {
 	t.checkSquareMatrix()
-	if t.Shape[0] != 4 {
+	if t.shape[0] != 4 {
 		panic("Inverse currently only supported for 4x4 matrices")
 	}
 
@@ -188,7 +186,7 @@ func (t *Tensor) Normalize() *Tensor {
 	for i := range data {
 		data[i] = t.Data[i] / length
 	}
-	return NewTensor(data, t.Shape)
+	return NewTensor(data, t.shape)
 }
 
 func (t *Tensor) Homogeneous() *Tensor {
@@ -223,16 +221,16 @@ func RotateTensor(axis *Tensor, angle float32) *Tensor {
 }
 
 func (a *Tensor) MatMulMatrix(b *Tensor) *Tensor {
-	if len(a.Shape) != 2 || len(b.Shape) != 2 {
+	if len(a.shape) != 2 || len(b.shape) != 2 {
 		panic("Matrix multiplication requires 2D tensors")
 	}
-	if a.Shape[1] != b.Shape[0] {
-		panic(fmt.Sprintf("Shape mismatch: %v vs %v", a.Shape, b.Shape))
+	if a.shape[1] != b.shape[0] {
+		panic(fmt.Sprintf("shape mismatch: %v vs %v", a.shape, b.shape))
 	}
 
-	m := a.Shape[0]
-	n := b.Shape[1]
-	k := a.Shape[1]
+	m := a.shape[0]
+	n := b.shape[1]
+	k := a.shape[1]
 
 	result := make([]float32, m*n)
 
@@ -271,7 +269,7 @@ func Viewport(x, y, w, h float32) *Tensor {
 }
 
 func (m *Tensor) MulPosition(v *Tensor) *Tensor {
-	if !m.IsMatrix() || m.Shape[0] != 4 || m.Shape[1] != 4 {
+	if !m.IsMatrix() || m.shape[0] != 4 || m.shape[1] != 4 {
 		panic("MulPosition requires a 4x4 matrix")
 	}
 

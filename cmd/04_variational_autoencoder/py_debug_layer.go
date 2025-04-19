@@ -7,7 +7,6 @@ import (
 	"github.com/Jimmy2099/torch/testing"
 )
 
-
 func PyConvT(x *tensor.Tensor, v torch.LayerForTesting, inChannels, outChannels int) *tensor.Tensor {
 	kernelSize := []int{5, 5}
 	stride := []int{2, 2}
@@ -54,7 +53,6 @@ func PyTanh(x *tensor.Tensor, v torch.LayerForTesting) *tensor.Tensor {
 
 func (v *VAE) PyDecode(x *tensor.Tensor) *tensor.Tensor {
 
-
 	{
 		x = testing.GetPytorchInitData(fmt.Sprint(`
 	import time
@@ -82,47 +80,47 @@ func (v *VAE) PyDecode(x *tensor.Tensor) *tensor.Tensor {
 	{
 		fmt.Println("\nDecoder ConvT 0:")
 		x = v.decoderConv0.Forward(x)
-		fmt.Printf("After dec_convT0: %v\n", x.Shape)
+		fmt.Printf("After dec_convT0: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 1:")
 		x = v.decoderConv1.Forward(x)
-		fmt.Printf("After dec_bn1: %v\n", x.Shape)
+		fmt.Printf("After dec_bn1: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 2:")
 		x = v.decoderReLU2.Forward(x)
-		fmt.Printf("After dec_relu2: %v\n", x.Shape)
+		fmt.Printf("After dec_relu2: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 3:")
 		x = v.decoderConv3.Forward(x)
-		fmt.Printf("After dec_convT3: %v\n", x.Shape)
+		fmt.Printf("After dec_convT3: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 4:")
 		x = v.decoderConv4.Forward(x)
-		fmt.Printf("After dec_bn4: %v\n", x.Shape)
+		fmt.Printf("After dec_bn4: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 5:")
 		x = v.decoderReLU5.Forward(x)
-		fmt.Printf("After dec_relu5: %v\n", x.Shape)
+		fmt.Printf("After dec_relu5: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 6:")
 		x = v.decoderConv6.Forward(x)
-		fmt.Printf("After dec_convT6: %v\n", x.Shape)
+		fmt.Printf("After dec_convT6: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 7:")
 		x = v.decoderConv7.Forward(x)
-		fmt.Printf("After dec_bn7: %v\n", x.Shape)
+		fmt.Printf("After dec_bn7: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 8:")
 		x = v.decoderReLU8.Forward(x)
-		fmt.Printf("After dec_relu8: %v\n", x.Shape)
+		fmt.Printf("After dec_relu8: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 9:")
 		x = v.decoderConv9.Forward(x)
-		fmt.Printf("After dec_convT9: %v\n", x.Shape)
+		fmt.Printf("After dec_convT9: %v\n", x.GetShape())
 
 		fmt.Println("Decoder Tanh 10 (Output):")
 		x = v.decoderTanh10.Forward(x)
-		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
+		fmt.Printf("After dec_tanh10 (output): %v\n", x.GetShape())
 
 		{
 			x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))

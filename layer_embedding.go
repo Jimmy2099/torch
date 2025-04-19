@@ -23,10 +23,7 @@ func (e *Embedding) GetWeights() *tensor.Tensor {
 }
 
 func (e *Embedding) GetBias() *tensor.Tensor {
-	return &tensor.Tensor{
-		Data:  make([]float32, 0),
-		Shape: make([]int, 0),
-	}
+	return tensor.NewEmptyTensor()
 }
 
 func NewEmbedding(vocabSize, embDim int) *Embedding {
@@ -45,8 +42,8 @@ func NewEmbedding(vocabSize, embDim int) *Embedding {
 }
 
 func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
-	if len(indices.Shape) != 2 {
-		panic(fmt.Sprintf("Embedding expects 2D input, got %dD", len(indices.Shape)))
+	if len(indices.GetShape()) != 2 {
+		panic(fmt.Sprintf("Embedding expects 2D input, got %dD", len(indices.GetShape())))
 	}
 
 	floatIndices := indices.Data
@@ -59,7 +56,7 @@ func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
 	}
 	e.LastIndices = intIndices
 
-	batchSize, seqLen := indices.Shape[0], indices.Shape[1]
+	batchSize, seqLen := indices.GetShape()[0], indices.GetShape()[1]
 	outputShape := []int{batchSize, seqLen, e.EmbDim}
 	outputData := make([]float32, batchSize*seqLen*e.EmbDim)
 
@@ -82,8 +79,8 @@ func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
 
 func (e *Embedding) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
 	gradData := gradOutput.Data
-	batchSize := gradOutput.Shape[0]
-	seqLen := gradOutput.Shape[1]
+	batchSize := gradOutput.GetShape()[0]
+	seqLen := gradOutput.GetShape()[1]
 
 	for i := range e.GradWeights.Data {
 		e.GradWeights.Data[i] = 0

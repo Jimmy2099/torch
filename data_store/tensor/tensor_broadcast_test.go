@@ -5,14 +5,12 @@ import (
 	"testing"
 )
 
-
 func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
-
 
 func Test_computeStrides(t *testing.T) {
 	tests := []struct {
@@ -25,13 +23,13 @@ func Test_computeStrides(t *testing.T) {
 		{"Matrix 2x3", []int{2, 3}, []int{3, 1}},
 		{"Matrix 3x2", []int{3, 2}, []int{2, 1}},
 		{"3D Tensor", []int{2, 3, 4}, []int{12, 4, 1}},
-		{"Shape with 1s", []int{1, 5, 1}, []int{5, 1, 1}},
+		{"shape with 1s", []int{1, 5, 1}, []int{5, 1, 1}},
 		{"Leading 1", []int{1, 2, 3}, []int{6, 3, 1}},
 		{"Trailing 1", []int{2, 3, 1}, []int{3, 1, 1}},
-		{"Empty Shape", []int{}, []int{}},
-		{"Shape with 0", []int{2, 0, 3}, []int{0, 3, 1}},
-		{"Shape with 0 at end", []int{3, 2, 0}, []int{0, 0, 1}},
-		{"Nil Shape", nil, []int{}},
+		{"Empty shape", []int{}, []int{}},
+		{"shape with 0", []int{2, 0, 3}, []int{0, 3, 1}},
+		{"shape with 0 at end", []int{3, 2, 0}, []int{0, 0, 1}},
+		{"Nil shape", nil, []int{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -157,7 +155,7 @@ func TestTensor_broadcastedIndex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tensor := &Tensor{Shape: tt.sourceShape}
+			tensor := &Tensor{shape: tt.sourceShape}
 			strides := computeStrides(tt.sourceShape)
 
 			gotIndex := tensor.broadcastedIndex(tt.targetIndices, strides)
@@ -168,7 +166,7 @@ func TestTensor_broadcastedIndex(t *testing.T) {
 		})
 	}
 	t.Run("PanicMismatchedLengths", func(t *testing.T) {
-		tensor := &Tensor{Shape: []int{2, 3}}
+		tensor := &Tensor{shape: []int{2, 3}}
 		strides := []int{3, 1}
 		badIndices := []int{1, 1, 1}
 		checkPanic(t, func() { tensor.broadcastedIndex(badIndices, strides) }, "")

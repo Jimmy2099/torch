@@ -29,16 +29,16 @@ func (m *MaxPool2DLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	if x == nil {
 		panic("input tensor cannot be nil")
 	}
-	if len(x.Shape) != 4 {
+	if len(x.GetShape()) != 4 {
 		panic("MaxPool2D expects 4D input tensor [batch, channels, height, width]")
 	}
 
 	m.Input = x.Clone()
 
-	batchSize := x.Shape[0]
-	channels := x.Shape[1]
-	inHeight := x.Shape[2]
-	inWidth := x.Shape[3]
+	batchSize := x.GetShape()[0]
+	channels := x.GetShape()[1]
+	inHeight := x.GetShape()[2]
+	inWidth := x.GetShape()[3]
 
 	outHeight := (inHeight+2*m.Padding-m.PoolSize)/m.Stride + 1
 	outWidth := (inWidth+2*m.Padding-m.PoolSize)/m.Stride + 1
@@ -91,11 +91,11 @@ func (m *MaxPool2DLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
 	if gradOutput == nil {
 		panic("gradient tensor cannot be nil")
 	}
-	if len(gradOutput.Shape) != 4 {
+	if len(gradOutput.GetShape()) != 4 {
 		panic("gradOutput must be 4D tensor")
 	}
 
-	gradInput := tensor.NewTensor(make([]float32, len(m.Input.Data)), m.Input.Shape)
+	gradInput := tensor.NewTensor(make([]float32, len(m.Input.Data)), m.Input.GetShape())
 
 	for idx, pos := range m.ArgMax {
 		b, c, h, w := pos[0], pos[1], pos[2], pos[3]

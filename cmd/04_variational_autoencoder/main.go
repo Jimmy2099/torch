@@ -151,7 +151,6 @@ func NewVAE() *VAE {
 		{"fc_logvar.weight", vae.fcLogVar, []int{64, 8192}, nil},
 		{"fc_logvar.bias", vae.fcLogVar, nil, []int{64}},
 
-
 		{"decoder_fc.weight", vae.decoderFc, []int{8192, 64}, nil},
 		{"decoder_fc.bias", vae.decoderFc, nil, []int{8192}},
 
@@ -216,134 +215,133 @@ func main() {
 
 func (v *VAE) Encode(x *tensor.Tensor) *tensor.Tensor {
 	fmt.Println("\n=== Starting VAE Forward Pass ===")
-	fmt.Printf("Input shape: %v\n", x.Shape)
+	fmt.Printf("Input shape: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder Conv 0:")
 	x = v.encoderConv0.Forward(x)
-	fmt.Printf("After enc_conv0: %v\n", x.Shape)
+	fmt.Printf("After enc_conv0: %v\n", x.GetShape())
 
 	fmt.Println("Encoder BN 1:")
 	x = v.encoderConv1.Forward(x)
-	fmt.Printf("After enc_bn1: %v\n", x.Shape)
+	fmt.Printf("After enc_bn1: %v\n", x.GetShape())
 
 	fmt.Println("Encoder ReLU 2:")
 	x = v.encoderReLU2.Forward(x)
-	fmt.Printf("After enc_relu2: %v\n", x.Shape)
+	fmt.Printf("After enc_relu2: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder Conv 3:")
 	x = v.encoderConv3.Forward(x)
-	fmt.Printf("After enc_conv3: %v\n", x.Shape)
+	fmt.Printf("After enc_conv3: %v\n", x.GetShape())
 
 	fmt.Println("Encoder BN 4:")
 	x = v.encoderConv4.Forward(x)
-	fmt.Printf("After enc_bn4: %v\n", x.Shape)
+	fmt.Printf("After enc_bn4: %v\n", x.GetShape())
 
 	fmt.Println("Encoder ReLU 5:")
 	x = v.encoderReLU5.Forward(x)
-	fmt.Printf("After enc_relu5: %v\n", x.Shape)
+	fmt.Printf("After enc_relu5: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder Conv 6:")
 	x = v.encoderConv6.Forward(x)
-	fmt.Printf("After enc_conv6: %v\n", x.Shape)
+	fmt.Printf("After enc_conv6: %v\n", x.GetShape())
 
 	fmt.Println("Encoder BN 7:")
 	x = v.encoderConv7.Forward(x)
-	fmt.Printf("After enc_bn7: %v\n", x.Shape)
+	fmt.Printf("After enc_bn7: %v\n", x.GetShape())
 
 	fmt.Println("Encoder ReLU 8:")
 	x = v.encoderReLU8.Forward(x)
-	fmt.Printf("After enc_relu8: %v\n", x.Shape)
+	fmt.Printf("After enc_relu8: %v\n", x.GetShape())
 
 	fmt.Println("\nEncoder Conv 9:")
 	x = v.encoderConv9.Forward(x)
-	fmt.Printf("After enc_conv9: %v\n", x.Shape)
+	fmt.Printf("After enc_conv9: %v\n", x.GetShape())
 
 	fmt.Println("Encoder BN 10:")
 	x = v.encoderConv10.Forward(x)
-	fmt.Printf("After enc_bn10: %v\n", x.Shape)
+	fmt.Printf("After enc_bn10: %v\n", x.GetShape())
 
 	fmt.Println("Encoder ReLU 11:")
 	x = v.encoderReLU11.Forward(x)
-	fmt.Printf("After enc_relu11: %v\n", x.Shape)
+	fmt.Printf("After enc_relu11: %v\n", x.GetShape())
 
 	fmt.Println("\nFlatten:")
 	flatFeatures := v.flatten.Forward(x)
-	fmt.Printf("After flatten: %v\n", flatFeatures.Shape)
+	fmt.Printf("After flatten: %v\n", flatFeatures.GetShape())
 
 	fmt.Println("\nFC Mu:")
 	mu := v.fcMu.Forward(flatFeatures)
-	fmt.Printf("After fc_mu: %v\n", mu.Shape)
+	fmt.Printf("After fc_mu: %v\n", mu.GetShape())
 
 	fmt.Println("\nFC LogVar:")
 	logvar := v.fcLogVar.Forward(flatFeatures)
-	fmt.Printf("After fc_logvar: %v\n", logvar.Shape)
+	fmt.Printf("After fc_logvar: %v\n", logvar.GetShape())
 	return x
 }
-
 
 func (v *VAE) Decode(x *tensor.Tensor) *tensor.Tensor {
 
 	{
 		fmt.Println("\nDecoder FC:")
 		x = v.decoderFc.Forward(x)
-		fmt.Printf("After decoder_fc: %v\n", x.Shape)
+		fmt.Printf("After decoder_fc: %v\n", x.GetShape())
 		decoderReshapeChannels := 512
 		decoderReshapeSize := 4
 		fmt.Println("\nReshape for Decoder Conv:")
-		batchSize := x.Shape[0]
+		batchSize := x.GetShape()[0]
 		x = x.Reshape([]int{
 			batchSize,
 			decoderReshapeChannels,
 			decoderReshapeSize,
 			decoderReshapeSize,
 		})
-		fmt.Printf("After reshape: %v\n", x.Shape)
+		fmt.Printf("After reshape: %v\n", x.GetShape())
 	}
 
 	{
 		fmt.Println("\nDecoder ConvT 0:")
 		x = v.decoderConv0.Forward(x)
-		fmt.Printf("After dec_convT0: %v\n", x.Shape)
+		fmt.Printf("After dec_convT0: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 1:")
 		x = v.decoderConv1.Forward(x)
-		fmt.Printf("After dec_bn1: %v\n", x.Shape)
+		fmt.Printf("After dec_bn1: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 2:")
 		x = v.decoderReLU2.Forward(x)
-		fmt.Printf("After dec_relu2: %v\n", x.Shape)
+		fmt.Printf("After dec_relu2: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 3:")
 		x = v.decoderConv3.Forward(x)
-		fmt.Printf("After dec_convT3: %v\n", x.Shape)
+		fmt.Printf("After dec_convT3: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 4:")
 		x = v.decoderConv4.Forward(x)
-		fmt.Printf("After dec_bn4: %v\n", x.Shape)
+		fmt.Printf("After dec_bn4: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 5:")
 		x = v.decoderReLU5.Forward(x)
-		fmt.Printf("After dec_relu5: %v\n", x.Shape)
+		fmt.Printf("After dec_relu5: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 6:")
 		x = v.decoderConv6.Forward(x)
-		fmt.Printf("After dec_convT6: %v\n", x.Shape)
+		fmt.Printf("After dec_convT6: %v\n", x.GetShape())
 
 		fmt.Println("Decoder BN 7:")
 		x = v.decoderConv7.Forward(x)
-		fmt.Printf("After dec_bn7: %v\n", x.Shape)
+		fmt.Printf("After dec_bn7: %v\n", x.GetShape())
 
 		fmt.Println("Decoder ReLU 8:")
 		x = v.decoderReLU8.Forward(x)
-		fmt.Printf("After dec_relu8: %v\n", x.Shape)
+		fmt.Printf("After dec_relu8: %v\n", x.GetShape())
 
 		fmt.Println("\nDecoder ConvT 9:")
 		x = v.decoderConv9.Forward(x)
-		fmt.Printf("After dec_convT9: %v\n", x.Shape)
+		fmt.Printf("After dec_convT9: %v\n", x.GetShape())
 
 		fmt.Println("Decoder Tanh 10 (Output):")
 		x = v.decoderTanh10.Forward(x)
-		fmt.Printf("After dec_tanh10 (output): %v\n", x.Shape)
+		fmt.Printf("After dec_tanh10 (output): %v\n", x.GetShape())
 
 		{
 			x = x.Mul(tensor.NewTensor([]float32{0.5}, []int{1})).Add(tensor.NewTensor([]float32{0.5}, []int{1}))

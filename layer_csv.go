@@ -54,7 +54,7 @@ func LoadImageFromCSV(filename string) *tensor.Tensor {
 		panic(err)
 	}
 
-	return t.Reshape([]int{1, t.Shape[0], t.Shape[1]})
+	return t.Reshape([]int{1, t.GetShape()[0], t.GetShape()[1]})
 }
 
 func LoadFlatDataFromCSV(filePath string) ([]float32, error) {
@@ -96,7 +96,6 @@ func LoadFlatDataFromCSV(filePath string) ([]float32, error) {
 			flatData = append(flatData, float32(value))
 		}
 	}
-
 
 	return flatData, nil
 }

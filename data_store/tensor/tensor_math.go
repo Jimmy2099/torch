@@ -11,23 +11,23 @@ func (t *Tensor) Sub(other *Tensor) *Tensor {
 
 	{
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
+			emptyShape := getBroadcastedShape(t.shape, other.shape)
 			return &Tensor{
-				Shape: emptyShape,
+				shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
+		if !canBroadcast(t.shape, other.shape) {
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.shape, other.shape))
 		}
 	}
 
 	{
-		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
+		broadcastedShape := getBroadcastedShape(t.shape, other.shape)
 		result := Zeros(broadcastedShape)
 
-		tStrides := computeStrides(t.Shape)
-		otherStrides := computeStrides(other.Shape)
+		tStrides := computeStrides(t.shape)
+		otherStrides := computeStrides(other.shape)
 
 		size := result.Size()
 		for i := 0; i < size; i++ {
@@ -50,23 +50,23 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 
 	{
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
+			emptyShape := getBroadcastedShape(t.shape, other.shape)
 			return &Tensor{
-				Shape: emptyShape,
+				shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
+		if !canBroadcast(t.shape, other.shape) {
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.shape, other.shape))
 		}
 	}
 
 	{
-		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
+		broadcastedShape := getBroadcastedShape(t.shape, other.shape)
 		result := Zeros(broadcastedShape)
 
-		tStrides := computeStrides(t.Shape)
-		otherStrides := computeStrides(other.Shape)
+		tStrides := computeStrides(t.shape)
+		otherStrides := computeStrides(other.shape)
 
 		size := result.Size()
 		for i := 0; i < size; i++ {
@@ -83,22 +83,22 @@ func (t *Tensor) Div(other *Tensor) *Tensor {
 func (t *Tensor) Add(other *Tensor) *Tensor {
 	{
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
+			emptyShape := getBroadcastedShape(t.shape, other.shape)
 			return &Tensor{
-				Shape: emptyShape,
+				shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
+		if !canBroadcast(t.shape, other.shape) {
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.shape, other.shape))
 		}
 	}
 
-	broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
+	broadcastedShape := getBroadcastedShape(t.shape, other.shape)
 	result := Zeros(broadcastedShape)
 
-	tStrides := computeStrides(t.Shape)
-	otherStrides := computeStrides(other.Shape)
+	tStrides := computeStrides(t.shape)
+	otherStrides := computeStrides(other.shape)
 
 	size := result.Size()
 	for i := 0; i < size; i++ {
@@ -114,23 +114,23 @@ func (t *Tensor) Add(other *Tensor) *Tensor {
 func (t *Tensor) Mul(other *Tensor) *Tensor {
 	{
 		if len(t.Data) == 0 || len(other.Data) == 0 {
-			emptyShape := getBroadcastedShape(t.Shape, other.Shape)
+			emptyShape := getBroadcastedShape(t.shape, other.shape)
 			return &Tensor{
-				Shape: emptyShape,
+				shape: emptyShape,
 				Data:  make([]float32, 0),
 			}
 		}
-		if !canBroadcast(t.Shape, other.Shape) {
-			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.Shape, other.Shape))
+		if !canBroadcast(t.shape, other.shape) {
+			panic(fmt.Sprintf("cannot broadcast shapes %v and %v", t.shape, other.shape))
 		}
 	}
 	{
 
-		broadcastedShape := getBroadcastedShape(t.Shape, other.Shape)
+		broadcastedShape := getBroadcastedShape(t.shape, other.shape)
 		result := Zeros(broadcastedShape)
 
-		tStrides := computeStrides(t.Shape)
-		otherStrides := computeStrides(other.Shape)
+		tStrides := computeStrides(t.shape)
+		otherStrides := computeStrides(other.shape)
 
 		size := result.Size()
 		for i := 0; i < size; i++ {
@@ -150,21 +150,21 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	aIs1D := false
 	bIs1D := false
 
-	if len(a.Shape) == 1 {
-		a = a.Reshape(append([]int{1}, a.Shape...))
+	if len(a.shape) == 1 {
+		a = a.Reshape(append([]int{1}, a.shape...))
 		aIs1D = true
 	}
-	if len(b.Shape) == 1 {
-		b = b.Reshape(append(b.Shape, 1))
+	if len(b.shape) == 1 {
+		b = b.Reshape(append(b.shape, 1))
 		bIs1D = true
 	}
 
 	if len(a.Data) == 0 || len(b.Data) == 0 {
-		aBatch := a.Shape[:len(a.Shape)-2]
-		bBatch := b.Shape[:len(b.Shape)-2]
+		aBatch := a.shape[:len(a.shape)-2]
+		bBatch := b.shape[:len(b.shape)-2]
 		batchShape := getBroadcastedShape(aBatch, bBatch)
-		m := a.Shape[len(a.Shape)-2]
-		p := b.Shape[len(b.Shape)-1]
+		m := a.shape[len(a.shape)-2]
+		p := b.shape[len(b.shape)-1]
 		resultShape := append(append([]int{}, batchShape...), m, p)
 		if aIs1D {
 			resultShape = resultShape[:len(resultShape)-1]
@@ -173,31 +173,31 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 			resultShape = resultShape[:len(resultShape)-1]
 		}
 		return &Tensor{
-			Shape: resultShape,
+			shape: resultShape,
 			Data:  make([]float32, 0),
 		}
 	}
 
-	aLastDim := a.Shape[len(a.Shape)-1]
-	bSecondLastDim := b.Shape[len(b.Shape)-2]
+	aLastDim := a.shape[len(a.shape)-1]
+	bSecondLastDim := b.shape[len(b.shape)-2]
 	if aLastDim != bSecondLastDim {
 		panic(fmt.Sprintf("matmul: dimension mismatch (%d vs %d)", aLastDim, bSecondLastDim))
 	}
 
-	aBatchShape := a.Shape[:len(a.Shape)-2]
-	bBatchShape := b.Shape[:len(b.Shape)-2]
+	aBatchShape := a.shape[:len(a.shape)-2]
+	bBatchShape := b.shape[:len(b.shape)-2]
 	batchShape := getBroadcastedShape(aBatchShape, bBatchShape)
 	if batchShape == nil {
 		panic(fmt.Sprintf("matmul: cannot broadcast batch shapes %v and %v", aBatchShape, bBatchShape))
 	}
 
-	m := a.Shape[len(a.Shape)-2]
-	p := b.Shape[len(b.Shape)-1]
+	m := a.shape[len(a.shape)-2]
+	p := b.shape[len(b.shape)-1]
 	resultShape := append(append([]int{}, batchShape...), m, p)
 	result := Zeros(resultShape)
 
-	aStrides := computeStrides(a.Shape)
-	bStrides := computeStrides(b.Shape)
+	aStrides := computeStrides(a.shape)
+	bStrides := computeStrides(b.shape)
 	batchSize := product(batchShape)
 	matrixSize := m * p
 
@@ -219,11 +219,11 @@ func (t *Tensor) MatMul(other *Tensor) *Tensor {
 	}
 
 	if aIs1D {
-		newShape := append(result.Shape[:len(result.Shape)-2], result.Shape[len(result.Shape)-1])
+		newShape := append(result.shape[:len(result.shape)-2], result.shape[len(result.shape)-1])
 		result = result.Reshape(newShape)
 	}
 	if bIs1D {
-		result = result.Reshape(result.Shape[:len(result.Shape)-1])
+		result = result.Reshape(result.shape[:len(result.shape)-1])
 	}
 
 	return result

@@ -22,7 +22,7 @@ func SigmoidDerivative(x float32) float32 {
 }
 
 func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
-	shape := input.Shape
+	shape := input.GetShape()
 
 	outputData := make([]float32, len(input.Data))
 	for i := 0; i < len(input.Data); i++ {
@@ -33,7 +33,7 @@ func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 }
 
 func (s *SigmoidLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	shape := gradOutput.Shape
+	shape := gradOutput.GetShape()
 
 	gradInputData := make([]float32, len(gradOutput.Data))
 	for i := 0; i < len(gradOutput.Data); i++ {

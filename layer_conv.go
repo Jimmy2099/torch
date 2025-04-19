@@ -89,18 +89,18 @@ func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	}
 
 	var biasBroadcast *tensor.Tensor
-	switch len(convOut.Shape) {
+	switch len(convOut.GetShape()) {
 	case 1:
 		biasBroadcast = c.Bias
 	case 2:
-		biasBroadcast = c.Bias.Repeat(1, convOut.Shape[1])
+		biasBroadcast = c.Bias.Repeat(1, convOut.GetShape()[1])
 	case 4:
 		biasBroadcast = c.Bias.Reshape([]int{1, c.OutChannels, 1, 1})
 		biasBroadcast = biasBroadcast.Expand([]int{
-			convOut.Shape[0],
+			convOut.GetShape()[0],
 			c.OutChannels,
-			convOut.Shape[2],
-			convOut.Shape[3],
+			convOut.GetShape()[2],
+			convOut.GetShape()[3],
 		})
 	default:
 		panic("unsupported output shape from convolution")

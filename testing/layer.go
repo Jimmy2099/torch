@@ -80,7 +80,7 @@ torch.set_default_dtype(torch.float%d)
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
-        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        f.write("shape," + ",".join(map(str, tensor.shape)) + "\n")
         tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
@@ -88,7 +88,7 @@ def save_tensor_to_csv(tensor, file_path):
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))
@@ -155,14 +155,14 @@ import torch
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
-        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        f.write("shape," + ",".join(map(str, tensor.shape)) + "\n")
         tensor = tensor.reshape(-1, tensor.shape[0])
         np.savetxt(f, tensor.numpy(), delimiter="," , fmt="%%.16f")
 
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))
@@ -220,7 +220,7 @@ torch.set_default_dtype(%s)
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
-        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        f.write("shape," + ",".join(map(str, tensor.shape)) + "\n")
         tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
@@ -235,7 +235,7 @@ def load_tensor_from_csv_with_shape(file_path,shape):
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))
@@ -303,7 +303,7 @@ torch.set_default_dtype(%s)
 
 def save_tensor_to_csv(tensor, file_path):
     with open(file_path, 'w') as f:
-        f.write("Shape," + ",".join(map(str, tensor.shape)) + "\n")
+        f.write("shape," + ",".join(map(str, tensor.shape)) + "\n")
         tensor = tensor.detach().numpy().astype(np.float32)
         np.savetxt(f, tensor.reshape(-1, tensor.shape[0]), 
                   delimiter=",", fmt="%%.16f")
@@ -318,7 +318,7 @@ def load_tensor_from_csv_with_shape(file_path,shape):
 def load_tensor_from_csv(file_path):
     with open(file_path, 'r') as f:
         header = f.readline().strip()
-        if not header.startswith("Shape,"):
+        if not header.startswith("shape,"):
             raise ValueError("Invalid CSV format: missing shape header")
         
         shape = list(map(int, header.split(",")[1:]))

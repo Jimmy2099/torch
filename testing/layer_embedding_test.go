@@ -28,12 +28,12 @@ func TestNewEmbedding(t *testing.T) {
 	embDim := 3
 	emb := torch.NewEmbedding(vocabSize, embDim)
 
-	if emb.Weights.Shape[0] != vocabSize || emb.Weights.Shape[1] != embDim {
-		t.Errorf("Expected weights shape [%d,%d], got %v", vocabSize, embDim, emb.Weights.Shape)
+	if emb.Weights.shape[0] != vocabSize || emb.Weights.shape[1] != embDim {
+		t.Errorf("Expected weights shape [%d,%d], got %v", vocabSize, embDim, emb.Weights.shape)
 	}
 
-	if emb.GradWeights.Shape[0] != vocabSize || emb.GradWeights.Shape[1] != embDim {
-		t.Errorf("Expected gradWeights shape [%d,%d], got %v", vocabSize, embDim, emb.GradWeights.Shape)
+	if emb.GradWeights.shape[0] != vocabSize || emb.GradWeights.shape[1] != embDim {
+		t.Errorf("Expected gradWeights shape [%d,%d], got %v", vocabSize, embDim, emb.GradWeights.shape)
 	}
 }
 
@@ -99,9 +99,9 @@ func TestEmbeddingForward(t *testing.T) {
 			output := emb.Forward(tt.input)
 
 			if !tt.shouldPanic {
-				if !reflect.DeepEqual(output.Shape, tt.expectedShape) {
-					t.Errorf("Shape mismatch\nexpected: %v\ngot: %v",
-						tt.expectedShape, output.Shape)
+				if !reflect.DeepEqual(output.shape, tt.expectedShape) {
+					t.Errorf("shape mismatch\nexpected: %v\ngot: %v",
+						tt.expectedShape, output.shape)
 				}
 
 				expectedTensor := tensor.NewTensor(tt.expected, tt.expectedShape)
@@ -253,8 +253,8 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			if algorithm.Product(tc.inputShape) == 0 {
 				output := emb.Forward(inputTensor)
 				expectedShape := append(tc.inputShape, tc.embDim)
-				if !reflect.DeepEqual(output.Shape, expectedShape) {
-					t.Errorf("Expected shape %v, got %v", expectedShape, output.Shape)
+				if !reflect.DeepEqual(output.shape, expectedShape) {
+					t.Errorf("Expected shape %v, got %v", expectedShape, output.shape)
 				}
 				if len(output.Data) != 0 {
 					t.Errorf("Empty input should produce empty output")
@@ -268,9 +268,9 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			const epsilon = 1e-6
 			const relativeTol = 1e-4
 
-			if !reflect.DeepEqual(goResult.Shape, pyResult.Shape) {
-				t.Errorf("Shape mismatch\nGo: %v\nPyTorch: %v",
-					goResult.Shape, pyResult.Shape)
+			if !reflect.DeepEqual(goResult.shape, pyResult.shape) {
+				t.Errorf("shape mismatch\nGo: %v\nPyTorch: %v",
+					goResult.shape, pyResult.shape)
 			}
 
 			if len(goResult.Data) != len(pyResult.Data) {
