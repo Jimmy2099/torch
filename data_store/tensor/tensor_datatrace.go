@@ -6,18 +6,34 @@ import (
 	"os"
 )
 
-var logData []*Tensor
+var dataTrace *DataTrace = nil
 
-func EnableDataTrace() {
-	logData = make([]*Tensor, 0)
+type DataTrace struct {
+	matchPointerNum int
+	TensorData      []*Tensor
 }
 
-func EndDataTrace() {
-	logData = nil
-	matchNum = 0
+func EnableTensorTrace() {
+	if dataTrace != nil {
+		panic("dataTrace has already been initialized")
+	}
+	dataTrace = &DataTrace{
+		TensorData:      make([]*Tensor, 0),
+		matchPointerNum: 0,
+	}
 }
 
-func LoadDataTraceLog() {
+func EndTensorTrace() {
+	if dataTrace == nil {
+		panic("dataTrace has not been initialized")
+	}
+	dataTrace = nil
+}
+
+func (m *DataTrace) LoadDataTraceLog() {
+	if dataTrace != nil {
+		panic("dataTrace has already been initialized")
+	}
 	file, err := os.Open("output.gob")
 	if err != nil {
 		log.Fatal(err)
@@ -25,13 +41,16 @@ func LoadDataTraceLog() {
 	defer file.Close()
 
 	encoder := gob.NewDecoder(file)
-	err = encoder.Decode(&logData)
+	err = encoder.Decode(&m.TensorData)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func WriteDataTraceLog() {
+func (m *DataTrace) WriteDataTraceLog() {
+	if dataTrace == nil {
+		panic("dataTrace has not been initialized")
+	}
 	file, err := os.Create("output.gob")
 	if err != nil {
 		log.Fatal(err)
@@ -39,50 +58,72 @@ func WriteDataTraceLog() {
 	defer file.Close()
 
 	encoder := gob.NewEncoder(file)
-	err = encoder.Encode(logData)
+	err = encoder.Encode(m.TensorData)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (t *Tensor) TraceLogToggle() {
-	logData = append(logData, t.Clone())
+func GetDataTrace() *DataTrace {
+	return dataTrace
 }
 
-var matchNum = 0
+func (m *DataTrace) AppendTensorData(tensor *Tensor) {
+	m.TensorData = append(m.TensorData, tensor)
+}
+
+func (t *Tensor) TraceLogToggle() {
+	GetDataTrace().AppendTensorData(t.Clone())
+}
 
 func (t *Tensor) Match() bool {
-	if matchNum+1 > len(logData) {
+	trace := GetDataTrace()
+	if trace == nil {
+		panic("dataTrace is not initialized")
+	}
+	if trace.matchPointerNum >= len(trace.TensorData) {
 		return false
 	}
-	match := logData[matchNum].Equal(t)
-	matchNum += 1
+	data := trace.TensorData[trace.matchPointerNum]
+	match := data.Equal(t)
+	trace.matchPointerNum++
 	return match
 }
 
 func (t *Tensor) MatchPanic() bool {
-	data := logData[matchNum]
+	trace := GetDataTrace()
+	if trace == nil {
+		panic("dataTrace is not initialized")
+	}
+	if trace.matchPointerNum >= len(trace.TensorData) {
+		panic("MatchPanic: no more data in dataTrace")
+	}
+	data := trace.TensorData[trace.matchPointerNum]
 	ok := data.EqualFloat32WithShape(t)
-	matchNum += 1
+	trace.matchPointerNum++
 	if !ok {
 		panic("ERROR: MatchPanic")
-		//breakpoint here
 	}
 	return ok
 }
 
 func (t *Tensor) ContainPanic() bool {
-
-	data := logData[matchNum]
+	trace := GetDataTrace()
+	if trace == nil {
+		panic("dataTrace is not initialized")
+	}
+	if trace.matchPointerNum >= len(trace.TensorData) {
+		panic("ContainPanic: no more data in dataTrace")
+	}
+	data := trace.TensorData[trace.matchPointerNum]
 	ok := data.Contain(t)
-	matchNum += 1
+	trace.matchPointerNum++
 	if !ok {
 		data = data.Reshape([]int{len(data.Data), 1})
 		data.SaveToCSV("data.csv")
 		tt := t.Reshape([]int{len(t.Data), 1})
 		tt.SaveToCSV("target.csv")
 		panic("ERROR: ContainPanic")
-		//set a breakpoint here
 	}
 	return ok
 }
