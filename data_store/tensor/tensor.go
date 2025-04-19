@@ -8,7 +8,7 @@ import (
 type Tensor struct {
 	Data   []float32
 	shape  []int
-	Device *Device
+	Device Device
 }
 
 func NewTensor(data []float32, shape []int) *Tensor {

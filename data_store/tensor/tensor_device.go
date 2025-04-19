@@ -7,14 +7,17 @@ const (
 	GPU
 )
 
-type Device struct {
-	Type  DeviceType
-	Index int
+type Device interface {
+	GetDeviceType() DeviceType
+	GetIndex() int
 }
 
-func GetDefaultDevice() *Device {
-	return &Device{
-		Type:  CPU,
-		Index: 0,
-	}
+var defaultDevice = GetCpuMemoryDevice()
+
+func GetDefaultDevice() Device {
+	return defaultDevice
+}
+
+func SetDefaultDevice(device Device) {
+	defaultDevice = device
 }
