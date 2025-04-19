@@ -44,8 +44,8 @@ func ShapeSum(shape []int) (result int) {
 	return result
 }
 
-func (m *Tensor) TensorData() []float32 {
-	return m.Data
+func (t *Tensor) TensorData() []float32 {
+	return t.Data
 }
 
 func (t *Tensor) Save(filename string) error {
@@ -90,4 +90,11 @@ func NewEmptyTensor() *Tensor {
 		Data:  make([]float32, 0),
 		shape: make([]int, 0),
 	}
+}
+
+func (t *Tensor) ToDevice(device Device) {
+	if device == nil {
+		panic("device cannot be nil")
+	}
+	//TODO
 }
