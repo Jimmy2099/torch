@@ -2,13 +2,13 @@ package tensor
 
 type CpuMemoryDevice struct {
 	Type DeviceType
-	Num  int
+	Num  DeviceNum
 }
 
 func GetCpuMemoryDevice() Device {
 	device := &CpuMemoryDevice{
-		Type: CPU,
-		Num:  0,
+		Type: DeviceCPU,
+		Num:  DefaultDeviceNum,
 	}
 	return device
 }
@@ -17,6 +17,6 @@ func (d *CpuMemoryDevice) GetDeviceType() DeviceType {
 	return d.Type
 }
 
-func (d *CpuMemoryDevice) GetIndex() int {
+func (d *CpuMemoryDevice) GetIndex() DeviceNum {
 	return d.Num
 }

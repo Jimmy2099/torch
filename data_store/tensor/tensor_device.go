@@ -1,15 +1,20 @@
 package tensor
 
 type DeviceType int
+type DeviceNum int
 
 const (
-	CPU DeviceType = iota
-	GPU
+	DeviceCPU DeviceType = 1 + iota
+	DeviceGPU
+)
+
+const (
+	DefaultDeviceNum DeviceNum = 1
 )
 
 type Device interface {
 	GetDeviceType() DeviceType
-	GetIndex() int
+	GetIndex() DeviceNum
 }
 
 var defaultDevice = GetCpuMemoryDevice()
