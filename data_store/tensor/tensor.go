@@ -5,38 +5,43 @@ import (
 	"os"
 )
 
-type DeviceType int
-
-const (
-	CPU DeviceType = iota
-	GPU
-)
-
-type Device struct {
-	Type  DeviceType
-	Index int
-}
-
 type Tensor struct {
 	Data   []float32
 	shape  []int
-	Device Device
+	Device *Device
 }
 
 func NewTensor(data []float32, shape []int) *Tensor {
+	if shape == nil {
+		shape = []int{1, len(data)}
+	}
+
+	sum := ShapeSum(shape)
+
+	if len(data) != sum {
+		panic("shape length mismatch")
+	}
+
 	t := &Tensor{
 		Data:  data,
 		shape: shape,
-		Device: Device{
-			Type:  CPU,
-			Index: 0,
-		},
 	}
-	if shape == nil {
-		shape = []int{1, len(data)}
-		t.Reshape(shape)
-	}
+	t.Device = GetDefaultDevice()
 	return t
+}
+
+func ShapeSum(shape []int) (result int) {
+	if len(shape) == 0 {
+		return 0
+	}
+	result = 1
+	for i := 0; i < len(shape); i++ {
+		if shape[i] == 1 {
+			continue
+		}
+		result *= shape[i]
+	}
+	return result
 }
 
 func (m *Tensor) TensorData() []float32 {
@@ -75,6 +80,7 @@ func LoadTensorFromGobFile(filename string) (*Tensor, error) {
 func (t *Tensor) GetShape() []int {
 	return t.shape
 }
+
 func (t *Tensor) GetShapeByNum(num int) int {
 	return t.shape[num]
 }
