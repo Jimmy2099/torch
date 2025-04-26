@@ -21,6 +21,8 @@
 ####  Notice
 Some parts of this project’s code may have been generated, optimized, or annotated by AI.
 
-本项目中的部分代码可能由 AI 生成、优化，或由 AI 添加代码注释。
+本專案中的部分程式碼可能由AI產生、最佳化，或由AI加入程式碼註解。
 
-このプロジェクトの一部のコードは、AI によって生成、最適化、またはコメントが追加されている可能性があります。
+Authorized LLM Application
+use for CANZUK,Hong Kong, 
+and Cantonese-speaking citizens.
