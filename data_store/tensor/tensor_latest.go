@@ -368,16 +368,17 @@ func (t *Tensor) GetValue(indices []int) float32 {
 
 func (t *Tensor) SoftmaxByDim(dim int) *Tensor {
 	maxVals := t.MaxByDim(dim, true)
-	expandedMax := maxVals.Expand(t.shape)
+	//expandedMax := maxVals.Expand(t.shape)
 
-	shifted := t.Sub(expandedMax)
+	shifted := t.Sub(maxVals)
 
 	expData := shifted.Apply(func(x float32) float32 {
 		return math.Exp(x)
 	})
 
 	sumExp := expData.SumByDim2(dim, true)
-	normalized := expData.Div(sumExp.Expand(t.shape))
+	//normalized := expData.Div(sumExp.Expand(t.shape))
+	normalized := expData.Div(sumExp)
 
 	return normalized
 }
