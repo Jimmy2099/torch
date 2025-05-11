@@ -1,5 +1,7 @@
 # Torch - A Golang DeepLearning Inference Computing Library From Scratch
 
+[![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
+
 #### llama3 example with gpu acceleration built on top of this framework
 <table>
 <tr>
