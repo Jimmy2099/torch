@@ -22,7 +22,3 @@
 
 ####  Notice
 Some parts of this project’s code may have been generated, optimized, or annotated by AI.
-
-Authorized LLM Application
-use for CANZUK,Hong Kong, 
-and Cantonese-speaking citizens.
