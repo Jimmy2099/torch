@@ -1,4 +1,4 @@
-package torch_test
+package main
 
 import (
 	"github.com/Jimmy2099/torch"
@@ -22,4 +22,5 @@ func TestLinearBackward(t *testing.T) {
 	output := layer.Forward(x)
 	loss := output.LossMSE(y)
 	fmt.Println(loss)
+
 }

@@ -12,14 +12,11 @@ type LinearLayer struct {
 	OutputDim         int
 	Weights           *tensor.Tensor
 	Bias              *tensor.Tensor
-	Input             *tensor.Tensor
-	Output            *tensor.Tensor
-	GradInput         *tensor.Tensor
-	WeightDecay       float32
-	Momentum          float32
-	VWeights          *tensor.Tensor
-	VBias             *tensor.Tensor
 	WeightsTransposed bool
+}
+
+func (l *LinearLayer) ZeroGrad() {
+
 }
 
 func (l *LinearLayer) GetWeights() *tensor.Tensor {
@@ -75,38 +72,8 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 		OutputDim:         outputDim,
 		Weights:           tensor.NewTensor(weightsData, []int{outputDim, inputDim}),
 		Bias:              tensor.NewTensor(biasData, []int{outputDim, 1}),
-		VWeights:          tensor.NewTensor(make([]float32, outputDim*inputDim), []int{outputDim, inputDim}),
-		VBias:             tensor.NewTensor(make([]float32, outputDim), []int{outputDim, 1}),
-		WeightDecay:       0.001,
-		Momentum:          0.9,
 		WeightsTransposed: false,
 	}
-}
-
-func (l *LinearLayer) updateParameters(dWeights, dBias *tensor.Tensor, learningRate float32) {
-	for i := 0; i < l.Weights.GetShape()[0]; i++ {
-		for j := 0; j < l.Weights.GetShape()[1]; j++ {
-			regGrad := l.WeightDecay * l.Weights.Data[i*l.Weights.GetShape()[1]+j]
-			l.VWeights.Data[i*l.VWeights.GetShape()[1]+j] = l.Momentum*l.VWeights.Data[i*l.VWeights.GetShape()[1]+j] -
-				learningRate*(dWeights.Data[i*dWeights.GetShape()[1]+j]+regGrad)
-			l.Weights.Data[i*l.Weights.GetShape()[1]+j] += l.VWeights.Data[i*l.VWeights.GetShape()[1]+j]
-		}
-	}
-
-	for i := 0; i < l.Bias.GetShape()[0]; i++ {
-		l.VBias.Data[i] = l.Momentum*l.VBias.Data[i] - learningRate*dBias.Data[i]
-		l.Bias.Data[i] += l.VBias.Data[i]
-	}
-}
-
-func (l *LinearLayer) ZeroGrad() {
-	l.GradInput = nil
-	l.VWeights = tensor.NewTensor(make([]float32, l.OutputDim*l.InputDim), []int{l.OutputDim, l.InputDim})
-	l.VBias = tensor.NewTensor(make([]float32, l.OutputDim), []int{l.OutputDim, 1})
-}
-
-func (l *LinearLayer) NumParams() int {
-	return l.Weights.GetShape()[0]*l.Weights.GetShape()[1] + l.Bias.GetShape()[0]
 }
 
 func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Tensor {
@@ -133,7 +100,7 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 	}
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
-	l.Input = reshapedX.Clone()
+	input := reshapedX.Clone()
 	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
@@ -150,14 +117,13 @@ func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {
 		if in == 0 {
 			outputData[outputIndex] = l.Bias.Data[out]
 		}
-		outputData[outputIndex] += l.Input.Data[inputIndex] * l.Weights.Data[weightIndex]
+		outputData[outputIndex] += input.Data[inputIndex] * l.Weights.Data[weightIndex]
 	}
 
 	newShape := make([]int, len(originalShape))
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	output := tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
-	l.Output = output
 
 	return output
 }
@@ -219,19 +185,18 @@ func (l *LinearLayer) ForwardSignalThreadCompute(x *tensor.Tensor) *tensor.Tenso
 	}
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
-	l.Input = reshapedX.Clone()
+	input := reshapedX.Clone()
 	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
-	for i := 0; i < len(l.Input.Data); i++ {
-		LinearCompute(l.Bias.Data, l.Weights.Data, outputData, len(x.Data), l.Input.Data[i], i)
+	for i := 0; i < len(input.Data); i++ {
+		LinearCompute(l.Bias.Data, l.Weights.Data, outputData, len(x.Data), input.Data[i], i)
 	}
 
 	newShape := make([]int, len(originalShape))
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	output := tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
-	l.Output = output
 
 	return output
 }
@@ -252,7 +217,7 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	}
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
-	l.Input = reshapedX.Clone()
+	input := reshapedX.Clone()
 	batchSize := reshapedX.GetShape()[0]
 	outputData := make([]float32, batchSize*l.OutputDim)
 
@@ -278,7 +243,7 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 					sum := l.Bias.Data[out]
 					ptr := out * l.InputDim
 					for in := 0; in < l.InputDim; in++ {
-						sum += l.Input.Data[b*l.InputDim+in] * l.Weights.Data[ptr+in]
+						sum += input.Data[b*l.InputDim+in] * l.Weights.Data[ptr+in]
 					}
 					outputData[b*l.OutputDim+out] = sum
 				}
@@ -309,7 +274,7 @@ func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	}
 	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
 
-	l.Input = reshapedX.Clone()
+	input := reshapedX.Clone()
 	batchSize := reshapedX.GetShape()[0]
 
 	if l.WeightsTransposed == false {
@@ -318,7 +283,7 @@ func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	}
 
 	matmulResult := vek32.MatMul(
-		l.Input.Data,
+		input.Data,
 		l.Weights.Data,
 		l.InputDim,
 	)
@@ -337,7 +302,6 @@ func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	output := tensor.NewTensor(outputData, newShape)
-	l.Output = output
 
 	return output
 }
