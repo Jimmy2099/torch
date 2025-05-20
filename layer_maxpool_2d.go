@@ -85,24 +85,7 @@ func (m *MaxPool2DLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (m *MaxPool2DLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
-	if m.Input == nil {
-		panic("must call Forward first")
-	}
-	if gradOutput == nil {
-		panic("gradient tensor cannot be nil")
-	}
-	if len(gradOutput.GetShape()) != 4 {
-		panic("gradOutput must be 4D tensor")
-	}
-
-	gradInput := tensor.NewTensor(make([]float32, len(m.Input.Data)), m.Input.GetShape())
-
-	for idx, pos := range m.ArgMax {
-		b, c, h, w := pos[0], pos[1], pos[2], pos[3]
-		gradInput.Set1([]int{b, c, h, w}, gradOutput.Data[idx])
-	}
-
-	return gradInput
+	return nil
 }
 
 func (m *MaxPool2DLayer) OutputShape() []int {

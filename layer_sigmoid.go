@@ -33,14 +33,7 @@ func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
 }
 
 func (s *SigmoidLayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	shape := gradOutput.GetShape()
-
-	gradInputData := make([]float32, len(gradOutput.Data))
-	for i := 0; i < len(gradOutput.Data); i++ {
-		gradInputData[i] = gradOutput.Data[i] * SigmoidDerivative(gradOutput.Data[i])
-	}
-
-	return tensor.NewTensor(gradInputData, shape)
+	return nil
 }
 
 func (s *SigmoidLayer) ZeroGrad() {

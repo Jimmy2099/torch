@@ -78,35 +78,8 @@ func (e *Embedding) Forward(indices *tensor.Tensor) *tensor.Tensor {
 }
 
 func (e *Embedding) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	gradData := gradOutput.Data
-	batchSize := gradOutput.GetShape()[0]
-	seqLen := gradOutput.GetShape()[1]
-
-	for i := range e.GradWeights.Data {
-		e.GradWeights.Data[i] = 0
-	}
-
-	for b := 0; b < batchSize; b++ {
-		for s := 0; s < seqLen; s++ {
-			idx := e.LastIndices[b*seqLen+s]
-			if idx < 0 || idx >= e.VocabSize {
-				continue
-			}
-
-			gradStart := (b*seqLen + s) * e.EmbDim
-			weightStart := idx * e.EmbDim
-
-			for i := 0; i < e.EmbDim; i++ {
-				e.GradWeights.Data[weightStart+i] += gradData[gradStart+i]
-			}
-		}
-	}
-
-	for i := range e.Weights.Data {
-		e.Weights.Data[i] -= learningRate * e.GradWeights.Data[i]
-	}
-
 	return nil
+
 }
 
 func (e *Embedding) ZeroGrad() {

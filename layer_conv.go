@@ -112,22 +112,7 @@ func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (c *ConvLayer) Backward(gradOutput *tensor.Tensor) *tensor.Tensor {
-	gradWeights, err := c.InputCache.Conv2DGradWeights(gradOutput, c.KernelSize, c.Stride, c.Padding)
-	if err != nil {
-		panic(err)
-	}
-	c.GradWeights = gradWeights
-
-	gradBias := gradOutput.SumByDim(0)
-	gradBias = gradBias.SumByDim(1)
-	c.GradBias = gradBias
-
-	gradInput, err := gradOutput.Conv2DGradInput(c.Weights, c.KernelSize, c.Stride, c.Padding)
-	if err != nil {
-		panic(err)
-	}
-
-	return gradInput
+	return nil
 }
 
 func (c *ConvLayer) BackwardWithLR(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {

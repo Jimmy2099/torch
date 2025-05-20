@@ -32,8 +32,5 @@ func (f *FlattenLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (f *FlattenLayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
-	if len(f.inputShape) == 0 {
-		panic("FlattenLayer: input shape not recorded during forward pass")
-	}
-	return dout.Reshape(f.inputShape)
+	return nil
 }

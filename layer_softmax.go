@@ -41,20 +41,7 @@ func (s *SoftmaxLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 }
 
 func (s *SoftmaxLayer) Backward(dout *tensor.Tensor) *tensor.Tensor {
-	if s.output == nil {
-		panic("must call Forward first")
-	}
-	if dout == nil {
-		panic("gradient tensor cannot be nil")
-	}
-	if !shapeEqual(s.output.GetShape(), dout.GetShape()) {
-		panic("output and gradient shapes must match")
-	}
-
-	sumDout := dout.Multiply(s.output).Sum()
-	grad := s.output.Multiply(dout.SubScalar(sumDout))
-
-	return grad
+	return nil
 }
 
 func (s *SoftmaxLayer) SetAxis(axis int) {

@@ -110,54 +110,7 @@ func (l *LinearLayer) NumParams() int {
 }
 
 func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Tensor {
-	if l.Input == nil || l.Input.Data == nil {
-		panic("Forward propagation did not correctly save input data")
-	}
-
-	batchSize := gradOutput.GetShape()[0]
-	dWeights := make([]float32, l.InputDim*l.OutputDim)
-	dBias := make([]float32, l.OutputDim)
-	gradInput := make([]float32, batchSize*l.InputDim)
-
-	for b := 0; b < batchSize; b++ {
-		for out := 0; out < l.OutputDim; out++ {
-			grad := gradOutput.Data[b*l.OutputDim+out]
-			if out >= l.OutputDim || b >= batchSize {
-				panic("Gradient index out of bounds")
-			}
-			for in := 0; in < l.InputDim; in++ {
-				dWeights[out*l.InputDim+in] += l.Input.Data[b*l.InputDim+in] * grad
-			}
-			dBias[out] += grad
-		}
-	}
-
-	for b := 0; b < batchSize; b++ {
-		for in := 0; in < l.InputDim; in++ {
-			var sum float32
-			for out := 0; out < l.OutputDim; out++ {
-				sum += gradOutput.Data[b*l.OutputDim+out] * l.Weights.Data[out*l.InputDim+in]
-			}
-			gradInput[b*l.InputDim+in] = sum
-		}
-	}
-
-	if l.VWeights == nil || l.VBias == nil {
-		l.VWeights = tensor.NewTensor(make([]float32, len(l.Weights.Data)), l.Weights.GetShape())
-		l.VBias = tensor.NewTensor(make([]float32, len(l.Bias.Data)), l.Bias.GetShape())
-	}
-
-	for i := range l.Weights.Data {
-		l.VWeights.Data[i] = l.Momentum*l.VWeights.Data[i] - lr*(dWeights[i]/float32(batchSize)+l.WeightDecay*l.Weights.Data[i])
-		l.Weights.Data[i] += l.VWeights.Data[i]
-	}
-
-	for i := range l.Bias.Data {
-		l.VBias.Data[i] = l.Momentum*l.VBias.Data[i] - lr*(dBias[i]/float32(batchSize))
-		l.Bias.Data[i] += l.VBias.Data[i]
-	}
-
-	return tensor.NewTensor(gradInput, []int{batchSize, l.InputDim})
+	return nil
 }
 
 func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {

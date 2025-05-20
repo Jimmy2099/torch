@@ -39,48 +39,8 @@ func NewRMSNorm(features int, eps float32) *RMSNorm {
 }
 
 func (r *RMSNorm) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	if r.inputCache == nil {
-		panic("Forward pass must be called before backward pass")
-	}
-	inputTensor := r.inputCache
+	return nil
 
-	gradInputShape := inputTensor.GetShape()
-	gradInputData := make([]float32, len(inputTensor.Data))
-	gradInput := tensor.NewTensor(gradInputData, gradInputShape)
-
-	gradWeightsData := make([]float32, len(r.Weights.Data))
-
-	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
-	featureSize := r.Weights.GetShape()[0]
-
-	for b := 0; b < batchSize; b++ {
-		start := b * featureSize
-		end := start + featureSize
-
-		sumSq := float32(0.0)
-		for i := start; i < end; i++ {
-			sumSq += inputTensor.Data[i] * inputTensor.Data[i]
-		}
-		meanSq := sumSq / float32(featureSize)
-		rms := math.Sqrt(meanSq + r.eps)
-		invRms := 1.0 / rms
-
-		for i := start; i < end; i++ {
-			featureIdx := i % featureSize
-			x := inputTensor.Data[i]
-
-			dxHat := gradOutput.Data[i] * r.Weights.Data[featureIdx]
-			gradInput.Data[i] = dxHat*invRms - (x*sumSq)/(float32(featureSize)*rms*rms*rms)
-
-			gradWeightsData[featureIdx] += gradOutput.Data[i] * (x * invRms)
-		}
-	}
-
-	for i := range r.Weights.Data {
-		r.Weights.Data[i] -= learningRate * gradWeightsData[i] / float32(batchSize)
-	}
-
-	return gradInput
 }
 
 func (r *RMSNorm) ZeroGrad() {

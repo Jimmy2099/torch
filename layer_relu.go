@@ -82,24 +82,7 @@ func (r *ReLULayer) NegativeSlope() float32 {
 }
 
 func (r *ReLULayer) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	if r.input == nil {
-		panic("must call Forward first")
-	}
-	if gradOutput == nil {
-		panic("gradient tensor cannot be nil")
-	}
-	if !shapeEqual(r.input.GetShape(), gradOutput.GetShape()) {
-		panic("input and gradient shapes must match")
-	}
-
-	grad := r.input.Apply(func(val float32) float32 {
-		if val > 0 {
-			return 1.0
-		}
-		return r.negative
-	})
-
-	return grad.Multiply(gradOutput)
+	return nil
 }
 
 func (r *ReLULayer) ZeroGrad() {
