@@ -2,39 +2,77 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
+
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/optimizer"
-	"math"
 )
 
 func main() {
-	layer := torch.NewLinearLayer(2, 2)
+	rand.Seed(42)
 
-	layer.SetWeights([]float32{0.5, 0.5, 0.5, 0.5})
-	layer.SetBias([]float32{0, 0})
-
-	x := tensor.NewTensor([]float32{1, 2}, []int{1, 2})
-	y := tensor.NewTensor([]float32{0, 0}, []int{1, 2})
-	for i := range x.Data {
-		y.Data[i] = float32(math.Sin(float64(x.Data[i])))
+	numSamples := 100
+	xData := make([]float32, numSamples)
+	for i := 0; i < numSamples; i++ {
+		xData[i] = float32(rand.NormFloat64())
 	}
+	X := tensor.NewTensor(xData, []int{numSamples, 1})
 
-	fmt.Printf("W = %v\n", layer.Weights)
-	fmt.Printf("B = %v\n", layer.Bias)
+	yData := make([]float32, numSamples)
+	for i := 0; i < numSamples; i++ {
+		yData[i] = float32(math.Sin(float64(xData[i])))
+	}
+	y := tensor.NewTensor(yData, []int{numSamples, 1})
 
-	optim := optimizer.NewSGD([]*tensor.Tensor{layer.Weights, layer.Bias}, 0.1)
+	layer := torch.NewLinearLayer(1, 1)
+	layer.SetWeights([]float32{0.5})
+	layer.SetBias([]float32{0.0})
 
-	for i := 0; i < 100; i++ {
-		out := layer.Forward(x)
-		loss := out.LossMSE(y)
+	fmt.Println("Initial Parameters:")
+	fmt.Printf("Weight: %v\n", layer.Weights.Data)
+	fmt.Printf("Bias: %v\n", layer.Bias.Data)
+
+	optim := optimizer.NewSGD([]*tensor.Tensor{
+		layer.Weights,
+		layer.Bias,
+	}, 0.01)
+
+	numEpochs := 100
+	for epoch := 0; epoch < numEpochs; epoch++ {
+		outputs := layer.Forward(X)
+
+		loss := outputs.LossMSE(y)
+
+		layer.ZeroGrad()
 		loss.Backward()
 		optim.Step()
-		layer.Weights.ZeroGrad()
-		layer.Bias.ZeroGrad()
-		fmt.Printf("Epoch %d: loss = %v\n", i, loss.Data)
-	}
-	fmt.Printf("W after update: %v\n", layer.Weights)
-	fmt.Printf("B after update: %v\n", layer.Bias)
 
+		if (epoch+1)%10 == 0 {
+			fmt.Printf("Epoch [%d/%d], Loss: %.4f\n",
+				epoch+1, numEpochs, loss.Data[0])
+		}
+	}
+
+	fmt.Println("\nTrained Parameters:")
+	fmt.Printf("Weight: %v\n", layer.Weights.Data)
+	fmt.Printf("Bias: %v\n", layer.Bias.Data)
+
+	numTest := 5
+	xTestData := make([]float32, numTest)
+	for i := 0; i < numTest; i++ {
+		xTestData[i] = float32(rand.NormFloat64())
+	}
+	X_test := tensor.NewTensor(xTestData, []int{numTest, 1})
+
+	yReal := make([]float32, numTest)
+	for i := 0; i < numTest; i++ {
+		yReal[i] = float32(math.Sin(float64(xTestData[i])))
+	}
+	predictions := layer.Forward(X_test)
+
+	fmt.Println("\nTest Results:")
+	fmt.Println("Real values:", yReal)
+	fmt.Println("Predictions:", predictions.Data)
 }

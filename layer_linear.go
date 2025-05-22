@@ -16,7 +16,8 @@ type LinearLayer struct {
 }
 
 func (l *LinearLayer) ZeroGrad() {
-
+	l.Weights.ZeroGrad()
+	l.Bias.ZeroGrad()
 }
 
 func (l *LinearLayer) GetWeights() *tensor.Tensor {
@@ -89,26 +90,37 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	l.Bias.EnableGrad()
 	out.Parents = []*tensor.Tensor{x, l.Weights, l.Bias}
 	out.GradFn = func() {
+		batchSize := x.GetShape()[0]
+		inputDim := l.InputDim
+		outputDim := l.OutputDim
+
 		if x.RequireGrad() {
-			for j := 0; j < l.InputDim; j++ {
-				dx := float32(0)
-				for i := 0; i < l.OutputDim; i++ {
-					dx += out.Grad[i] * l.Weights.Data[i*l.InputDim+j]
+			for b := 0; b < batchSize; b++ {
+				for j := 0; j < inputDim; j++ {
+					dx := float32(0)
+					for i := 0; i < outputDim; i++ {
+						dx += out.Grad[b*outputDim+i] * l.Weights.Data[i*inputDim+j]
+					}
+					x.Grad[b*inputDim+j] += dx
 				}
-				x.Grad[j] += dx
 			}
 		}
+
 		if l.Weights.RequireGrad() {
-			for i := 0; i < l.OutputDim; i++ {
-				for j := 0; j < l.InputDim; j++ {
-					l.Weights.Grad[i*l.InputDim+j] += out.Grad[i] * x.Data[j]
+			for b := 0; b < batchSize; b++ {
+				for i := 0; i < outputDim; i++ {
+					for j := 0; j < inputDim; j++ {
+						l.Weights.Grad[i*inputDim+j] += out.Grad[b*outputDim+i] * x.Data[b*inputDim+j]
+					}
 				}
 			}
 		}
 
 		if l.Bias.RequireGrad() {
-			for i := 0; i < l.OutputDim; i++ {
-				l.Bias.Grad[i] += out.Grad[i]
+			for b := 0; b < batchSize; b++ {
+				for i := 0; i < outputDim; i++ {
+					l.Bias.Grad[i] += out.Grad[b*outputDim+i]
+				}
 			}
 		}
 	}

@@ -29,7 +29,7 @@ for epoch in range(num_epochs):
     if (epoch + 1) % 10 == 0:
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
-print("weight:", model.weight) #0.6109
+print("weight:", model.weight) # 0.6109
 print("bias:", model.bias)    # -0.1250
 
 X_test = torch.randn(5, 1)
