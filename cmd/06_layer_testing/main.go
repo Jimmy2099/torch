@@ -10,6 +10,7 @@ import (
 
 func main() {
 	layer := torch.NewLinearLayer(2, 2)
+
 	layer.SetWeights([]float32{0.5, 0.5, 0.5, 0.5})
 	layer.SetBias([]float32{0, 0})
 
@@ -35,4 +36,5 @@ func main() {
 	}
 	fmt.Printf("W after update: %v\n", layer.Weights)
 	fmt.Printf("B after update: %v\n", layer.Bias)
+
 }

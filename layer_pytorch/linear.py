@@ -9,7 +9,9 @@ torch.manual_seed(42)
 X = torch.randn(100, 1)
 y = torch.sin(X)
 
-model = nn.Linear(in_features=1, out_features=1, bias=True)  # Fixed output dimension
+# minimal example only one parameter weight and bias for testing
+model = nn.Linear(in_features=1, out_features=1, bias=True)
+print(model)
 
 criterion = nn.MSELoss()
 
@@ -27,8 +29,8 @@ for epoch in range(num_epochs):
     if (epoch + 1) % 10 == 0:
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
-print("weight:", model.weight)
-print("bias:", model.bias)
+print("weight:", model.weight) #0.6109
+print("bias:", model.bias)    # -0.1250
 
 X_test = torch.randn(5, 1)
 y_real = torch.sin(X_test).numpy()
