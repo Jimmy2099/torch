@@ -1,139 +1,112 @@
 package main
 
 import (
-	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/data_store/tensor"
-	"github.com/Jimmy2099/torch/pkg/fmt"
-	math "github.com/chewxy/math32"
+	"fmt"
+	"math"
 	"math/rand"
 	"time"
+
+	"github.com/Jimmy2099/torch"
+	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/optimizer"
 )
 
-type NeuralNetwork struct {
-	Layers []torch.Layer
+type RegressionModel struct {
+	Linear1 *torch.LinearLayer
+	Relu    *torch.ReLULayer
+	Linear2 *torch.LinearLayer
 }
 
-func (nn *NeuralNetwork) Parameters() []*tensor.Tensor {
-	params := make([]*tensor.Tensor, 0)
-	for _, layer := range nn.Layers {
-		if linearLayer, ok := layer.(*torch.LinearLayer); ok {
-			params = append(params, linearLayer.Weights)
-			params = append(params, linearLayer.Bias)
+func NewRegressionModel(inputDim, hiddenDim int) *RegressionModel {
+	return &RegressionModel{
+		Linear1: torch.NewLinearLayer(inputDim, hiddenDim),
+		Relu:    torch.NewReLULayer(),
+		Linear2: torch.NewLinearLayer(hiddenDim, 1),
+	}
+}
+
+func (m *RegressionModel) Forward(x *tensor.Tensor) *tensor.Tensor {
+	x = m.Linear1.Forward(x)
+	x = m.Relu.Forward(x)
+	return m.Linear2.Forward(x)
+}
+
+func (m *RegressionModel) Parameters() []*tensor.Tensor {
+	return []*tensor.Tensor{
+		m.Linear1.Weights,
+		m.Linear1.Bias,
+		m.Linear2.Weights,
+		m.Linear2.Bias,
+	}
+}
+
+var targetFunc = func(x1, x2 float32) float32 {
+	return 3 + 2*x1 + 1.5*x2 +
+		0.5*x1*x1 - 0.8*x2*x2 +
+		0.3*x1*x1*x1
+}
+
+func generateData(numSamples int) (*tensor.Tensor, *tensor.Tensor) {
+	rand.Seed(time.Now().UnixNano())
+
+	X := make([]float32, numSamples*2)
+	y := make([]float32, numSamples)
+
+	for i := 0; i < numSamples; i++ {
+		x1 := rand.Float32()
+		x2 := rand.Float32()
+		X[i*2] = x1
+		X[i*2+1] = x2
+		y[i] = targetFunc(x1, x2)
+	}
+
+	return tensor.NewTensor(X, []int{numSamples, 2}),
+		tensor.NewTensor(y, []int{numSamples, 1})
+}
+
+func trainModel(model *RegressionModel, X, y *tensor.Tensor, epochs int, lr float32) {
+	optim := optimizer.NewSGD(model.Parameters(), lr)
+
+	for epoch := 1; epoch <= epochs; epoch++ {
+		pred := model.Forward(X)
+
+		loss := pred.LossMSE(y)
+
+		for _, p := range model.Parameters() {
+			p.ZeroGrad()
+		}
+
+		loss.Backward()
+
+		optim.Step()
+
+		if epoch%10 == 0 || epoch == 1 {
+			fmt.Printf("Epoch [%4d/%d] | Loss: %.4f\n",
+				epoch, epochs, loss.Data[0])
 		}
 	}
-	return params
-}
-
-func (nn *NeuralNetwork) ZeroGrad() {
-	for _, layer := range nn.Layers {
-		if linearLayer, ok := layer.(*torch.LinearLayer); ok {
-			linearLayer.ZeroGrad()
-		}
-	}
-}
-
-func NewNeuralNetwork(layerDims []int) *NeuralNetwork {
-	return &NeuralNetwork{
-		Layers: createLayers(layerDims),
-	}
-}
-
-func createLayers(layerDims []int) []torch.Layer {
-	layers := make([]torch.Layer, 0)
-	for i := 0; i < len(layerDims)-1; i++ {
-		layers = append(layers, torch.NewLinearLayer(layerDims[i], layerDims[i+1]))
-		if i < len(layerDims)-2 {
-			layers = append(layers, torch.NewReLULayer())
-		}
-	}
-	return layers
-}
-
-func (nn *NeuralNetwork) Forward(x *tensor.Tensor) *tensor.Tensor {
-	output := x
-	for _, layer := range nn.Layers {
-		output = layer.Forward(output)
-	}
-	return output
-}
-
-func (nn *NeuralNetwork) Backward(targets *tensor.Tensor, lr float32) {
-	lastLayer := nn.Layers[len(nn.Layers)-1].(*torch.LinearLayer)
-	output := lastLayer.Output
-
-	if !tensor.ShapeEqual(output.GetShape(), targets.GetShape()) {
-		targets = targets.Reshape(output.GetShape())
-	}
-
-	gradOutput := output.Sub(targets)
-	gradOutput = gradOutput.MulScalar(2.0 / float32(targets.GetShape()[0]))
-
-	for i := len(nn.Layers) - 1; i >= 0; i-- {
-		gradOutput = nn.Layers[i].Backward(gradOutput, lr)
-	}
-}
-
-func polynomialFeatures(X *tensor.Tensor, degree int) *tensor.Tensor {
-	numSamples, numFeatures := X.GetShape()[0], X.GetShape()[1]
-	newFeatures := numFeatures * degree
-	features := make([]float32, numSamples*newFeatures)
-
-	for s := 0; s < numSamples; s++ {
-		for f := 0; f < numFeatures; f++ {
-			val := X.Data[s*numFeatures+f]
-			for d := 1; d <= degree; d++ {
-				features[s*newFeatures+f*degree+(d-1)] = math.Pow(val, float32(d))
-			}
-		}
-	}
-	return tensor.NewTensor(features, []int{numSamples, newFeatures})
-}
-
-func targetFunc(x1, x2 float32) float32 {
-	return 3 + 2*x1 + 1.5*x2 + 0.5*x1*x1 - 0.8*x2*x2 + 0.3*x1*x1*x1
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	X, y := generateData(1000)
 
-	X_data := make([]float32, 10*2)
-	for i := range X_data {
-		X_data[i] = float32(rand.Float32())
-	}
-	X_train := tensor.NewTensor(X_data, []int{10, 2})
+	model := NewRegressionModel(2, 10)
 
-	y_data := make([]float32, 10)
-	for j := 0; j < 10; j++ {
-		x1 := X_train.Data[j*2]
-		x2 := X_train.Data[j*2+1]
-		y_data[j] = targetFunc(x1, x2)
-	}
-	y_train := tensor.NewTensor(y_data, []int{10, 1})
+	const (
+		learningRate = 0.01
+		totalEpochs  = 100
+	)
 
-	degree := 3
-	X_train_poly := polynomialFeatures(X_train, degree)
-	fmt.Printf("Training data shape: %v\n", X_train_poly.GetShape())
+	fmt.Println("=== Training Started ===")
+	trainModel(model, X, y, totalEpochs, learningRate)
+	fmt.Println("=== Training Completed ===")
 
-	model := NewNeuralNetwork([]int{6, 10, 1})
+	testX := tensor.NewTensor([]float32{0.2, 0.3}, []int{1, 2})
 
-	fmt.Println("\n=== shape Verification ===")
-	fmt.Printf("Input shape: %v\n", X_train_poly.GetShape())
-	fmt.Printf("Target shape: %v\n", y_train.GetShape())
-	sampleOutput := model.Forward(X_train_poly)
-	fmt.Printf("Model output shape: %v\n", sampleOutput.GetShape())
+	pred := model.Forward(testX)
+	actual := targetFunc(testX.Data[0], testX.Data[1])
 
-	trainer := torch.NewBasicTrainer(torch.MSE)
-	epochs := 500
-	learningRate := float32(0.0)
-
-	trainer.Train(model, X_train_poly, y_train, epochs, float32(learningRate))
-
-	test_data := []float32{0.2, 0.3}
-	test_sample := tensor.NewTensor(test_data, []int{1, 2})
-	test_poly := polynomialFeatures(test_sample, degree)
-	prediction := model.Forward(test_poly)
-
-	fmt.Printf("\nPrediction: %.4f\n", prediction.Data[0])
-	fmt.Printf("Actual value: %.4f\n", targetFunc(test_data[0], test_data[1]))
-	fmt.Printf("Error: %.4f\n", math.Abs(prediction.Data[0]-targetFunc(test_data[0], test_data[1])))
+	fmt.Printf("\nPrediction: %.4f\n", pred.Data[0])
+	fmt.Printf("Actual Value: %.4f\n", actual)
+	fmt.Printf("Absolute Error: %.4f\n", math.Abs(float64(pred.Data[0]-float32(actual))))
 }
