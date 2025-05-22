@@ -18,30 +18,21 @@ func main() {
 	for i := range x.Data {
 		y.Data[i] = float32(math.Sin(float64(x.Data[i])))
 	}
-	
-	for i := 0; i < 100; i++ {
-		out := layer.Forward(x)
-		loss := out.LossMSE(y)
-		loss.Backward()
-		layer.Weights.ZeroGrad()
-		layer.Bias.ZeroGrad()
-		fmt.Printf("Epoch %d: loss = %v\n", i, loss.Data)
-	}
-
-	out := layer.Forward(x)
-	loss := out.LossMSE(y)
-	fmt.Printf("Loss before backward: %v\n", loss)
 
 	fmt.Printf("W = %v\n", layer.Weights)
 	fmt.Printf("B = %v\n", layer.Bias)
 
-	loss.Backward()
-
 	optim := optimizer.NewSGD([]*tensor.Tensor{layer.Weights, layer.Bias}, 0.1)
-	optim.Step()
-	layer.Weights.ZeroGrad()
-	layer.Bias.ZeroGrad()
 
+	for i := 0; i < 100; i++ {
+		out := layer.Forward(x)
+		loss := out.LossMSE(y)
+		loss.Backward()
+		optim.Step()
+		layer.Weights.ZeroGrad()
+		layer.Bias.ZeroGrad()
+		fmt.Printf("Epoch %d: loss = %v\n", i, loss.Data)
+	}
 	fmt.Printf("W after update: %v\n", layer.Weights)
 	fmt.Printf("B after update: %v\n", layer.Bias)
 }
