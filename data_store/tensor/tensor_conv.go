@@ -60,7 +60,9 @@ func (t *Tensor) Transpose() *Tensor {
 	}
 
 	newShape := []int{cols, rows}
-
+	//t.Data=newData
+	//t.shape=newShape
+	//return t
 	return &Tensor{
 		Data:  newData,
 		shape: newShape,

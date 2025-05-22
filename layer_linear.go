@@ -36,6 +36,7 @@ func (l *LinearLayer) SetWeights(data []float32) {
 	copy(copiedData, data)
 
 	l.Weights = tensor.NewTensor(copiedData, []int{l.OutputDim, l.InputDim})
+	l.Weights.EnableGrad()
 }
 
 func (l *LinearLayer) SetBias(data []float32) {
@@ -47,6 +48,7 @@ func (l *LinearLayer) SetBias(data []float32) {
 	copy(copiedData, data)
 
 	l.Bias = tensor.NewTensor(copiedData, []int{l.OutputDim, 1})
+	l.Bias.EnableGrad()
 }
 
 func (l *LinearLayer) SetWeightsAndShape(data []float32, shape []int) {
@@ -81,7 +83,36 @@ func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Te
 }
 
 func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	return l.ForwardSIMD(x)
+	out := l.ForwardSIMD(x)
+	out.EnableGrad()
+	l.Weights.EnableGrad()
+	l.Bias.EnableGrad()
+	out.Parents = []*tensor.Tensor{x, l.Weights, l.Bias}
+	out.GradFn = func() {
+		if x.RequireGrad() {
+			for j := 0; j < l.InputDim; j++ {
+				dx := float32(0)
+				for i := 0; i < l.OutputDim; i++ {
+					dx += out.Grad[i] * l.Weights.Data[i*l.InputDim+j]
+				}
+				x.Grad[j] += dx
+			}
+		}
+		if l.Weights.RequireGrad() {
+			for i := 0; i < l.OutputDim; i++ {
+				for j := 0; j < l.InputDim; j++ {
+					l.Weights.Grad[i*l.InputDim+j] += out.Grad[i] * x.Data[j]
+				}
+			}
+		}
+
+		if l.Bias.RequireGrad() {
+			for i := 0; i < l.OutputDim; i++ {
+				l.Bias.Grad[i] += out.Grad[i]
+			}
+		}
+	}
+	return out
 }
 
 func (l *LinearLayer) ForwardSignalThread(x *tensor.Tensor) *tensor.Tensor {

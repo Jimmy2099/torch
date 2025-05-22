@@ -1,31 +1,30 @@
 package tensor
 
-func (t *Tensor) LossMSE(other *Tensor) float32 {
-	if other == nil {
-		panic("other tensor is nil")
+func (pred *Tensor) LossMSE(target *Tensor) *Tensor {
+	if len(pred.Data) != len(target.Data) {
+		panic("MSE: shape mismatch")
 	}
-	if t.Device != other.Device {
-		panic("tensors must be on the same device")
+	var sum float32
+	N := float32(len(pred.Data))
+	for i := range pred.Data {
+		d := pred.Data[i] - target.Data[i]
+		sum += d * d
 	}
-	if len(t.shape) != len(other.shape) {
-		panic("tensors must have the same shape")
-	}
-	for i := range t.shape {
-		if t.shape[i] != other.shape[i] {
-			panic("tensors must have the same shape")
+	lossVal := sum / N
+	out := NewTensor([]float32{lossVal}, []int{1, 1})
+	out.EnableGrad()
+
+	out.Parents = []*Tensor{pred}
+
+	out.GradFn = func() {
+		if !pred.RequiresGrad {
+			return
+		}
+		for i := range pred.Data {
+			d := pred.Data[i] - target.Data[i]
+			grad := (2 * d / N) * out.Grad[0]
+			pred.Grad[i] += grad
 		}
 	}
-	if len(t.Data) != len(other.Data) {
-		panic("data length mismatch")
-	}
-	if len(t.Data) == 0 {
-		panic("tensor is empty")
-	}
-
-	var sum float32
-	for i := range t.Data {
-		diff := t.Data[i] - other.Data[i]
-		sum += diff * diff
-	}
-	return sum / float32(len(t.Data))
+	return out
 }

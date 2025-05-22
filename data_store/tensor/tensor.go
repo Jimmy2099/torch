@@ -9,8 +9,13 @@ type Tensor struct {
 	Data   []float32
 	shape  []int
 	Device Device
-	//
-	Grad []float32
+
+	//Backward
+	Grad         []float32
+	RequiresGrad bool
+	Parents      []*Tensor
+	GradFn       func()
+	IsLeaf       bool
 }
 
 func NewTensor(data []float32, shape []int) *Tensor {
@@ -25,10 +30,17 @@ func NewTensor(data []float32, shape []int) *Tensor {
 	}
 
 	t := &Tensor{
-		Data:  data,
-		shape: shape,
+		Data:         data,
+		shape:        shape,
+		RequiresGrad: false,
 	}
 	t.Device = GetDefaultDevice()
+	return t
+}
+
+func (t *Tensor) EnableGrad() *Tensor {
+	t.RequiresGrad = true
+	t.Grad = make([]float32, len(t.Data))
 	return t
 }
 

@@ -6,9 +6,12 @@ import (
 
 type Layer interface {
 	Forward(input *tensor.Tensor) *tensor.Tensor
+
+	//DEL
 	Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor
 	ZeroGrad()
 	Parameters() []*tensor.Tensor
+	//DEL
 }
 
 type LayerLoader interface {
