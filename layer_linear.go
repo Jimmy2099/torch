@@ -3,7 +3,6 @@ package torch
 import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
-	"github.com/viterin/vek/vek32"
 	"sync"
 )
 
@@ -78,13 +77,12 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 		WeightsTransposed: false,
 	}
 }
-
-func (l *LinearLayer) Backward(gradOutput *tensor.Tensor, lr float32) *tensor.Tensor {
+func (l *LinearLayer) Backward(x *tensor.Tensor, lr float32) *tensor.Tensor {
 	return nil
 }
 
-func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
-	out := l.ForwardSIMD(x)
+func (l *LinearLayer) SetupBackward(x, out *tensor.Tensor) {
+
 	out.EnableGrad()
 	l.Weights.EnableGrad()
 	l.Bias.EnableGrad()
@@ -124,6 +122,11 @@ func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 			}
 		}
 	}
+}
+
+func (l *LinearLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
+	out := l.ForwardSignalThreadCompute(x)
+	l.SetupBackward(x, out)
 	return out
 }
 
@@ -299,52 +302,4 @@ func (l *LinearLayer) ForwardMultiThread(x *tensor.Tensor) *tensor.Tensor {
 	copy(newShape, originalShape)
 	newShape[len(newShape)-1] = l.OutputDim
 	return tensor.NewTensor(outputData, []int{batchSize, l.OutputDim}).Reshape(newShape)
-}
-
-func (l *LinearLayer) ForwardSIMD(x *tensor.Tensor) *tensor.Tensor {
-	originalShape := x.ShapeCopy()
-	if len(originalShape) == 0 {
-		panic("Input tensor shape cannot be empty")
-	}
-	inputDim := originalShape[len(originalShape)-1]
-	if inputDim != l.InputDim {
-		panic(fmt.Sprintf("Input dimension mismatch: last dimension is %d, expected %d", inputDim, l.InputDim))
-	}
-
-	flattenedBatch := 1
-	for _, dim := range originalShape[:len(originalShape)-1] {
-		flattenedBatch *= dim
-	}
-	reshapedX := x.Reshape([]int{flattenedBatch, l.InputDim})
-
-	input := reshapedX.Clone()
-	batchSize := reshapedX.GetShape()[0]
-
-	if l.WeightsTransposed == false {
-		l.Weights = l.Weights.Transpose()
-		l.WeightsTransposed = true
-	}
-
-	matmulResult := vek32.MatMul(
-		input.Data,
-		l.Weights.Data,
-		l.InputDim,
-	)
-
-	broadcastBias := make([]float32, batchSize*l.OutputDim)
-	for b := 0; b < batchSize; b++ {
-		copy(
-			broadcastBias[b*l.OutputDim:(b+1)*l.OutputDim],
-			l.Bias.Data,
-		)
-	}
-
-	outputData := vek32.Add(matmulResult, broadcastBias)
-
-	newShape := make([]int, len(originalShape))
-	copy(newShape, originalShape)
-	newShape[len(newShape)-1] = l.OutputDim
-	output := tensor.NewTensor(outputData, newShape)
-
-	return output
 }

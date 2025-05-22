@@ -4,7 +4,6 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
-	"github.com/viterin/vek/vek32"
 	"runtime"
 	"sync"
 )
@@ -67,7 +66,7 @@ func (r *RMSNorm) SetBiasAndShape(data []float32, shape []int) {
 var numCPU = runtime.NumCPU()
 
 func (r *RMSNorm) Forward(x *tensor.Tensor) *tensor.Tensor {
-	return r.ForwardSIMD(x)
+	return r.ForwardSignalThread(x)
 }
 
 func (r *RMSNorm) ForwardSignalThread(inputTensor *tensor.Tensor) *tensor.Tensor {
@@ -179,45 +178,6 @@ func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor 
 
 	wg.Wait()
 	close(sem)
-
-	return output
-}
-
-func (r *RMSNorm) ForwardSIMD(inputTensor *tensor.Tensor) *tensor.Tensor {
-	if len(inputTensor.GetShape()) == 1 {
-		inputTensor = inputTensor.Reshape([]int{1, inputTensor.GetShape()[0]})
-	}
-	if len(inputTensor.GetShape()) < 2 {
-		panic(fmt.Sprintf("Input must be at least 2D tensor, got shape: %v", inputTensor.GetShape()))
-	}
-
-	features := inputTensor.GetShape()[len(inputTensor.GetShape())-1]
-	if features != r.Weights.GetShape()[0] {
-		panic(fmt.Sprintf("Feature dimension mismatch: input has %d, weights have %d", features, r.Weights.GetShape()[0]))
-	}
-
-	r.inputCache = inputTensor
-	outputShape := inputTensor.GetShape()
-	outputData := make([]float32, len(inputTensor.Data))
-	output := tensor.NewTensor(outputData, outputShape)
-
-	batchSize := product(inputTensor.GetShape()[:len(inputTensor.GetShape())-1])
-	featureSize := features
-
-	weightsData := r.Weights.Data
-
-	for b := 0; b < batchSize; b++ {
-		start := b * featureSize
-		end := start + featureSize
-		inputBatch := inputTensor.Data[start:end]
-		outputBatch := output.Data[start:end]
-
-		sumSq := vek32.Dot(inputBatch, inputBatch)
-		rms := math.Sqrt(sumSq/float32(featureSize) + r.eps)
-
-		vek32.DivNumber_Into(outputBatch, inputBatch, rms)
-		vek32.Mul_Inplace(outputBatch, weightsData)
-	}
 
 	return output
 }
