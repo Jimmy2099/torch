@@ -34,10 +34,21 @@ func main() {
 	fmt.Printf("Weight: %v\n", layer.Weights.Data)
 	fmt.Printf("Bias: %v\n", layer.Bias.Data)
 
-	optim := optimizer.NewSGD([]*tensor.Tensor{
-		layer.Weights,
-		layer.Bias,
-	}, 0.01)
+	//optim := optimizer.NewSGD([]*tensor.Tensor{
+	//	layer.Weights,
+	//	layer.Bias,
+	//}, 0.01)
+
+	optim := optimizer.NewAdam(
+		[]*tensor.Tensor{
+			layer.Weights,
+			layer.Bias,
+		},
+		0.001,
+		0.9,
+		0.999,
+		1e-8,
+	)
 
 	numEpochs := 100
 	for epoch := 0; epoch < numEpochs; epoch++ {
