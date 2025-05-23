@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/data_store/matrix"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
@@ -27,10 +26,6 @@ type CNN struct {
 	fc2   *torch.LinearLayer
 	relu  *torch.ReLULayer
 	pool  *torch.MaxPool2DLayer
-}
-
-func (c *CNN) Parameters() []*matrix.Matrix {
-	panic("implement me")
 }
 
 func (c *CNN) Forward(x *tensor.Tensor) *tensor.Tensor {
@@ -165,9 +160,6 @@ func NewCNN() *CNN {
 	return cnn
 }
 
-func (c *CNN) Backward(targets *matrix.Matrix, lr float32) {
-}
-
 func (c *CNN) ZeroGrad() {
 	c.conv1.ZeroGrad()
 	c.fc1.ZeroGrad()
@@ -196,8 +188,8 @@ func main() {
 	for num := 0; num < len(images); num++ {
 		model := NewCNN()
 		prediction := Predict(model, images[num])
-		fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0][0])
-		result = append(result, int(prediction.Data[0][0]))
+		fmt.Println("Label:", labels[num], "prediction:", prediction.Data[0])
+		result = append(result, int(prediction.Data[0]))
 	}
 	fmt.Println("label:", labels)
 	fmt.Println("predictions:", result)
@@ -309,17 +301,12 @@ func LoadDataFromCSVDir(directory string) ([]*tensor.Tensor, []string, error) {
 	return tensors, labels, nil
 }
 
-func Predict(model *CNN, image *tensor.Tensor) *matrix.Matrix {
+func Predict(model *CNN, image *tensor.Tensor) *tensor.Tensor {
 	image = image.Reshape([]int{1, 1, 28, 28})
 	output := model.Forward(image)
 
-	outputMatrix := &matrix.Matrix{
-		Data: [][]float32{output.Data},
-		Rows: 1,
-		Cols: len(output.Data),
-	}
-
-	return outputMatrix.ArgMax()
+	output = output.Reshape([]int{1, len(output.Data)})
+	return output.ArgMax()
 }
 
 func predictPlot(imagePaths []string, predictions []int) error {
