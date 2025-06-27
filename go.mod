@@ -15,8 +15,7 @@ require (
 	github.com/x448/float16 v0.8.4
 )
 
-
 replace (
 	github.com/chewxy/math32 v1.11.1 => ./thirdparty/math32
-	gpu_hardware v0.0.0 => ./restricted/pkg/gpu
+//gpu_hardware v0.0.0 => ./restricted/pkg/gpu
 )

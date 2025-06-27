@@ -1,8 +1,9 @@
 package mnist
 
 import (
-	"github.com/Jimmy2099/torch/data_store/matrix"
-	"github.com/Jimmy2099/torch/pkg/fmt"
+	"fmt"
+	//"github.com/Jimmy2099/torch/data_store/matrix"
+	//"github.com/Jimmy2099/torch/pkg/fmt"
 	"math/rand"
 	"time"
 )

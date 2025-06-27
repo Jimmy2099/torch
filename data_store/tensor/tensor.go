@@ -2,6 +2,7 @@ package tensor
 
 import (
 	"encoding/gob"
+	"github.com/Jimmy2099/torch/data_store/compute_graph"
 	"os"
 )
 
@@ -16,6 +17,9 @@ type Tensor struct {
 	Parents      []*Tensor
 	GradFn       func()
 	IsLeaf       bool
+
+	//Compute Graph
+	compute_graph.BaseNode
 }
 
 func NewTensor(data []float32, shape []int) *Tensor {
