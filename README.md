@@ -21,4 +21,4 @@
 #### More Examples:  [README.md](images/README.md)
 
 ####  Notice
-Some parts of this project’s code may have been generated, optimized, or annotated by AI.
+Some parts of this project’s code may generated, optimized, or annotated by AI.
