@@ -9,9 +9,9 @@ import (
 func TestComputeGraph(t *testing.T) {
 	graph := NewComputationalGraph()
 
-	x := NewVariable("x", tensor.NewTensor([]float32{2.0}, []int{1}))
-	w := NewVariable("w", tensor.NewTensor([]float32{3.0}, []int{1}))
-	b := NewVariable("b", tensor.NewTensor([]float32{1.0}, []int{1}))
+	x := NewVariable("x", tensor.NewTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}))
+	w := NewVariable("w", tensor.NewTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}))
+	b := NewVariable("b", tensor.NewTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}))
 
 	graph.AddNode(x)
 	graph.AddNode(w)
@@ -34,8 +34,8 @@ func TestComputeGraph(t *testing.T) {
 	graph.Print()
 
 	learningRate := tensor.NewTensor([]float32{0.1}, []int{1})
-	w.SetValue(w.value.Sub(w.GetGrad().Multiply(learningRate)))
-	b.SetValue(b.value.Sub(b.GetGrad().Multiply(learningRate)))
+	w.SetValue(w.value.Sub(w.GetGrad().Mul(learningRate)))
+	b.SetValue(b.value.Sub(b.GetGrad().Mul(learningRate)))
 	//w.SetValue(w.value - learningRate*w.GetGrad())
 	//b.SetValue(b.value - learningRate*b.GetGrad())
 

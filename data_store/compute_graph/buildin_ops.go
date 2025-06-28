@@ -91,6 +91,6 @@ func (s *Sigmoid) Backward(grad *tensor.Tensor) {
 	output := s.Output
 	//localGrad := output * (1 - output)
 	one := tensor.Ones(output.GetShape())
-	localGrad := output.Multiply(one.Sub(output))
-	s.Children[0].Backward(grad.Multiply(localGrad))
+	localGrad := output.Mul(one.Sub(output))
+	s.Children[0].Backward(localGrad.Mul(grad))
 }
