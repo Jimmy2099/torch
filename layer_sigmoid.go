@@ -9,6 +9,7 @@ type SigmoidLayer struct {
 }
 
 func NewSigmoidLayer() *SigmoidLayer {
+	//sig := compute_graph.NewSigmoid("sigmoid", add)
 	return &SigmoidLayer{}
 }
 
@@ -22,6 +23,7 @@ func SigmoidDerivative(x float32) float32 {
 }
 
 func (s *SigmoidLayer) Forward(input *tensor.Tensor) *tensor.Tensor {
+
 	shape := input.GetShape()
 
 	outputData := make([]float32, len(input.Data))

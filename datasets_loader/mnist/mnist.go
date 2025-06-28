@@ -1,16 +1,13 @@
 package mnist
 
 import (
-	"fmt"
-	//"github.com/Jimmy2099/torch/data_store/matrix"
-	//"github.com/Jimmy2099/torch/pkg/fmt"
-	"math/rand"
-	"time"
+	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 )
 
 type MNISTData struct {
-	Images *matrix.Matrix
-	Labels *matrix.Matrix
+	Images *tensor.Tensor
+	Labels *tensor.Tensor
 }
 
 func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {
@@ -31,39 +28,41 @@ func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {
 		return nil, fmt.Errorf("labels data is nil")
 	}
 
-	imageMatrix := matrix.NewMatrixFromSlice(images)
-	labelMatrix := matrix.NewMatrixFromSlice(labels)
+	imageMatrix := tensor.NewTensorFromSlice(images)
+	labelMatrix := tensor.NewTensorFromSlice(labels)
 
 	return &MNISTData{Images: imageMatrix, Labels: labelMatrix}, nil
 }
 
 func (data *MNISTData) MiniBatch(batchSize int) []MNISTData {
-	var batches []MNISTData
-	for i := 0; i < data.Images.Rows; i += batchSize {
-		end := i + batchSize
-		if end > data.Images.Rows {
-			end = data.Images.Rows
-		}
-
-		imageBatch := data.Images.GetRows(i, end)
-		labelBatch := data.Labels.GetRows(i, end)
-
-		batches = append(batches, MNISTData{
-			Images: imageBatch,
-			Labels: labelBatch,
-		})
-	}
-	return batches
+	//var batches []MNISTData
+	//for i := 0; i < data.Images.Rows; i += batchSize {
+	//	end := i + batchSize
+	//	if end > data.Images.Rows {
+	//		end = data.Images.Rows
+	//	}
+	//
+	//	imageBatch := data.Images.GetRows(i, end)
+	//	labelBatch := data.Labels.GetRows(i, end)
+	//
+	//	batches = append(batches, MNISTData{
+	//		Images: imageBatch,
+	//		Labels: labelBatch,
+	//	})
+	//}
+	//return batches
+	return nil
 }
 
 func (data *MNISTData) Shuffle() {
-	if data.Images == nil || data.Labels == nil {
-		panic("Images or Labels are nil")
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	indices := rand.Perm(data.Images.Rows)
-
-	data.Images = data.Images.ReorderRows(indices)
-	data.Labels = data.Labels.ReorderRows(indices)
+	//TODO
+	//if data.Images == nil || data.Labels == nil {
+	//	panic("Images or Labels are nil")
+	//}
+	//
+	//rand.Seed(time.Now().UnixNano())
+	//indices := rand.Perm(data.Images.Rows)
+	//
+	//data.Images = data.Images.ReorderRows(indices)
+	//data.Labels = data.Labels.ReorderRows(indices)
 }
