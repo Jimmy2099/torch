@@ -14,3 +14,4 @@ restricted
 *.zip.*
 *.zip
 *_result.txt
+*.json

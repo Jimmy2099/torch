@@ -100,3 +100,9 @@ func (t *Tensor) Indices(i int) []int {
 	}
 	return indices
 }
+
+func (t *Tensor) Fill(value float32) {
+	for i := range t.Data {
+		t.Data[i] = value
+	}
+}
