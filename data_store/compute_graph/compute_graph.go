@@ -17,14 +17,16 @@ type Node interface {
 }
 
 type ComputationalGraph struct {
-	nodes   []Node
-	tensors map[string]*Tensor
-	output  *Tensor
+	nodes     []Node
+	tensors   map[string]*Tensor
+	output    *Tensor
+	nodeCount int
 }
 
 func NewComputationalGraph() *ComputationalGraph {
 	return &ComputationalGraph{
-		tensors: make(map[string]*Tensor),
+		tensors:   make(map[string]*Tensor),
+		nodeCount: 0,
 	}
 }
 
@@ -40,7 +42,8 @@ type Tensor struct {
 	Name  string
 	value *tensor.Tensor
 	grad  *tensor.Tensor
-	node  *Variable
+	shape []int
+	node  Node
 	graph *ComputationalGraph
 }
 
@@ -67,14 +70,14 @@ func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string)
 		Name:  name,
 		value: t,
 		grad:  grad,
+		shape: shape,
 		graph: g,
 	}
 
 	g.tensors[name] = tensor
 
-	node := &Variable{
+	node := &InputNode{
 		Name:   "input:" + name,
-		OpType: InputNode,
 		output: tensor,
 	}
 	tensor.node = node
@@ -83,103 +86,9 @@ func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string)
 	return tensor
 }
 
-//func (g *ComputationalGraph) Forward() {
-//	for _, node := range g.nodes {
-//		switch node.OpType {
-//		case InputNode:
-//		case MultiplyNode:
-//			a := node.inputs[0].value
-//			b := node.inputs[1].value
-//			output := node.output.value
-//
-//			for i := range output.Data {
-//				output.Data[i] = a.Data[i] * b.Data[i]
-//			}
-//
-//		case AddNode:
-//			a := node.inputs[0].value
-//			b := node.inputs[1].value
-//			output := node.output.value
-//
-//			for i := range output.Data {
-//				output.Data[i] = a.Data[i] + b.Data[i]
-//			}
-//		}
-//	}
-//}
-
-//func (g *ComputationalGraph) Backward() {
-//	for _, t := range g.tensors {
-//		for i := range t.grad.Data {
-//			t.grad.Data[i] = 0
-//		}
-//	}
-//
-//	if g.output != nil {
-//		for i := range g.output.grad.Data {
-//			g.output.grad.Data[i] = 1.0
-//		}
-//	} else {
-//		panic("output tensor not set")
-//	}
-//
-//	for i := len(g.nodes) - 1; i >= 0; i-- {
-//		node := g.nodes[i]
-//		if node.gradFunc != nil {
-//			node.gradFunc()
-//		}
-//	}
-//}
-
 func (t *Tensor) SetValue(value *tensor.Tensor) {
 	t.value = value
 }
-
-//func (g *ComputationalGraph) PrintGraph() {
-//	fmt.Println("Computational Graph Structure:")
-//	for _, node := range g.nodes {
-//		switch node.OpType {
-//		case InputNode:
-//			fmt.Printf("[Input] %s -> %s\n", node.Name, node.output.Name)
-//		case MultiplyNode:
-//			fmt.Printf("[Multiply] %s * %s -> %s\n",
-//				node.inputs[0].Name, node.inputs[1].Name, node.output.Name)
-//		case AddNode:
-//			fmt.Printf("[Add] %s + %s -> %s\n",
-//				node.inputs[0].Name, node.inputs[1].Name, node.output.Name)
-//		}
-//	}
-//}
-
-//func (g *ComputationalGraph) PrintDetailed() {
-//	fmt.Println("Detailed Computational Graph:")
-//	fmt.Println("Nodes:")
-//	for _, node := range g.nodes {
-//		fmt.Printf("  Node: %s (%s)\n", node.Name, node.OpType)
-//
-//		if len(node.inputs) > 0 {
-//			fmt.Println("    Inputs:")
-//			for _, input := range node.inputs {
-//				fmt.Printf("      - %s\n", input.Name)
-//			}
-//		}
-//
-//		if node.output != nil {
-//			fmt.Printf("    Output: %s\n", node.output.Name)
-//		}
-//	}
-//
-//	fmt.Println("\nTensors:")
-//	for name, tensor := range g.tensors {
-//		fmt.Printf("  Tensor: %s\n", name)
-//		fmt.Printf("    Value: %v\n", tensor.value.Data)
-//		fmt.Printf("    Grad: %v\n", tensor.grad.Data)
-//	}
-//
-//	if g.output != nil {
-//		fmt.Printf("\nOutput Tensor: %s\n", g.output.Name)
-//	}
-//}
 
 type GraphExport struct {
 	Nodes   []NodeExport   `json:"nodes"`
@@ -189,7 +98,7 @@ type GraphExport struct {
 
 type NodeExport struct {
 	Name   string   `json:"name"`
-	OpType NodeType `json:"opType"`
+	Type   string   `json:"type"`
 	Inputs []string `json:"inputs"`
 	Output string   `json:"output"`
 }
@@ -199,48 +108,6 @@ type TensorExport struct {
 	Value []float32 `json:"value"`
 	Grad  []float32 `json:"grad"`
 }
-
-//
-//func (g *ComputationalGraph) ExportToFile(filename string) error {
-//	exportData := GraphExport{
-//		Output: g.output.Name,
-//	}
-//
-//	for _, node := range g.nodes {
-//		ne := NodeExport{
-//			Name:   node.Name,
-//			OpType: node.OpType,
-//			Output: node.output.Name,
-//		}
-//
-//		for _, input := range node.inputs {
-//			ne.Inputs = append(ne.Inputs, input.Name)
-//		}
-//
-//		exportData.Nodes = append(exportData.Nodes, ne)
-//	}
-//
-//	for name, tensor := range g.tensors {
-//		te := TensorExport{
-//			Name:  name,
-//			Value: tensor.value.Data,
-//			Grad:  tensor.grad.Data,
-//		}
-//		exportData.Tensors = append(exportData.Tensors, te)
-//	}
-//
-//	data, err := json.MarshalIndent(exportData, "", "  ")
-//	if err != nil {
-//		return fmt.Errorf("failed to marshal graph: %w", err)
-//	}
-//
-//	err = os.WriteFile(filename, data, 0644)
-//	if err != nil {
-//		return fmt.Errorf("failed to write file: %w", err)
-//	}
-//
-//	return nil
-//}
 
 func LoadFromFile(filename string) (*ComputationalGraph, error) {
 	data, err := os.ReadFile(filename)
@@ -257,66 +124,62 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 
 	tensorMap := make(map[string]*Tensor)
 	for _, te := range exportData.Tensors {
-
 		t := &Tensor{
 			Name:  te.Name,
-			value: &tensor.Tensor{Data: te.Value}, // Fixed: create from exported Value
-			grad:  &tensor.Tensor{Data: te.Grad},  // Already correct
+			value: &tensor.Tensor{Data: te.Value},
+			grad:  &tensor.Tensor{Data: te.Grad},
 			graph: graph,
 		}
-
 		tensorMap[te.Name] = t
 		graph.tensors[te.Name] = t
 	}
 
 	for _, ne := range exportData.Nodes {
-		node := &Variable{
-			Name:   ne.Name,
-			OpType: ne.OpType,
-		}
-
-		if outputTensor, ok := tensorMap[ne.Output]; ok {
-			node.output = outputTensor
-			outputTensor.node = node
-		} else {
-			return nil, fmt.Errorf("output tensor %s not found for node %s", ne.Output, ne.Name)
-		}
+		var node Node
+		var inputs []*Tensor
 
 		for _, inputName := range ne.Inputs {
 			if inputTensor, ok := tensorMap[inputName]; ok {
-				node.inputs = append(node.inputs, inputTensor)
+				inputs = append(inputs, inputTensor)
 			} else {
 				return nil, fmt.Errorf("input tensor %s not found for node %s", inputName, ne.Name)
 			}
 		}
 
-		switch ne.OpType {
-		case MultiplyNode:
-			node.gradFunc = func() {
-				t := node.inputs[0]
-				other := node.inputs[1]
-				outputTensor := node.output
-				for i := range t.grad.Data {
-					t.grad.Data[i] += other.value.Data[i] * outputTensor.grad.Data[i]
-				}
-				for i := range other.grad.Data {
-					other.grad.Data[i] += t.value.Data[i] * outputTensor.grad.Data[i]
-				}
-			}
-		case AddNode:
-			node.gradFunc = func() {
-				t := node.inputs[0]
-				other := node.inputs[1]
-				outputTensor := node.output
-				for i := range t.grad.Data {
-					t.grad.Data[i] += outputTensor.grad.Data[i]
-				}
-				for i := range other.grad.Data {
-					other.grad.Data[i] += outputTensor.grad.Data[i]
-				}
-			}
+		outputTensor := tensorMap[ne.Output]
+		if outputTensor == nil {
+			return nil, fmt.Errorf("output tensor %s not found for node %s", ne.Output, ne.Name)
 		}
 
+		switch ne.Type {
+		case "Input":
+			node = &InputNode{
+				Name:   ne.Name,
+				output: outputTensor,
+			}
+		case "Multiply":
+			if len(inputs) != 2 {
+				return nil, fmt.Errorf("multiply node requires exactly 2 inputs")
+			}
+			node = &Multiply{
+				Name:     ne.Name,
+				Children: []*Tensor{inputs[0], inputs[1]},
+				output:   outputTensor,
+			}
+		case "Add":
+			if len(inputs) != 2 {
+				return nil, fmt.Errorf("add node requires exactly 2 inputs")
+			}
+			node = &Add{
+				Name:     ne.Name,
+				Children: []*Tensor{inputs[0], inputs[1]},
+				output:   outputTensor,
+			}
+		default:
+			return nil, fmt.Errorf("unknown node type: %s", ne.Type)
+		}
+
+		outputTensor.node = node
 		graph.nodes = append(graph.nodes, node)
 	}
 
@@ -333,121 +196,6 @@ func (g *ComputationalGraph) GetTensors() map[string]*Tensor {
 	return g.tensors
 }
 
-//func (g *ComputationalGraph) GetNodes() []*Variable {
-//	return g.nodes
-//}
-
-func (t *Tensor) Multiply(other *Tensor, name string) *Tensor {
-	if t.graph != other.graph {
-		panic("tensors belong to different graphs")
-	}
-	g := t.graph
-
-	if len(t.value.Data) != len(other.value.Data) {
-		panic("tensor sizes must match for multiplication")
-	}
-
-	outputValue := &tensor.Tensor{
-		Data: make([]float32, len(t.value.Data)),
-	}
-
-	gradData := make([]float32, len(outputValue.Data))
-	outputGrad := &tensor.Tensor{
-		Data: gradData,
-	}
-
-	outputTensor := &Tensor{
-		Name:  name,
-		value: outputValue,
-		grad:  outputGrad,
-		graph: g,
-	}
-
-	if _, exists := g.tensors[name]; exists {
-		panic("tensor name already exists: " + name)
-	}
-	g.tensors[name] = outputTensor
-
-	node := &Variable{
-		Name:   name,
-		OpType: MultiplyNode,
-		inputs: []*Tensor{t, other},
-		output: outputTensor,
-		gradFunc: func() {
-			for i := range t.grad.Data {
-				t.grad.Data[i] += other.value.Data[i] * outputTensor.grad.Data[i]
-			}
-
-			for i := range other.grad.Data {
-				other.grad.Data[i] += t.value.Data[i] * outputTensor.grad.Data[i]
-			}
-		},
-	}
-	outputTensor.node = node
-	g.nodes = append(g.nodes, node)
-
-	return outputTensor
-}
-
-func (t *Tensor) Add(other *Tensor, name string) *Tensor {
-	if t.graph != other.graph {
-		panic("tensors belong to different graphs")
-	}
-	g := t.graph
-
-	if len(t.value.Data) != len(other.value.Data) {
-		panic("tensor sizes must match for addition")
-	}
-
-	outputValue := &tensor.Tensor{
-		Data: make([]float32, len(t.value.Data)),
-	}
-
-	gradData := make([]float32, len(outputValue.Data))
-	outputGrad := &tensor.Tensor{
-		Data: gradData,
-	}
-
-	outputTensor := &Tensor{
-		Name:  name,
-		value: outputValue,
-		grad:  outputGrad,
-		graph: g,
-	}
-
-	if _, exists := g.tensors[name]; exists {
-		panic("tensor name already exists: " + name)
-	}
-	g.tensors[name] = outputTensor
-
-	node := &Variable{
-		Name:   name,
-		OpType: AddNode,
-		inputs: []*Tensor{t, other},
-		output: outputTensor,
-		gradFunc: func() {
-			for i := range t.grad.Data {
-				t.grad.Data[i] += outputTensor.grad.Data[i]
-			}
-
-			for i := range other.grad.Data {
-				other.grad.Data[i] += outputTensor.grad.Data[i]
-			}
-		},
-	}
-	outputTensor.node = node
-	g.nodes = append(g.nodes, node)
-
-	return outputTensor
-}
-
-//	func (g *ComputationalGraph) NewTensor(initValue *tensor.Tensor) *Variable {
-//		val := newTensor(initValue)
-//		g.AddNode(val)
-//		val.graph = g
-//		return val
-//	}
-
 func (g *ComputationalGraph) Forward() {
 	for _, node := range g.nodes {
 		node.Forward()
@@ -455,39 +203,283 @@ func (g *ComputationalGraph) Forward() {
 }
 
 func (g *ComputationalGraph) Backward() {
-	for i := len(g.nodes) - 1; i >= 0; i-- {
-		if v, ok := g.nodes[i].(*Variable); ok {
-			v.resetGrad()
+	// Reset gradients
+	for _, node := range g.nodes {
+		if inputNode, ok := node.(*InputNode); ok {
+			inputNode.resetGrad()
 		}
 	}
 
+	// Perform backward pass starting from output
 	for i := len(g.nodes) - 1; i >= 0; i-- {
-		if _, ok := g.nodes[i].(*Variable); !ok {
+		if _, ok := g.nodes[i].(*InputNode); !ok {
 			g.nodes[i].Backward(tensor.NewTensor([]float32{1.0}, []int{1}))
 			break
 		}
 	}
 }
 
-//func (g *ComputationalGraph) AddNode(node Node) {
-//	g.nodes = append(g.nodes, node)
-//}
+func (t *Tensor) Multiply(other *Tensor, names ...string) *Tensor {
+	var name string
+	if len(names) > 0 {
+		name = names[0]
+	} else {
+		name = fmt.Sprintf("multiply_%d", t.graph.nodeCount)
+		t.graph.nodeCount++
+	}
 
-//func (g *ComputationalGraph) Print() {
-//	fmt.Println("Computational Graph:")
-//	for _, node := range g.nodes {
-//		children := ""
-//		for _, child := range node.GetChildren() {
-//			children += child.GetName() + " "
-//		}
-//		if children == "" {
-//			children = "None"
-//		}
-//		fmt.Printf("Node: %v | Output: %v | Grad: %v | Children: %s\n",
-//			node.GetName(), node.GetOutput(), node.GetGrad(), children)
-//	}
-//}
+	if t.graph != other.graph {
+		panic("tensors belong to different graphs")
+	}
+	g := t.graph
 
-func newTensor(initValue *tensor.Tensor) *Variable {
-	return newVariable(initValue)
+	multNode := NewMultiply(name, t, other)
+
+	outputTensor := &Tensor{
+		Name:  name,
+		value: tensor.NewTensor([]float32{}, []int{0}),
+		grad:  tensor.NewTensor([]float32{}, []int{0}),
+		shape: t.shape,
+		graph: g,
+		node:  multNode,
+	}
+
+	if _, exists := g.tensors[name]; exists {
+		panic("tensor name already exists: " + name)
+	}
+	g.tensors[name] = outputTensor
+	multNode.output = outputTensor
+	g.nodes = append(g.nodes, multNode)
+	return outputTensor
+}
+
+func (t *Tensor) Add(other *Tensor, names ...string) *Tensor {
+	var name string
+	if len(names) > 0 {
+		name = names[0]
+	} else {
+		name = fmt.Sprintf("add_%d", t.graph.nodeCount)
+		t.graph.nodeCount++
+	}
+
+	if t.graph != other.graph {
+		panic("tensors belong to different graphs")
+	}
+	g := t.graph
+
+	addNode := NewAdd(name, t, other)
+
+	outputTensor := &Tensor{
+		Name:  name,
+		value: tensor.NewTensor([]float32{}, []int{0}),
+		grad:  tensor.NewTensor([]float32{}, []int{0}),
+		shape: t.shape,
+		graph: g,
+		node:  addNode,
+	}
+
+	if _, exists := g.tensors[name]; exists {
+		panic("tensor name already exists: " + name)
+	}
+	g.tensors[name] = outputTensor
+	addNode.output = outputTensor
+	g.nodes = append(g.nodes, addNode)
+	return outputTensor
+}
+
+// Input Node
+type InputNode struct {
+	Name   string
+	Output *tensor.Tensor
+	Grad   *tensor.Tensor
+	output *Tensor
+}
+
+func (n *InputNode) Forward() *tensor.Tensor {
+	n.Output = n.output.value
+	return n.Output
+}
+
+func (n *InputNode) Backward(grad *tensor.Tensor) {
+	if n.Grad == nil {
+		n.Grad = tensor.NewTensor(make([]float32, len(n.Output.Data)), n.output.shape)
+	}
+
+	for i := range n.Grad.Data {
+		n.Grad.Data[i] += grad.Data[i]
+	}
+}
+
+func (n *InputNode) GetOutput() *tensor.Tensor { return n.Output }
+func (n *InputNode) GetGrad() *tensor.Tensor   { return n.Grad }
+func (n *InputNode) GetName() string           { return n.Name }
+func (n *InputNode) GetChildren() []Node       { return nil }
+func (n *InputNode) resetGrad() {
+	n.Grad = tensor.NewTensor(make([]float32, len(n.Output.Data)), n.output.shape)
+}
+
+// Multiply Node
+type Multiply struct {
+	Name     string
+	Children []*Tensor
+	Output   *tensor.Tensor
+	Grad     *tensor.Tensor
+	output   *Tensor
+}
+
+func NewMultiply(name string, a, b *Tensor) *Multiply {
+	return &Multiply{
+		Name:     name,
+		Children: []*Tensor{a, b},
+	}
+}
+
+func (m *Multiply) Forward() *tensor.Tensor {
+	a := m.Children[0].node.Forward()
+	b := m.Children[1].node.Forward()
+
+	if len(a.Data) != len(b.Data) {
+		panic("tensor sizes must match for multiplication")
+	}
+
+	result := a.Mul(b)
+	m.Output = result
+	if m.output != nil {
+		m.output.value = result
+	}
+	return result
+}
+
+func (m *Multiply) Backward(grad *tensor.Tensor) {
+	m.Grad = grad
+	a := m.Children[0].node.GetOutput()
+	b := m.Children[1].node.GetOutput()
+
+	// Calculate gradients for children
+	gradA := b.Mul(grad)
+	gradB := a.Mul(grad)
+
+	// Propagate gradients
+	m.Children[0].node.Backward(gradA)
+	m.Children[1].node.Backward(gradB)
+}
+
+func (m *Multiply) GetOutput() *tensor.Tensor { return m.Output }
+func (m *Multiply) GetGrad() *tensor.Tensor   { return m.Grad }
+func (m *Multiply) GetName() string           { return m.Name }
+func (m *Multiply) GetChildren() []Node {
+	nodes := make([]Node, len(m.Children))
+	for i, t := range m.Children {
+		nodes[i] = t.node
+	}
+	return nodes
+}
+
+// Add Node
+type Add struct {
+	Name     string
+	Children []*Tensor
+	Output   *tensor.Tensor
+	Grad     *tensor.Tensor
+	output   *Tensor
+}
+
+func NewAdd(name string, a, b *Tensor) *Add {
+	return &Add{
+		Name:     name,
+		Children: []*Tensor{a, b},
+	}
+}
+
+func (a *Add) Forward() *tensor.Tensor {
+	x := a.Children[0].node.Forward()
+	y := a.Children[1].node.Forward()
+
+	if len(x.Data) != len(y.Data) {
+		panic("tensor sizes must match for addition")
+	}
+
+	result := x.Add(y)
+	a.Output = result
+	if a.output != nil {
+		a.output.value = result
+	}
+	return result
+}
+
+func (a *Add) Backward(grad *tensor.Tensor) {
+	a.Grad = grad
+	// Propagate the same gradient to both children
+	a.Children[0].node.Backward(grad)
+	a.Children[1].node.Backward(grad)
+}
+
+func (a *Add) GetOutput() *tensor.Tensor { return a.Output }
+func (a *Add) GetGrad() *tensor.Tensor   { return a.Grad }
+func (a *Add) GetName() string           { return a.Name }
+func (a *Add) GetChildren() []Node {
+	nodes := make([]Node, len(a.Children))
+	for i, t := range a.Children {
+		nodes[i] = t.node
+	}
+	return nodes
+}
+
+func (g *ComputationalGraph) PrintStructure() {
+	fmt.Println("\nComputation Graph Structure:")
+	if g.output == nil {
+		fmt.Println("  (No output node set)")
+		return
+	}
+
+	// 从输出节点开始递归打印
+	g.printNode(g.output.node, "", true, true)
+}
+
+func (g *ComputationalGraph) printNode(node Node, prefix string, isLast bool, isRoot bool) {
+	// 确定当前节点的连接符号
+	var connector string
+	if isRoot {
+		connector = "Output: "
+	} else if isLast {
+		connector = "└── "
+	} else {
+		connector = "├── "
+	}
+
+	// 打印当前节点
+	fmt.Printf("%s%s%s (%s)\n", prefix, connector, node.GetName(), getNodeType(node))
+
+	// 获取子节点
+	children := node.GetChildren()
+	if len(children) == 0 {
+		return
+	}
+
+	// 更新前缀用于子节点
+	newPrefix := prefix
+	if isLast {
+		newPrefix += "    "
+	} else {
+		newPrefix += "│   "
+	}
+
+	// 递归打印子节点
+	for i, child := range children {
+		isLastChild := i == len(children)-1
+		g.printNode(child, newPrefix, isLastChild, false)
+	}
+}
+
+func getNodeType(node Node) string {
+	switch node.(type) {
+	case *InputNode:
+		return "Input"
+	case *Multiply:
+		return "Multiply"
+	case *Add:
+		return "Add"
+	default:
+		return "Operation"
+	}
 }

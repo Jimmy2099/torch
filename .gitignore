@@ -15,3 +15,4 @@ restricted
 *.zip
 *_result.txt
 *.json
+*.bin
