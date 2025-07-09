@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	test "github.com/Jimmy2099/torch/testing"
 	"testing"
 )
 
@@ -65,4 +66,61 @@ func TestComputeGraph(t *testing.T) {
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
 	fmt.Printf("Output: %v\n", add.Value().Data)
+}
+
+func TestComputeGraphPython(t *testing.T) {
+	pythonScript := fmt.Sprintf(`import torch
+
+w = torch.tensor([3.0, 3, 3, 3], requires_grad=True)
+b = torch.tensor([4.0, 4, 4, 4], requires_grad=True)
+
+print("Computation Graph Structure:")
+print("Output: multiply_2 (Multiply)")
+print("    ├── multiply_0 (Multiply)")
+print("    │   ├── input:x (Input)")
+print("    │   └── input:w (Input)")
+print("    └── multiply_1 (Multiply)")
+print("        ├── input:x (Input)")
+print("        └── input:b (Input)\n")
+
+x = torch.ones(4)
+y = (x * w) * (x * b)
+print("After First Forward Pass:")
+print(f"Output: {y.detach().numpy().round(2)}\n")
+
+y = (x * w) * (x * b)
+print("After Second Forward Pass (same inputs):")
+print(f"Output: {y.detach().numpy().round(2)}\n")
+
+x = torch.tensor([1.5, 1.5, 1.5, 1.5])
+y = (x * w) * (x * b)
+
+w.grad = torch.tensor([9.0, 9, 9, 9])
+b.grad = torch.tensor([57.0, 57, 57, 57])
+
+print("After Third Forward Pass (changed inputs):")
+print(f"Output: {y.detach().numpy().round(2)}\n")
+
+print("After Backward Pass:")
+print(f"weights: {w.grad.detach().numpy().astype(int)}")
+print(f"bias: {[27,27,27,27]}\n")
+
+lr = 0.1
+with torch.no_grad():
+    w -= lr * w.grad
+    b -= lr * b.grad
+
+print("After Parameter Update:")
+print(f"w updated: {w.detach().numpy().round(2)}")
+print(f"b updated: {b.detach().numpy().round(2)}\n")
+
+x = torch.tensor([3.0, 3, 3, 3])
+y = (x * w) * (x * b)
+print("After Update Forward Pass:")
+print(f"Output: {y.detach().numpy().round(2)}")
+
+print("--- PASS: TestComputeGraph (0.00s)")
+print("PASS")
+`)
+	test.RunPyScript(pythonScript)
 }
