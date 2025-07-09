@@ -115,3 +115,83 @@ func (t *Tensor) Negate() *Tensor {
 	}
 	return NewTensor(data, t.shape)
 }
+
+func (t *Tensor) Permute(perm []int) *Tensor {
+	// Validate permutation
+	if len(perm) != len(t.shape) {
+		panic(fmt.Sprintf("Permutation length %d doesn't match tensor dimensions %d", len(perm), len(t.shape)))
+	}
+
+	// Check for valid permutation indices
+	seen := make(map[int]bool)
+	for _, p := range perm {
+		if p < 0 || p >= len(t.shape) {
+			panic(fmt.Sprintf("Invalid permutation index: %d", p))
+		}
+		if seen[p] {
+			panic("Duplicate permutation index")
+		}
+		seen[p] = true
+	}
+
+	// Calculate new shape
+	newShape := make([]int, len(perm))
+	for i, idx := range perm {
+		newShape[i] = t.shape[idx]
+	}
+
+	// Handle zero-size tensor
+	if len(t.Data) == 0 {
+		return &Tensor{
+			Data:  []float32{},
+			shape: newShape,
+		}
+	}
+
+	// Calculate strides for original tensor
+	oldStrides := make([]int, len(t.shape))
+	stride := 1
+	for i := len(t.shape) - 1; i >= 0; i-- {
+		oldStrides[i] = stride
+		stride *= t.shape[i]
+	}
+
+	// Calculate strides for new tensor
+	newStrides := make([]int, len(perm))
+	stride = 1
+	for i := len(perm) - 1; i >= 0; i-- {
+		newStrides[i] = stride
+		stride *= newShape[i]
+	}
+
+	// Create new data array
+	totalSize := 1
+	for _, s := range newShape {
+		totalSize *= s
+	}
+	newData := make([]float32, totalSize)
+
+	// Rearrange data according to permutation
+	for i := 0; i < totalSize; i++ {
+		origIndex := 0
+		remainder := i
+		for j := 0; j < len(perm); j++ {
+			coord := remainder / newStrides[j]
+			remainder = remainder % newStrides[j]
+			origIndex += coord * oldStrides[perm[j]]
+		}
+		newData[i] = t.Data[origIndex]
+	}
+
+	return &Tensor{
+		Data:  newData,
+		shape: newShape,
+	}
+}
+
+func (t *Tensor) Transpose() *Tensor {
+	if len(t.shape) != 2 {
+		panic("Transpose without permutation requires 2D tensor")
+	}
+	return t.Permute([]int{1, 0})
+}

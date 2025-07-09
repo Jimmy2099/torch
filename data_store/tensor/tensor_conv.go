@@ -44,7 +44,7 @@ func (t *Tensor) Multiply(other *Tensor) *Tensor {
 	}
 }
 
-func (t *Tensor) Transpose() *Tensor {
+func (t *Tensor) BakTranspose() *Tensor {
 	if len(t.shape) != 2 {
 		panic("Transpose only works for 2D tensors")
 	}
