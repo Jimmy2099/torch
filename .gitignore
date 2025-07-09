@@ -16,3 +16,4 @@ restricted
 *_result.txt
 *.json
 *.bin
+*.onnx

@@ -59,8 +59,8 @@ func TestComputeGraph(t *testing.T) {
 	}
 
 	fmt.Println("\nAfter Parameter Update:")
-	fmt.Printf("w updated: %v\n", w.Value().Data)
-	fmt.Printf("b updated: %v\n", b.Value().Data)
+	fmt.Printf("weight updated: %v\n", w.Value().Data)
+	fmt.Printf("bias updated: %v\n", b.Value().Data)
 
 	// 更新参数后的前向传播
 	graph.Forward()
@@ -111,8 +111,8 @@ with torch.no_grad():
     b -= lr * b.grad
 
 print("After Parameter Update:")
-print(f"w updated: {w.detach().numpy().round(2)}")
-print(f"b updated: {b.detach().numpy().round(2)}\n")
+print(f"weight updated: {w.detach().numpy().round(2)}")
+print(f"bias updated: {b.detach().numpy().round(2)}\n")
 
 x = torch.tensor([3.0, 3, 3, 3])
 y = (x * w) * (x * b)

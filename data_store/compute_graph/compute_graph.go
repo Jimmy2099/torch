@@ -298,7 +298,6 @@ func (t *Tensor) Add(other *Tensor, names ...string) *Tensor {
 	return outputTensor
 }
 
-// Input Node
 type InputNode struct {
 	Name   string
 	Output *tensor.Tensor
@@ -340,7 +339,6 @@ func (n *InputNode) GetGrad() *tensor.Tensor   { return n.Grad }
 func (n *InputNode) GetName() string           { return n.Name }
 func (n *InputNode) GetChildren() []Node       { return nil }
 
-// Multiply Node
 type Multiply struct {
 	Name     string
 	Children []*Tensor
@@ -402,7 +400,6 @@ func (m *Multiply) GetChildren() []Node {
 func (m *Multiply) GetOutput() *tensor.Tensor { return m.output.value }
 func (a *Add) GetOutput() *tensor.Tensor      { return a.output.value }
 
-// Add Node
 type Add struct {
 	Name     string
 	Children []*Tensor
@@ -439,8 +436,6 @@ func (a *Add) ResetComputed() {
 }
 
 func (a *Add) Backward(grad *tensor.Tensor) {
-	//a.Grad = grad
-	// Propagate the same gradient to both children
 	a.Children[0].node.Backward(grad)
 	a.Children[1].node.Backward(grad)
 }
