@@ -71,7 +71,7 @@ func TestNewTensor(t *testing.T) {
 	tensor := NewTensor(data, shape)
 
 	if tensor == nil {
-		t.Fatal("NewTensor returned nil")
+		t.Fatal("NewGraphTensor returned nil")
 	}
 	if !reflect.DeepEqual(tensor.shape, shape) {
 		t.Errorf("Expected shape %v, got %v", shape, tensor.shape)

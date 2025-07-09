@@ -81,16 +81,16 @@ func TestNewTensor2(t *testing.T) {
 			defer func() {
 				r := recover()
 				if r != nil && !tc.expectPanic {
-					t.Errorf("NewTensor panicked unexpectedly: %v", r)
+					t.Errorf("NewGraphTensor panicked unexpectedly: %v", r)
 				} else if r == nil && tc.expectPanic {
-					t.Errorf("NewTensor was expected to panic but did not")
+					t.Errorf("NewGraphTensor was expected to panic but did not")
 				}
 			}()
 
 			actualTensor := NewTensor(tc.inputData, tc.inputShape)
 
 			if actualTensor == nil {
-				t.Fatalf("NewTensor returned nil, expected a valid *Tensor")
+				t.Fatalf("NewGraphTensor returned nil, expected a valid *Tensor")
 			}
 
 			if !reflect.DeepEqual(actualTensor.Data, tc.expectedTensor.Data) {

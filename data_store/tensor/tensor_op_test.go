@@ -292,7 +292,7 @@ func TestTensor_Reshape(t *testing.T) {
 					t.Errorf("Reshape(%v) resulted in shape %v, want %v", tt.reshapeTo, tensor.shape, tt.wantShape)
 				}
 				if len(currentData) > 0 && len(tensor.Data) > 0 && currentData[0] != tensor.Data[0] {
-					t.Logf("Warning: Data slice pointers differ after reshape (original=%p, tensor=%p). This might be okay if NewTensor copies data, but Reshape itself should not reallocate.", &currentData[0], &tensor.Data[0])
+					t.Logf("Warning: Data slice pointers differ after reshape (original=%p, tensor=%p). This might be okay if NewGraphTensor copies data, but Reshape itself should not reallocate.", &currentData[0], &tensor.Data[0])
 				}
 				if !floatsEqual(tensor.Data, currentData, epsilon) {
 					t.Errorf("Reshape changed tensor data content: got %v, expected %v", tensor.Data, currentData)
