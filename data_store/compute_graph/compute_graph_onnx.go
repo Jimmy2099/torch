@@ -17,21 +17,36 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	model.ProducerName = "Torch Go"
 	model.ProducerVersion = "0.1"
 
-	// 创建操作集导入信息
+	// Create operator set import info
 	opset := &onnx_ir.OperatorSetIdProto{
 		Domain:  "",
 		Version: 11, // ONNX opset version
 	}
 	model.OpsetImport = []*onnx_ir.OperatorSetIdProto{opset}
 
-	// 创建图结构
+	// Create graph structure
 	graph := &onnx_ir.GraphProto{
 		Name: "computational_graph",
 	}
 
-	// 1. 添加所有张量作为输入
+	// Track tensors produced by operations
+	producedTensors := make(map[string]bool)
+	for _, node := range g.nodes {
+		switch n := node.(type) {
+		case *Multiply:
+			producedTensors[n.output.Name] = true
+		case *Add:
+			producedTensors[n.output.Name] = true
+		}
+	}
+
+	// 1. Add ONLY initial tensors as inputs (exclude intermediates)
 	for name, t := range g.tensors {
-		// 创建类型信息
+		if producedTensors[name] {
+			continue // Skip tensors produced by operations
+		}
+
+		// Create type info
 		tensorType := &onnx_ir.TypeProto_Tensor{
 			ElemType: int32(onnx_ir.TensorProto_FLOAT),
 			Shape: &onnx_ir.TensorShapeProto{
@@ -47,7 +62,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			}
 		}
 
-		// 创建值信息
+		// Create value info
 		valueInfo := &onnx_ir.ValueInfoProto{
 			Name: name,
 			Type: &onnx_ir.TypeProto{
@@ -57,40 +72,52 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			},
 		}
 
-		// 添加到图输入
+		// Add to graph inputs
 		graph.Input = append(graph.Input, valueInfo)
 	}
 
-	// 2. 添加所有操作节点
+	// Node name counter for uniqueness
+	nodeCounter := make(map[string]int)
+
+	// 2. Add all operation nodes
 	for _, node := range g.nodes {
+		var onnxNode *onnx_ir.NodeProto
+		var nodeType string
+
 		switch n := node.(type) {
 		case *Multiply:
-			onnxNode := &onnx_ir.NodeProto{
+			nodeType = "Mul"
+			onnxNode = &onnx_ir.NodeProto{
 				OpType: "Mul",
 				Input:  []string{n.Children[0].Name, n.Children[1].Name},
 				Output: []string{n.output.Name},
-				Name:   n.Name,
 			}
-			graph.Node = append(graph.Node, onnxNode)
-
 		case *Add:
-			onnxNode := &onnx_ir.NodeProto{
+			nodeType = "Add"
+			onnxNode = &onnx_ir.NodeProto{
 				OpType: "Add",
 				Input:  []string{n.Children[0].Name, n.Children[1].Name},
 				Output: []string{n.output.Name},
-				Name:   n.Name,
 			}
-			graph.Node = append(graph.Node, onnxNode)
-
 		case *InputNode:
-			// 输入节点不需要特殊操作，已作为输入添加
+			// Skip input nodes (no operation needed)
+			continue
+		default:
+			return nil, fmt.Errorf("unsupported node type: %T", node)
 		}
+
+		// Generate unique node name
+		count := nodeCounter[nodeType]
+		nodeCounter[nodeType] = count + 1
+		onnxNode.Name = fmt.Sprintf("%s_%d", nodeType, count)
+
+		graph.Node = append(graph.Node, onnxNode)
 	}
 
-	// 3. 添加输出张量
+	// 3. Add output tensor
 	if g.output != nil {
 		outputInfo := &onnx_ir.ValueInfoProto{
-			Name: g.output.Name,
+			Name: g.output.Name, // Use original name
 			Type: &onnx_ir.TypeProto{
 				Value: &onnx_ir.TypeProto_TensorType{
 					TensorType: &onnx_ir.TypeProto_Tensor{
@@ -103,6 +130,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			},
 		}
 
+		// Set output shape
 		for i, dim := range g.output.shape {
 			outputInfo.Type.GetTensorType().Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
