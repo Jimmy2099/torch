@@ -9,9 +9,9 @@ import (
 func TestComputeGraph(t *testing.T) {
 	graph := NewComputationalGraph()
 
-	x := graph.NewTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
-	w := graph.NewTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
-	b := graph.NewTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
+	x := graph.NewGraphTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
+	w := graph.NewGraphTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
+	b := graph.NewGraphTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
 
 	wx := x.Multiply(w)
 	xb := x.Multiply(b)
@@ -128,9 +128,9 @@ print("PASS")
 func TestExportONNX(t *testing.T) {
 	graph := NewComputationalGraph()
 
-	x := graph.NewTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
-	w := graph.NewTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
-	b := graph.NewTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
+	x := graph.NewGraphTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
+	w := graph.NewGraphTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
+	b := graph.NewGraphTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
 
 	wx := x.Multiply(w)
 	xb := x.Multiply(b)
@@ -190,7 +190,8 @@ func TestExportONNX(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(onnxModel)
+
+	fmt.Println(onnxModel.model.ProducerName)
 	onnxModel.SaveONNX("model.onnx")
 }
 

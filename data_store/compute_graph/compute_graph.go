@@ -17,27 +17,27 @@ type Node interface {
 
 type ComputationalGraph struct {
 	nodes     []Node
-	tensors   map[string]*Tensor
-	output    *Tensor
+	tensors   map[string]*GraphTensor
+	output    *GraphTensor
 	nodeCount int
 }
 
 func NewComputationalGraph() *ComputationalGraph {
 	return &ComputationalGraph{
-		tensors:   make(map[string]*Tensor),
+		tensors:   make(map[string]*GraphTensor),
 		nodeCount: 0,
 	}
 }
 
-func (g *ComputationalGraph) SetOutput(t *Tensor) {
+func (g *ComputationalGraph) SetOutput(t *GraphTensor) {
 	g.output = t
 }
 
-func (g *ComputationalGraph) GetOutput() *Tensor {
+func (g *ComputationalGraph) GetOutput() *GraphTensor {
 	return g.output
 }
 
-type Tensor struct {
+type GraphTensor struct {
 	Name     string
 	value    *tensor.Tensor
 	grad     *tensor.Tensor
@@ -47,15 +47,15 @@ type Tensor struct {
 	computed bool
 }
 
-func (t *Tensor) Value() *tensor.Tensor {
+func (t *GraphTensor) Value() *tensor.Tensor {
 	return t.value
 }
 
-func (t *Tensor) Grad() *tensor.Tensor {
+func (t *GraphTensor) Grad() *tensor.Tensor {
 	return t.grad
 }
 
-func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string) *Tensor {
+func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name string) *GraphTensor {
 	t := tensor.NewTensor(data, shape)
 	if _, exists := g.tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -64,7 +64,7 @@ func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string)
 	gradData := make([]float32, len(t.Data))
 	grad := tensor.NewTensor(gradData, shape)
 
-	tensor := &Tensor{
+	tensor := &GraphTensor{
 		Name:     name,
 		value:    t,
 		grad:     grad,
@@ -85,7 +85,7 @@ func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string)
 	return tensor
 }
 
-func (t *Tensor) SetValue(value *tensor.Tensor) {
+func (t *GraphTensor) SetValue(value *tensor.Tensor) {
 	t.value = value
 }
 
@@ -121,9 +121,9 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 
 	graph := NewComputationalGraph()
 
-	tensorMap := make(map[string]*Tensor)
+	tensorMap := make(map[string]*GraphTensor)
 	for _, te := range exportData.Tensors {
-		t := &Tensor{
+		t := &GraphTensor{
 			Name:  te.Name,
 			value: &tensor.Tensor{Data: te.Value},
 			grad:  &tensor.Tensor{Data: te.Grad},
@@ -135,7 +135,7 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 
 	for _, ne := range exportData.Nodes {
 		var node Node
-		var inputs []*Tensor
+		var inputs []*GraphTensor
 
 		for _, inputName := range ne.Inputs {
 			if inputTensor, ok := tensorMap[inputName]; ok {
@@ -162,7 +162,7 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 			}
 			node = &Multiply{
 				Name:     ne.Name,
-				Children: []*Tensor{inputs[0], inputs[1]},
+				Children: []*GraphTensor{inputs[0], inputs[1]},
 				output:   outputTensor,
 			}
 		case "Add":
@@ -171,7 +171,7 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 			}
 			node = &Add{
 				Name:     ne.Name,
-				Children: []*Tensor{inputs[0], inputs[1]},
+				Children: []*GraphTensor{inputs[0], inputs[1]},
 				output:   outputTensor,
 			}
 		default:
@@ -191,7 +191,7 @@ func LoadFromFile(filename string) (*ComputationalGraph, error) {
 	return graph, nil
 }
 
-func (g *ComputationalGraph) GetTensors() map[string]*Tensor {
+func (g *ComputationalGraph) GetTensors() map[string]*GraphTensor {
 	return g.tensors
 }
 
@@ -230,7 +230,7 @@ func (g *ComputationalGraph) Backward() {
 	g.output.node.Backward(gradTensor)
 }
 
-func (t *Tensor) Multiply(other *Tensor, names ...string) *Tensor {
+func (t *GraphTensor) Multiply(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
 		name = names[0]
@@ -246,7 +246,7 @@ func (t *Tensor) Multiply(other *Tensor, names ...string) *Tensor {
 
 	multNode := NewMultiply(name, t, other)
 
-	outputTensor := &Tensor{
+	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
@@ -264,7 +264,7 @@ func (t *Tensor) Multiply(other *Tensor, names ...string) *Tensor {
 	return outputTensor
 }
 
-func (t *Tensor) Add(other *Tensor, names ...string) *Tensor {
+func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
 		name = names[0]
@@ -280,7 +280,7 @@ func (t *Tensor) Add(other *Tensor, names ...string) *Tensor {
 
 	addNode := NewAdd(name, t, other)
 
-	outputTensor := &Tensor{
+	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
@@ -302,7 +302,7 @@ type InputNode struct {
 	Name   string
 	Output *tensor.Tensor
 	Grad   *tensor.Tensor
-	output *Tensor
+	output *GraphTensor
 }
 
 func (n *InputNode) Forward() *tensor.Tensor {
@@ -341,14 +341,14 @@ func (n *InputNode) GetChildren() []Node       { return nil }
 
 type Multiply struct {
 	Name     string
-	Children []*Tensor
-	output   *Tensor
+	Children []*GraphTensor
+	output   *GraphTensor
 }
 
-func NewMultiply(name string, a, b *Tensor) *Multiply {
+func NewMultiply(name string, a, b *GraphTensor) *Multiply {
 	return &Multiply{
 		Name:     name,
-		Children: []*Tensor{a, b},
+		Children: []*GraphTensor{a, b},
 	}
 }
 
@@ -402,14 +402,14 @@ func (a *Add) GetOutput() *tensor.Tensor      { return a.output.value }
 
 type Add struct {
 	Name     string
-	Children []*Tensor
-	output   *Tensor
+	Children []*GraphTensor
+	output   *GraphTensor
 }
 
-func NewAdd(name string, a, b *Tensor) *Add {
+func NewAdd(name string, a, b *GraphTensor) *Add {
 	return &Add{
 		Name:     name,
-		Children: []*Tensor{a, b},
+		Children: []*GraphTensor{a, b},
 	}
 }
 
