@@ -1,6 +1,8 @@
 module softrender
 
-go 1.23.7
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/Jimmy2099/torch v0.0.0-20250403061702-b4f02e7526ec
@@ -35,6 +37,6 @@ require (
 )
 
 replace (
-	gitlab.com/brickhill/site/fauxgl v0.0.0-20200818143847-27cddc103802 => github.com/thedenbruh/brickgl v0.0.0-20231013201946-d440f553eda2
 	github.com/Jimmy2099/torch v0.0.0-20250403061702-b4f02e7526ec => ../../../
+	gitlab.com/brickhill/site/fauxgl v0.0.0-20200818143847-27cddc103802 => github.com/thedenbruh/brickgl v0.0.0-20231013201946-d440f553eda2
 )
