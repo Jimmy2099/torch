@@ -193,3 +193,31 @@ func TestExportONNX(t *testing.T) {
 	fmt.Println(onnxModel)
 	onnxModel.SaveONNX("model.onnx")
 }
+
+func TestExportONNXPython(t *testing.T) {
+	pythonScript := fmt.Sprintf(`import onnxruntime as ort
+import numpy as np
+
+model_path = "model.onnx"
+session = ort.InferenceSession(model_path)
+
+print("input:")
+for i, input in enumerate(session.get_inputs()):
+    print(f"{i}: name={input.name}, shape={input.shape}, type={input.type}")
+
+for i, output in enumerate(session.get_outputs()):
+    print(f"{i}: name={output.name}, shape={output.shape}, type={output.type}")
+
+x = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32).reshape(2, 2)
+w = np.array([3.0, 3.0, 3.0, 3.0], dtype=np.float32).reshape(2, 2)
+b = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32).reshape(2, 2)
+
+input_dict = {"x": x, "w": w, "b": b}
+
+outputs = session.run(output_names=["multiply_2"], input_feed=input_dict)
+
+print("\nresult:")
+print(outputs[0])
+`)
+	test.RunPyScript(pythonScript)
+}
