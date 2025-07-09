@@ -10,10 +10,9 @@ import (
 type Node interface {
 	Forward() *tensor.Tensor
 	Backward(grad *tensor.Tensor)
-	GetOutput() *tensor.Tensor
-	GetGrad() *tensor.Tensor
 	GetName() string
 	GetChildren() []Node
+	ResetComputed()
 }
 
 type ComputationalGraph struct {
@@ -39,12 +38,13 @@ func (g *ComputationalGraph) GetOutput() *Tensor {
 }
 
 type Tensor struct {
-	Name  string
-	value *tensor.Tensor
-	grad  *tensor.Tensor
-	shape []int
-	node  Node
-	graph *ComputationalGraph
+	Name     string
+	value    *tensor.Tensor
+	grad     *tensor.Tensor
+	shape    []int
+	node     Node
+	graph    *ComputationalGraph
+	computed bool
 }
 
 func (t *Tensor) Value() *tensor.Tensor {
@@ -62,16 +62,15 @@ func (g *ComputationalGraph) NewTensor(data []float32, shape []int, name string)
 	}
 
 	gradData := make([]float32, len(t.Data))
-	grad := &tensor.Tensor{
-		Data: gradData,
-	}
+	grad := tensor.NewTensor(gradData, shape)
 
 	tensor := &Tensor{
-		Name:  name,
-		value: t,
-		grad:  grad,
-		shape: shape,
-		graph: g,
+		Name:     name,
+		value:    t,
+		grad:     grad,
+		shape:    shape,
+		graph:    g,
+		computed: false,
 	}
 
 	g.tensors[name] = tensor
@@ -198,25 +197,37 @@ func (g *ComputationalGraph) GetTensors() map[string]*Tensor {
 
 func (g *ComputationalGraph) Forward() {
 	for _, node := range g.nodes {
-		node.Forward()
+		node.ResetComputed()
+	}
+
+	if g.output != nil {
+		g.output.node.Forward()
 	}
 }
 
 func (g *ComputationalGraph) Backward() {
-	// Reset gradients
 	for _, node := range g.nodes {
 		if inputNode, ok := node.(*InputNode); ok {
 			inputNode.resetGrad()
 		}
 	}
 
-	// Perform backward pass starting from output
-	for i := len(g.nodes) - 1; i >= 0; i-- {
-		if _, ok := g.nodes[i].(*InputNode); !ok {
-			g.nodes[i].Backward(tensor.NewTensor([]float32{1.0}, []int{1}))
-			break
-		}
+	if g.output == nil {
+		return
 	}
+
+	outputShape := g.output.value.GetShape()
+	num := 1
+	for _, dim := range outputShape {
+		num *= dim
+	}
+	gradData := make([]float32, num)
+	for i := range gradData {
+		gradData[i] = 1.0
+	}
+	gradTensor := tensor.NewTensor(gradData, outputShape)
+
+	g.output.node.Backward(gradTensor)
 }
 
 func (t *Tensor) Multiply(other *Tensor, names ...string) *Tensor {
@@ -296,34 +307,43 @@ type InputNode struct {
 }
 
 func (n *InputNode) Forward() *tensor.Tensor {
-	n.Output = n.output.value
-	return n.Output
+	if n.output.computed {
+		return n.output.value
+	}
+	n.output.computed = true
+	return n.output.value
 }
 
 func (n *InputNode) Backward(grad *tensor.Tensor) {
-	if n.Grad == nil {
-		n.Grad = tensor.NewTensor(make([]float32, len(n.Output.Data)), n.output.shape)
+	if n.output.grad == nil {
+		n.output.grad = tensor.NewTensor(
+			make([]float32, len(n.output.value.Data)),
+			n.output.value.GetShape(),
+		)
 	}
 
-	for i := range n.Grad.Data {
-		n.Grad.Data[i] += grad.Data[i]
+	for i := range grad.Data {
+		n.output.grad.Data[i] += grad.Data[i]
 	}
 }
 
-func (n *InputNode) GetOutput() *tensor.Tensor { return n.Output }
+func (n *InputNode) resetGrad() {
+	n.output.grad = tensor.NewTensor(make([]float32, len(n.output.value.Data)), n.output.value.GetShape())
+}
+
+func (n *InputNode) ResetComputed() {
+	n.output.computed = false
+}
+
+func (n *InputNode) GetOutput() *tensor.Tensor { return n.output.value }
 func (n *InputNode) GetGrad() *tensor.Tensor   { return n.Grad }
 func (n *InputNode) GetName() string           { return n.Name }
 func (n *InputNode) GetChildren() []Node       { return nil }
-func (n *InputNode) resetGrad() {
-	n.Grad = tensor.NewTensor(make([]float32, len(n.Output.Data)), n.output.shape)
-}
 
 // Multiply Node
 type Multiply struct {
 	Name     string
 	Children []*Tensor
-	Output   *tensor.Tensor
-	Grad     *tensor.Tensor
 	output   *Tensor
 }
 
@@ -335,6 +355,10 @@ func NewMultiply(name string, a, b *Tensor) *Multiply {
 }
 
 func (m *Multiply) Forward() *tensor.Tensor {
+	if m.output.computed {
+		return m.output.value
+	}
+
 	a := m.Children[0].node.Forward()
 	b := m.Children[1].node.Forward()
 
@@ -343,30 +367,31 @@ func (m *Multiply) Forward() *tensor.Tensor {
 	}
 
 	result := a.Mul(b)
-	m.Output = result
-	if m.output != nil {
-		m.output.value = result
-	}
+	m.output.value = result
+	m.output.computed = true
 	return result
 }
 
+func (m *Multiply) ResetComputed() {
+	m.output.computed = false
+}
+
 func (m *Multiply) Backward(grad *tensor.Tensor) {
-	m.Grad = grad
-	a := m.Children[0].node.GetOutput()
-	b := m.Children[1].node.GetOutput()
+	aVal := m.Children[0].value
+	bVal := m.Children[1].value
 
-	// Calculate gradients for children
-	gradA := b.Mul(grad)
-	gradB := a.Mul(grad)
+	if aVal == nil || bVal == nil || grad == nil {
+		panic("nil tensor in Multiply backward pass")
+	}
 
-	// Propagate gradients
+	gradA := bVal.Mul(grad)
+	gradB := aVal.Mul(grad)
+
 	m.Children[0].node.Backward(gradA)
 	m.Children[1].node.Backward(gradB)
 }
 
-func (m *Multiply) GetOutput() *tensor.Tensor { return m.Output }
-func (m *Multiply) GetGrad() *tensor.Tensor   { return m.Grad }
-func (m *Multiply) GetName() string           { return m.Name }
+func (m *Multiply) GetName() string { return m.Name }
 func (m *Multiply) GetChildren() []Node {
 	nodes := make([]Node, len(m.Children))
 	for i, t := range m.Children {
@@ -374,13 +399,13 @@ func (m *Multiply) GetChildren() []Node {
 	}
 	return nodes
 }
+func (m *Multiply) GetOutput() *tensor.Tensor { return m.output.value }
+func (a *Add) GetOutput() *tensor.Tensor      { return a.output.value }
 
 // Add Node
 type Add struct {
 	Name     string
 	Children []*Tensor
-	Output   *tensor.Tensor
-	Grad     *tensor.Tensor
 	output   *Tensor
 }
 
@@ -392,6 +417,10 @@ func NewAdd(name string, a, b *Tensor) *Add {
 }
 
 func (a *Add) Forward() *tensor.Tensor {
+	if a.output.computed {
+		return a.output.value
+	}
+
 	x := a.Children[0].node.Forward()
 	y := a.Children[1].node.Forward()
 
@@ -400,23 +429,23 @@ func (a *Add) Forward() *tensor.Tensor {
 	}
 
 	result := x.Add(y)
-	a.Output = result
-	if a.output != nil {
-		a.output.value = result
-	}
+	a.output.value = result
+	a.output.computed = true
 	return result
 }
 
+func (a *Add) ResetComputed() {
+	a.output.computed = false
+}
+
 func (a *Add) Backward(grad *tensor.Tensor) {
-	a.Grad = grad
+	//a.Grad = grad
 	// Propagate the same gradient to both children
 	a.Children[0].node.Backward(grad)
 	a.Children[1].node.Backward(grad)
 }
 
-func (a *Add) GetOutput() *tensor.Tensor { return a.Output }
-func (a *Add) GetGrad() *tensor.Tensor   { return a.Grad }
-func (a *Add) GetName() string           { return a.Name }
+func (a *Add) GetName() string { return a.Name }
 func (a *Add) GetChildren() []Node {
 	nodes := make([]Node, len(a.Children))
 	for i, t := range a.Children {
@@ -432,12 +461,10 @@ func (g *ComputationalGraph) PrintStructure() {
 		return
 	}
 
-	// 从输出节点开始递归打印
 	g.printNode(g.output.node, "", true, true)
 }
 
 func (g *ComputationalGraph) printNode(node Node, prefix string, isLast bool, isRoot bool) {
-	// 确定当前节点的连接符号
 	var connector string
 	if isRoot {
 		connector = "Output: "
@@ -447,16 +474,13 @@ func (g *ComputationalGraph) printNode(node Node, prefix string, isLast bool, is
 		connector = "├── "
 	}
 
-	// 打印当前节点
 	fmt.Printf("%s%s%s (%s)\n", prefix, connector, node.GetName(), getNodeType(node))
 
-	// 获取子节点
 	children := node.GetChildren()
 	if len(children) == 0 {
 		return
 	}
 
-	// 更新前缀用于子节点
 	newPrefix := prefix
 	if isLast {
 		newPrefix += "    "
@@ -464,7 +488,6 @@ func (g *ComputationalGraph) printNode(node Node, prefix string, isLast bool, is
 		newPrefix += "│   "
 	}
 
-	// 递归打印子节点
 	for i, child := range children {
 		isLastChild := i == len(children)-1
 		g.printNode(child, newPrefix, isLastChild, false)
