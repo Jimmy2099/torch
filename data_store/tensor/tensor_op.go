@@ -106,3 +106,12 @@ func (t *Tensor) Fill(value float32) {
 		t.Data[i] = value
 	}
 }
+
+func (t *Tensor) Negate() *Tensor {
+	data := make([]float32, len(t.Data))
+	copy(data, t.Data)
+	for i := 0; i < len(data); i++ {
+		data[i] = -data[i]
+	}
+	return NewTensor(data, t.shape)
+}

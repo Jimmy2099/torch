@@ -22,23 +22,19 @@ func TestComputeGraph(t *testing.T) {
 	fmt.Println("Computation Graph Structure:")
 	graph.PrintStructure()
 
-	// 第一次前向传播
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
 	fmt.Printf("Output: %v\n", add.Value().Data)
 
-	// 第二次前向传播（相同输入）
 	graph.Forward()
 	fmt.Println("\nAfter Second Forward Pass (same inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data) // 应相同
+	fmt.Printf("Output: %v\n", add.Value().Data)
 
-	// 修改输入值
 	x.Value().Data = []float32{3.0, 3.0, 3.0, 3.0}
 
-	// 第三次前向传播（新输入）
 	graph.Forward()
 	fmt.Println("\nAfter Third Forward Pass (changed inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data) // 应不同
+	fmt.Printf("Output: %v\n", add.Value().Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
@@ -62,7 +58,6 @@ func TestComputeGraph(t *testing.T) {
 	fmt.Printf("weight updated: %v\n", w.Value().Data)
 	fmt.Printf("bias updated: %v\n", b.Value().Data)
 
-	// 更新参数后的前向传播
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
 	fmt.Printf("Output: %v\n", add.Value().Data)
@@ -141,23 +136,19 @@ func TestExportONNX(t *testing.T) {
 	fmt.Println("Computation Graph Structure:")
 	graph.PrintStructure()
 
-	// 第一次前向传播
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
 	fmt.Printf("Output: %v\n", add.Value().Data)
 
-	// 第二次前向传播（相同输入）
 	graph.Forward()
 	fmt.Println("\nAfter Second Forward Pass (same inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data) // 应相同
+	fmt.Printf("Output: %v\n", add.Value().Data)
 
-	// 修改输入值
 	x.Value().Data = []float32{3.0, 3.0, 3.0, 3.0}
 
-	// 第三次前向传播（新输入）
 	graph.Forward()
 	fmt.Println("\nAfter Third Forward Pass (changed inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data) // 应不同
+	fmt.Printf("Output: %v\n", add.Value().Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
@@ -181,7 +172,6 @@ func TestExportONNX(t *testing.T) {
 	fmt.Printf("weight updated: %v\n", w.Value().Data)
 	fmt.Printf("bias updated: %v\n", b.Value().Data)
 
-	// 更新参数后的前向传播
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
 	fmt.Printf("Output: %v\n", add.Value().Data)
