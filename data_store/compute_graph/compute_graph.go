@@ -398,7 +398,8 @@ func (m *Multiply) GetChildren() []Node {
 	return nodes
 }
 func (m *Multiply) GetOutput() *tensor.Tensor { return m.output.value }
-func (a *Add) GetOutput() *tensor.Tensor      { return a.output.value }
+
+func (a *Add) GetOutput() *tensor.Tensor { return a.output.value }
 
 type Add struct {
 	Name     string
@@ -441,6 +442,7 @@ func (a *Add) Backward(grad *tensor.Tensor) {
 }
 
 func (a *Add) GetName() string { return a.Name }
+
 func (a *Add) GetChildren() []Node {
 	nodes := make([]Node, len(a.Children))
 	for i, t := range a.Children {

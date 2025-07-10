@@ -37,6 +37,10 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			producedTensors[n.output.Name] = true
 		case *Add:
 			producedTensors[n.output.Name] = true
+		case *Sub:
+			producedTensors[n.output.Name] = true
+		case *Div:
+			producedTensors[n.output.Name] = true
 		}
 	}
 
@@ -96,6 +100,20 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			nodeType = "Add"
 			onnxNode = &onnx_ir.NodeProto{
 				OpType: "Add",
+				Input:  []string{n.Children[0].Name, n.Children[1].Name},
+				Output: []string{n.output.Name},
+			}
+		case *Sub:
+			nodeType = "Sub"
+			onnxNode = &onnx_ir.NodeProto{
+				OpType: "Sub",
+				Input:  []string{n.Children[0].Name, n.Children[1].Name},
+				Output: []string{n.output.Name},
+			}
+		case *Div:
+			nodeType = "Div"
+			onnxNode = &onnx_ir.NodeProto{
+				OpType: "Div",
 				Input:  []string{n.Children[0].Name, n.Children[1].Name},
 				Output: []string{n.output.Name},
 			}
