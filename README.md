@@ -4,7 +4,7 @@
 
 # Inference Compute Runtime Support 
 - **Built-in Inference Computing Engine (CPU AGPL Available / GPU Close Source)**
-- **ONNX Runtime (WIP)**
+- **[ONNX Runtime](https://github.com/onnx/onnx/blob/main/docs/Operators.md) (Version 7 WIP)**
 
 #### llama3 example with gpu acceleration built on top of this framework
 <table>
