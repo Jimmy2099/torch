@@ -6,15 +6,15 @@ import (
 )
 
 type Sub struct {
-	Name     string
-	Children []*GraphTensor
-	output   *GraphTensor
+	OPS
 }
 
 func NewSub(name string, a, b *GraphTensor) *Sub {
 	return &Sub{
-		Name:     name,
-		Children: []*GraphTensor{a, b},
+		OPS{
+			Name:     name,
+			Children: []*GraphTensor{a, b},
+		},
 	}
 }
 
@@ -36,10 +36,6 @@ func (m *Sub) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Sub) ResetComputed() {
-	m.output.computed = false
-}
-
 func (m *Sub) Backward(grad *tensor.Tensor) {
 	aVal := m.Children[0].value
 	bVal := m.Children[1].value
@@ -54,18 +50,6 @@ func (m *Sub) Backward(grad *tensor.Tensor) {
 	m.Children[0].node.Backward(gradA)
 	m.Children[1].node.Backward(gradB)
 }
-
-func (m *Sub) GetName() string { return m.Name }
-
-func (m *Sub) GetChildren() []Node {
-	nodes := make([]Node, len(m.Children))
-	for i, t := range m.Children {
-		nodes[i] = t.node
-	}
-	return nodes
-}
-
-func (m *Sub) GetOutput() *tensor.Tensor { return m.output.value }
 
 func (t *GraphTensor) Sub(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
