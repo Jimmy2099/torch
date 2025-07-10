@@ -689,3 +689,41 @@ func (t *Tensor) Sigmoid() *Tensor {
 	}
 	return &Tensor{Data: data, shape: t.shape}
 }
+
+// Exp TODO TestCaseCheck
+func (t *Tensor) Exp() *Tensor {
+	newData := make([]float32, len(t.Data))
+
+	for i, val := range t.Data {
+		newData[i] = math.Exp(val)
+	}
+
+	newShape := make([]int, len(t.shape))
+	copy(newShape, t.shape)
+
+	return &Tensor{
+		Data:  newData,
+		shape: newShape,
+	}
+}
+
+// Log TODO TestCaseCheck
+func (t *Tensor) Log() *Tensor {
+	if len(t.Data) == 0 {
+		panic("tensor is empty")
+	}
+
+	logData := make([]float32, len(t.Data))
+
+	for i, v := range t.Data {
+		if v <= 0 {
+			panic("tensor contains non-positive value(s)")
+		}
+		logData[i] = math.Log(v)
+	}
+
+	return &Tensor{
+		Data:  logData,
+		shape: t.shape,
+	}
+}
