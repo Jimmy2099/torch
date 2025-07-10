@@ -15,7 +15,7 @@ func (m *OPS) GetName() string { return m.Name }
 func (m *OPS) GetChildren() []Node {
 	nodes := make([]Node, len(m.Children))
 	for i, t := range m.Children {
-		nodes[i] = t.node
+		nodes[i] = t.Node
 	}
 	return nodes
 }

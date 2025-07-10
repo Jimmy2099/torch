@@ -55,17 +55,17 @@ func TestSub(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
-	fmt.Printf("Output: %v\n", result.Value().Data)
+	fmt.Printf("Output: %v\n", result.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Second Forward Pass (same inputs):")
-	fmt.Printf("Output: %v\n", result.Value().Data)
+	fmt.Printf("Output: %v\n", result.value.Data)
 
-	x.Value().Data = []float32{3.0, 3.0, 3.0, 3.0}
+	x.value.Data = []float32{3.0, 3.0, 3.0, 3.0}
 
 	graph.Forward()
 	fmt.Println("\nAfter Third Forward Pass (changed inputs):")
-	fmt.Printf("Output: %v\n", result.Value().Data)
+	fmt.Printf("Output: %v\n", result.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
@@ -73,25 +73,25 @@ func TestSub(t *testing.T) {
 	fmt.Printf("bias: %v\n", b.Grad().Data)
 
 	learningRate := float32(0.1)
-	wData := w.Value().Data
+	wData := w.value.Data
 	wGrad := w.Grad().Data
 	for i := range wData {
 		wData[i] -= learningRate * wGrad[i]
 	}
 
-	bData := b.Value().Data
+	bData := b.value.Data
 	bGrad := b.Grad().Data
 	for i := range bData {
 		bData[i] -= learningRate * bGrad[i]
 	}
 
 	fmt.Println("\nAfter Parameter Update:")
-	fmt.Printf("weight updated: %v\n", w.Value().Data)
-	fmt.Printf("bias updated: %v\n", b.Value().Data)
+	fmt.Printf("weight updated: %v\n", w.value.Data)
+	fmt.Printf("bias updated: %v\n", b.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
-	fmt.Printf("Output: %v\n", result.Value().Data)
+	fmt.Printf("Output: %v\n", result.value.Data)
 
 	onnxModel, err := graph.ToONNXModel()
 	if err != nil {

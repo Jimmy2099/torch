@@ -18,7 +18,7 @@ func TestReciprocal(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Reciprocal: %v\n", reciprocal.Value().Data)
+	fmt.Printf("Reciprocal: %v\n", reciprocal.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")

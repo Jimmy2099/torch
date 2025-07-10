@@ -22,8 +22,8 @@ func TestExp(t *testing.T) {
 	// Forward pass
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass (Exp):")
-	fmt.Printf("Input: %v\n", input.Value().Data)
-	fmt.Printf("Exp Result: %v\n", expResult.Value().Data)
+	fmt.Printf("Input: %v\n", input.value.Data)
+	fmt.Printf("Exp Result: %v\n", expResult.value.Data)
 
 	// Validate results
 	expected := []float32{
@@ -32,7 +32,7 @@ func TestExp(t *testing.T) {
 		float32(math.Exp(0.0)),
 		float32(math.Exp(-1.0)),
 	}
-	validateResults(t, "Exp forward", expResult.Value().Data, expected)
+	validateResults(t, "Exp forward", expResult.value.Data, expected)
 
 	// Backward pass
 	graph.Backward()

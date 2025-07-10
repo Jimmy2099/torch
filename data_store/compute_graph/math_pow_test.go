@@ -23,9 +23,9 @@ func TestPow(t *testing.T) {
 	// Forward pass
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass (Pow):")
-	fmt.Printf("Base: %v\n", base.Value().Data)
-	fmt.Printf("Exponent: %v\n", exponent.Value().Data)
-	fmt.Printf("Pow Result: %v\n", powerResult.Value().Data)
+	fmt.Printf("Base: %v\n", base.value.Data)
+	fmt.Printf("Exponent: %v\n", exponent.value.Data)
+	fmt.Printf("Pow Result: %v\n", powerResult.value.Data)
 
 	// Validate results
 	expected := []float32{
@@ -34,7 +34,7 @@ func TestPow(t *testing.T) {
 		float32(math.Pow(4.0, 0.5)),
 		float32(math.Pow(1.0, 10.0)),
 	}
-	validateResults(t, "Pow forward", powerResult.Value().Data, expected)
+	validateResults(t, "Pow forward", powerResult.value.Data, expected)
 
 	// Backward pass
 	graph.Backward()

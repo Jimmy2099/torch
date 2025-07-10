@@ -13,8 +13,8 @@ func TestNeg(t *testing.T) {
 	// Forward pass
 	graph.Forward()
 	expected := []float32{-2, 3, -0.5}
-	if !compareSlices(output.Value().Data, expected) {
-		t.Errorf("Forward pass failed. Expected %v, got %v", expected, output.Value().Data)
+	if !compareSlices(output.value.Data, expected) {
+		t.Errorf("Forward pass failed. Expected %v, got %v", expected, output.value.Data)
 	}
 
 	// Backward pass
