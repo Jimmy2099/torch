@@ -6,16 +6,7 @@ import (
 )
 
 type Div struct {
-	Name     string
-	Children []*GraphTensor
-	output   *GraphTensor
-}
-
-func NewDiv(name string, a, b *GraphTensor) *Div {
-	return &Div{
-		Name:     name,
-		Children: []*GraphTensor{a, b},
-	}
+	OPS
 }
 
 func (m *Div) Forward() *tensor.Tensor {
@@ -34,10 +25,6 @@ func (m *Div) Forward() *tensor.Tensor {
 	m.output.value = result
 	m.output.computed = true
 	return result
-}
-
-func (m *Div) ResetComputed() {
-	m.output.computed = false
 }
 
 func (m *Div) Backward(grad *tensor.Tensor) {
@@ -65,18 +52,6 @@ func (m *Div) Backward(grad *tensor.Tensor) {
 	m.Children[0].node.Backward(gradA)
 	m.Children[1].node.Backward(gradB)
 }
-
-func (m *Div) GetName() string { return m.Name }
-
-func (m *Div) GetChildren() []Node {
-	nodes := make([]Node, len(m.Children))
-	for i, t := range m.Children {
-		nodes[i] = t.node
-	}
-	return nodes
-}
-
-func (m *Div) GetOutput() *tensor.Tensor { return m.output.value }
 
 func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
@@ -110,4 +85,13 @@ func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 	node.output = outputTensor
 	g.nodes = append(g.nodes, node)
 	return outputTensor
+}
+
+func NewDiv(name string, a, b *GraphTensor) *Div {
+	return &Div{
+		OPS{
+			Name:     name,
+			Children: []*GraphTensor{a, b},
+		},
+	}
 }
