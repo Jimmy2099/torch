@@ -3,7 +3,6 @@ package compute_graph
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"math"
 )
 
 type Sqrt struct {
@@ -15,14 +14,8 @@ func (m *Sqrt) Forward() *tensor.Tensor {
 		return m.output.value
 	}
 	input := m.Children[0].node.Forward()
-	data := make([]float32, len(input.Data))
-	for i, v := range input.Data {
-		if v < 0 {
-			panic("sqrt input must be non-negative")
-		}
-		data[i] = float32(math.Sqrt(float64(v)))
-	}
-	m.output.value = tensor.NewTensor(data, input.GetShape())
+	out := input.Clone().Sqrt()
+	m.output.value = tensor.NewTensor(out.Data, input.GetShape())
 	m.output.computed = true
 	return m.output.value
 }
