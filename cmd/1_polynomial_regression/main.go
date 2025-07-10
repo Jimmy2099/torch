@@ -107,6 +107,6 @@ func main() {
 	actual := targetFunc(testX.Data[0], testX.Data[1])
 
 	fmt.Printf("\nPrediction: %.4f\n", pred.Data[0])
-	fmt.Printf("Actual Value: %.4f\n", actual)
+	fmt.Printf("Actual value: %.4f\n", actual)
 	fmt.Printf("Absolute Error: %.4f\n", math.Abs(float64(pred.Data[0]-float32(actual))))
 }

@@ -408,7 +408,7 @@ func TestTensor_ShapeCopy(t *testing.T) {
 		assertShapeEqual(t, tsr.shape, originalShape)
 	})
 
-	t.Run("Zero Value Dimensions", func(t *testing.T) {
+	t.Run("Zero value Dimensions", func(t *testing.T) {
 		tsr := NewTensor([]float32{}, []int{0})
 		copyShape := tsr.ShapeCopy()
 		assertShapeEqual(t, copyShape, []int{0})

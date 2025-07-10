@@ -14,8 +14,8 @@ func (m *Div) Forward() *tensor.Tensor {
 		return m.output.value
 	}
 
-	a := m.Children[0].node.Forward()
-	b := m.Children[1].node.Forward()
+	a := m.Children[0].Node.Forward()
+	b := m.Children[1].Node.Forward()
 
 	if len(a.Data) != len(b.Data) {
 		panic("tensor sizes must match for division")
@@ -49,8 +49,8 @@ func (m *Div) Backward(grad *tensor.Tensor) {
 	oneOverBSquared := ones.Copy().Div(bSquared)
 	gradB := oneOverBSquared.Mul(aVal).Mul(grad).Negate()
 
-	m.Children[0].node.Backward(gradA)
-	m.Children[1].node.Backward(gradB)
+	m.Children[0].Node.Backward(gradA)
+	m.Children[1].Node.Backward(gradB)
 }
 
 func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
@@ -58,14 +58,14 @@ func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("div_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("div_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
 
-	if t.graph != other.graph {
+	if t.Graph != other.Graph {
 		panic("tensors belong to different graphs")
 	}
-	g := t.graph
+	g := t.Graph
 
 	node := NewDiv(name, t, other)
 
@@ -73,17 +73,17 @@ func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		shape: t.shape,
-		graph: g,
-		node:  node,
+		Shape: t.Shape,
+		Graph: g,
+		Node:  node,
 	}
 
-	if _, exists := g.tensors[name]; exists {
+	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
 	}
-	g.tensors[name] = outputTensor
+	g.Tensors[name] = outputTensor
 	node.output = outputTensor
-	g.nodes = append(g.nodes, node)
+	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
 

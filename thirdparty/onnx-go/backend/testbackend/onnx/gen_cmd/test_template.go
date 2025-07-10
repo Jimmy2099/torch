@@ -197,14 +197,14 @@ return &testbackend.TestCase{
 		      &ir.ValueInfoProto{
 			      Name: "{{ .Name }}",
 			      Type: &ir.TypeProto{
-				      Value: &ir.TypeProto_TensorType{
+				      value: &ir.TypeProto_TensorType{
 					      TensorType: &ir.TypeProto_Tensor{
 						      ElemType: {{ .ElemType }},
 						      Shape: &ir.TensorShapeProto{
 							      Dim: []*ir.TensorShapeProto_Dimension{
 								      {{ range .Dims }}
 								      &ir.TensorShapeProto_Dimension{
-									      Value: &ir.TensorShapeProto_Dimension_DimValue{
+									      value: &ir.TensorShapeProto_Dimension_DimValue{
 									      DimValue: {{ . }},
 									      },
 								      },
@@ -222,14 +222,14 @@ return &testbackend.TestCase{
 		      &ir.ValueInfoProto{
 			      Name: "{{ .Name }}",
 			      Type: &ir.TypeProto{
-				      Value: &ir.TypeProto_TensorType{
+				      value: &ir.TypeProto_TensorType{
 					      TensorType: &ir.TypeProto_Tensor{
 						      ElemType: {{ .ElemType }},
 						      Shape: &ir.TensorShapeProto{
 							      Dim: []*ir.TensorShapeProto_Dimension{
 								      {{ range .Dims }}
 								      &ir.TensorShapeProto_Dimension{
-									      Value: &ir.TensorShapeProto_Dimension_DimValue{
+									      value: &ir.TensorShapeProto_Dimension_DimValue{
 									      DimValue: {{ . }},
 									      },
 								      },
@@ -248,14 +248,14 @@ return &testbackend.TestCase{
 		      &ir.ValueInfoProto{
 			      Name: "{{ .Name }}",
 			      Type: &ir.TypeProto{
-				      Value: &ir.TypeProto_TensorType{
+				      value: &ir.TypeProto_TensorType{
 					      TensorType: &ir.TypeProto_Tensor{
 						      ElemType: {{ .ElemType }},
 						      Shape: &ir.TensorShapeProto{
 							      Dim: []*ir.TensorShapeProto_Dimension{
 								      {{ range .Dims }}
 								      &ir.TensorShapeProto_Dimension{
-									      Value: &ir.TensorShapeProto_Dimension_DimValue{
+									      value: &ir.TensorShapeProto_Dimension_DimValue{
 									      DimValue: {{ . }},
 									      },
 								      },

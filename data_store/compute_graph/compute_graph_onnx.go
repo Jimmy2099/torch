@@ -31,7 +31,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 
 	// Track tensors produced by operations
 	producedTensors := make(map[string]bool)
-	for _, node := range g.nodes {
+	for _, node := range g.Nodes {
 		switch n := node.(type) {
 		case *Multiply:
 			producedTensors[n.output.Name] = true
@@ -45,7 +45,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	}
 
 	// 1. Add ONLY initial tensors as inputs (exclude intermediates)
-	for name, t := range g.tensors {
+	for name, t := range g.Tensors {
 		if producedTensors[name] {
 			continue // Skip tensors produced by operations
 		}
@@ -54,11 +54,11 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		tensorType := &onnx_ir.TypeProto_Tensor{
 			ElemType: int32(onnx_ir.TensorProto_FLOAT),
 			Shape: &onnx_ir.TensorShapeProto{
-				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.shape)),
+				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.Shape)),
 			},
 		}
 
-		for i, dim := range t.shape {
+		for i, dim := range t.Shape {
 			tensorType.Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),
@@ -84,7 +84,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	nodeCounter := make(map[string]int)
 
 	// 2. Add all operation nodes
-	for _, node := range g.nodes {
+	for _, node := range g.Nodes {
 		var onnxNode *onnx_ir.NodeProto
 		var nodeType string
 
@@ -141,7 +141,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 					TensorType: &onnx_ir.TypeProto_Tensor{
 						ElemType: int32(onnx_ir.TensorProto_FLOAT),
 						Shape: &onnx_ir.TensorShapeProto{
-							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.shape)),
+							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.Shape)),
 						},
 					},
 				},
@@ -149,7 +149,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		}
 
 		// Set output shape
-		for i, dim := range g.output.shape {
+		for i, dim := range g.output.Shape {
 			outputInfo.Type.GetTensorType().Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),

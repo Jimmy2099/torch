@@ -18,7 +18,7 @@ func TestCeil(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Ceil: %v\n", ceil.Value().Data)
+	fmt.Printf("Ceil: %v\n", ceil.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")

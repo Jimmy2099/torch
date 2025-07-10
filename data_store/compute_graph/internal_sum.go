@@ -23,7 +23,7 @@ func (s *Sum) Forward() *tensor.Tensor {
 		return s.output.value
 	}
 
-	a := s.Children[0].node.Forward()
+	a := s.Children[0].Node.Forward()
 
 	sum := float32(0)
 	for _, val := range a.Data {
@@ -48,7 +48,7 @@ func (s *Sum) Backward(grad *tensor.Tensor) {
 	}
 
 	gradTensor := tensor.NewTensor(gradData, s.Children[0].value.GetShape())
-	s.Children[0].node.Backward(gradTensor)
+	s.Children[0].Node.Backward(gradTensor)
 }
 
 func (s *Sum) ResetComputed() {
@@ -59,7 +59,7 @@ func (s *Sum) GetName() string { return s.Name }
 func (s *Sum) GetChildren() []Node {
 	nodes := make([]Node, len(s.Children))
 	for i, t := range s.Children {
-		nodes[i] = t.node
+		nodes[i] = t.Node
 	}
 	return nodes
 }
@@ -69,10 +69,10 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("sum_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("sum_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
-	g := t.graph
+	g := t.Graph
 
 	sumNode := NewSum(name, t)
 
@@ -80,13 +80,13 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{0}, []int{1}), // Initialize with scalar
 		grad:  tensor.NewTensor([]float32{0}, []int{1}),
-		shape: []int{1},
-		graph: g,
-		node:  sumNode,
+		Shape: []int{1},
+		Graph: g,
+		Node:  sumNode,
 	}
 
-	g.tensors[name] = outputTensor
+	g.Tensors[name] = outputTensor
 	sumNode.output = outputTensor
-	g.nodes = append(g.nodes, sumNode)
+	g.Nodes = append(g.Nodes, sumNode)
 	return outputTensor
 }

@@ -24,17 +24,17 @@ func TestComputeGraph(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Second Forward Pass (same inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
-	x.Value().Data = []float32{3.0, 3.0, 3.0, 3.0}
+	x.value.Data = []float32{3.0, 3.0, 3.0, 3.0}
 
 	graph.Forward()
 	fmt.Println("\nAfter Third Forward Pass (changed inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
@@ -42,25 +42,25 @@ func TestComputeGraph(t *testing.T) {
 	fmt.Printf("bias: %v\n", b.Grad().Data)
 
 	learningRate := float32(0.1)
-	wData := w.Value().Data
+	wData := w.value.Data
 	wGrad := w.Grad().Data
 	for i := range wData {
 		wData[i] -= learningRate * wGrad[i]
 	}
 
-	bData := b.Value().Data
+	bData := b.value.Data
 	bGrad := b.Grad().Data
 	for i := range bData {
 		bData[i] -= learningRate * bGrad[i]
 	}
 
 	fmt.Println("\nAfter Parameter Update:")
-	fmt.Printf("weight updated: %v\n", w.Value().Data)
-	fmt.Printf("bias updated: %v\n", b.Value().Data)
+	fmt.Printf("weight updated: %v\n", w.value.Data)
+	fmt.Printf("bias updated: %v\n", b.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 }
 
 func TestComputeGraphPython(t *testing.T) {
@@ -149,8 +149,8 @@ func TestComputeGraphLossBackward(t *testing.T) {
 	// 第一次前向传播
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
-	fmt.Printf("Loss: %v\n", loss.Value().Data[0])
+	fmt.Printf("Output: %v\n", add.value.Data)
+	fmt.Printf("Loss: %v\n", loss.value.Data[0])
 
 	// 反向传播
 	graph.Backward()
@@ -160,27 +160,27 @@ func TestComputeGraphLossBackward(t *testing.T) {
 
 	// 优化器步骤 (手动实现SGD)
 	learningRate := float32(0.1)
-	wData := w.Value().Data
+	wData := w.value.Data
 	wGrad := w.Grad().Data
 	for i := range wData {
 		wData[i] -= learningRate * wGrad[i]
 	}
 
-	bData := b.Value().Data
+	bData := b.value.Data
 	bGrad := b.Grad().Data
 	for i := range bData {
 		bData[i] -= learningRate * bGrad[i]
 	}
 
 	fmt.Println("\nAfter Parameter Update:")
-	fmt.Printf("weight updated: %v\n", w.Value().Data)
-	fmt.Printf("bias updated: %v\n", b.Value().Data)
+	fmt.Printf("weight updated: %v\n", w.value.Data)
+	fmt.Printf("bias updated: %v\n", b.value.Data)
 
 	// 更新后前向传播
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
-	fmt.Printf("Loss: %v\n", loss.Value().Data[0])
+	fmt.Printf("Output: %v\n", add.value.Data)
+	fmt.Printf("Loss: %v\n", loss.value.Data[0])
 }
 
 func TestExportONNX(t *testing.T) {
@@ -201,17 +201,17 @@ func TestExportONNX(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Second Forward Pass (same inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
-	x.Value().Data = []float32{3.0, 3.0, 3.0, 3.0}
+	x.value.Data = []float32{3.0, 3.0, 3.0, 3.0}
 
 	graph.Forward()
 	fmt.Println("\nAfter Third Forward Pass (changed inputs):")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
@@ -219,25 +219,25 @@ func TestExportONNX(t *testing.T) {
 	fmt.Printf("bias: %v\n", b.Grad().Data)
 
 	learningRate := float32(0.1)
-	wData := w.Value().Data
+	wData := w.value.Data
 	wGrad := w.Grad().Data
 	for i := range wData {
 		wData[i] -= learningRate * wGrad[i]
 	}
 
-	bData := b.Value().Data
+	bData := b.value.Data
 	bGrad := b.Grad().Data
 	for i := range bData {
 		bData[i] -= learningRate * bGrad[i]
 	}
 
 	fmt.Println("\nAfter Parameter Update:")
-	fmt.Printf("weight updated: %v\n", w.Value().Data)
-	fmt.Printf("bias updated: %v\n", b.Value().Data)
+	fmt.Printf("weight updated: %v\n", w.value.Data)
+	fmt.Printf("bias updated: %v\n", b.value.Data)
 
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
-	fmt.Printf("Output: %v\n", add.Value().Data)
+	fmt.Printf("Output: %v\n", add.value.Data)
 
 	onnxModel, err := graph.ToONNXModel()
 	if err != nil {

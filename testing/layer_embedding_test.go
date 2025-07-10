@@ -283,7 +283,7 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 				avg := 0.5 * (math.Abs(goResult.Data[i]) + math.Abs(pyResult.Data[i]))
 
 				if diff > epsilon && diff/avg > relativeTol {
-					t.Errorf("Value mismatch at index %d\nGo: %.6f\nPyTorch: %.6f",
+					t.Errorf("value mismatch at index %d\nGo: %.6f\nPyTorch: %.6f",
 						i, goResult.Data[i], pyResult.Data[i])
 					break
 				}

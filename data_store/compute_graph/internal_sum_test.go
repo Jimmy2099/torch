@@ -24,7 +24,7 @@ func TestSum(t *testing.T) {
 	// 前向传播
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Sum: %v (expected: [10])\n", sum.Value().Data)
+	fmt.Printf("Sum: %v (expected: [10])\n", sum.value.Data)
 
 	// 反向传播
 	graph.Backward()
@@ -32,8 +32,8 @@ func TestSum(t *testing.T) {
 	fmt.Printf("Input Gradients: %v (expected: [1 1 1 1])\n", input.Grad().Data)
 
 	// 验证结果
-	if len(sum.Value().Data) != 1 || sum.Value().Data[0] != 10 {
-		t.Errorf("Sum calculation failed. Got %v, expected [10]", sum.Value().Data)
+	if len(sum.value.Data) != 1 || sum.value.Data[0] != 10 {
+		t.Errorf("Sum calculation failed. Got %v, expected [10]", sum.value.Data)
 	}
 
 	expectedGrad := []float32{1.0, 1.0, 1.0, 1.0}

@@ -14,7 +14,7 @@ func (m *Reciprocal) Forward() *tensor.Tensor {
 		return m.output.value
 	}
 
-	a := m.Children[0].node.Forward()
+	a := m.Children[0].Node.Forward()
 
 	ones := tensor.NewTensor(make([]float32, len(a.Data)), a.GetShape())
 	for i := range ones.Data {
@@ -43,7 +43,7 @@ func (m *Reciprocal) Backward(grad *tensor.Tensor) {
 	negOneOverASquared := ones.Div(aSquared).Negate()
 	gradA := negOneOverASquared.Mul(grad)
 
-	m.Children[0].node.Backward(gradA)
+	m.Children[0].Node.Backward(gradA)
 }
 
 func (t *GraphTensor) Reciprocal(names ...string) *GraphTensor {
@@ -51,11 +51,11 @@ func (t *GraphTensor) Reciprocal(names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("reciprocal_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("reciprocal_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
 
-	g := t.graph
+	g := t.Graph
 
 	node := NewReciprocal(name, t)
 
@@ -63,17 +63,17 @@ func (t *GraphTensor) Reciprocal(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		shape: t.shape,
-		graph: g,
-		node:  node,
+		Shape: t.Shape,
+		Graph: g,
+		Node:  node,
 	}
 
-	if _, exists := g.tensors[name]; exists {
+	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
 	}
-	g.tensors[name] = outputTensor
+	g.Tensors[name] = outputTensor
 	node.output = outputTensor
-	g.nodes = append(g.nodes, node)
+	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
 

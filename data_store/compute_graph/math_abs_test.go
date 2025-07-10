@@ -18,7 +18,7 @@ func TestAbs(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Abs: %v\n", abs.Value().Data)
+	fmt.Printf("Abs: %v\n", abs.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")

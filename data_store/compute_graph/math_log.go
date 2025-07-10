@@ -14,7 +14,7 @@ func (m *Log) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
-	input := m.Children[0].node.Forward()
+	input := m.Children[0].Node.Forward()
 	data := make([]float32, len(input.Data))
 	for i, v := range input.Data {
 		if v <= 0 {
@@ -38,7 +38,7 @@ func (m *Log) Backward(grad *tensor.Tensor) {
 		gradData[i] = grad.Data[i] / v
 	}
 	gradInput := tensor.NewTensor(gradData, inputVal.GetShape())
-	m.Children[0].node.Backward(gradInput)
+	m.Children[0].Node.Backward(gradInput)
 }
 
 func (t *GraphTensor) Log(names ...string) *GraphTensor {
@@ -46,11 +46,11 @@ func (t *GraphTensor) Log(names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("log_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("log_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
 
-	g := t.graph
+	g := t.Graph
 
 	node := NewLog(name, t)
 
@@ -58,17 +58,17 @@ func (t *GraphTensor) Log(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		shape: t.shape,
-		graph: g,
-		node:  node,
+		Shape: t.Shape,
+		Graph: g,
+		Node:  node,
 	}
 
-	if _, exists := g.tensors[name]; exists {
+	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
 	}
-	g.tensors[name] = outputTensor
+	g.Tensors[name] = outputTensor
 	node.output = outputTensor
-	g.nodes = append(g.nodes, node)
+	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
 

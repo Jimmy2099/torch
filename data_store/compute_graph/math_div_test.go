@@ -23,7 +23,7 @@ func TestDiv(t *testing.T) {
 	// Forward pass
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Quotient: %v\n", quotient.Value().Data)
+	fmt.Printf("Quotient: %v\n", quotient.value.Data)
 
 	// Backward pass
 	graph.Backward()
@@ -34,7 +34,7 @@ func TestDiv(t *testing.T) {
 	// Test parameter update
 	fmt.Println("\nUpdating parameters...")
 	lr := float32(0.1)
-	denomData := denominator.Value().Data
+	denomData := denominator.value.Data
 	denomGrad := denominator.Grad().Data
 	for i := range denomData {
 		denomData[i] -= lr * denomGrad[i]
@@ -45,5 +45,5 @@ func TestDiv(t *testing.T) {
 	// Forward pass with updated denominator
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
-	fmt.Printf("New Quotient: %v\n", quotient.Value().Data)
+	fmt.Printf("New Quotient: %v\n", quotient.value.Data)
 }

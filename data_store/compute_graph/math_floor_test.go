@@ -18,7 +18,7 @@ func TestFloor(t *testing.T) {
 
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
-	fmt.Printf("Floor: %v\n", floor.Value().Data)
+	fmt.Printf("Floor: %v\n", floor.value.Data)
 
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")

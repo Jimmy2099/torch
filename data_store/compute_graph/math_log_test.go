@@ -14,8 +14,8 @@ func TestLog(t *testing.T) {
 	// Forward pass
 	graph.Forward()
 	expected := []float32{0, 1, 2} // ln(1)=0, ln(e)=1, ln(e^2)=2
-	if !compareSlices(output.Value().Data, expected, 1e-5) {
-		t.Errorf("Forward pass failed. Expected %v, got %v", expected, output.Value().Data)
+	if !compareSlices(output.value.Data, expected, 1e-5) {
+		t.Errorf("Forward pass failed. Expected %v, got %v", expected, output.value.Data)
 	}
 
 	// Backward pass

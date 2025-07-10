@@ -13,14 +13,14 @@ func (m *Neg) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
-	input := m.Children[0].node.Forward()
+	input := m.Children[0].Node.Forward()
 	m.output.value = input.Negate()
 	m.output.computed = true
 	return m.output.value
 }
 
 func (m *Neg) Backward(grad *tensor.Tensor) {
-	m.Children[0].node.Backward(grad.Negate())
+	m.Children[0].Node.Backward(grad.Negate())
 }
 
 func (t *GraphTensor) Neg(names ...string) *GraphTensor {
@@ -28,11 +28,11 @@ func (t *GraphTensor) Neg(names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("neg_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("neg_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
 
-	g := t.graph
+	g := t.Graph
 
 	node := NewNeg(name, t)
 
@@ -40,17 +40,17 @@ func (t *GraphTensor) Neg(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		shape: t.shape,
-		graph: g,
-		node:  node,
+		Shape: t.Shape,
+		Graph: g,
+		Node:  node,
 	}
 
-	if _, exists := g.tensors[name]; exists {
+	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
 	}
-	g.tensors[name] = outputTensor
+	g.Tensors[name] = outputTensor
 	node.output = outputTensor
-	g.nodes = append(g.nodes, node)
+	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
 

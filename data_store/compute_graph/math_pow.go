@@ -11,11 +11,11 @@ func (t *GraphTensor) Pow(exponent *GraphTensor, names ...string) *GraphTensor {
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("pow_tensor_%d", t.graph.nodeCount)
-		t.graph.nodeCount++
+		name = fmt.Sprintf("pow_tensor_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
 	}
 
-	if t.graph != exponent.graph {
+	if t.Graph != exponent.Graph {
 		panic("tensors belong to different graphs")
 	}
 
@@ -25,14 +25,14 @@ func (t *GraphTensor) Pow(exponent *GraphTensor, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		shape: t.shape,
-		graph: t.graph,
-		node:  node,
+		Shape: t.Shape,
+		Graph: t.Graph,
+		Node:  node,
 	}
 
-	t.graph.tensors[name] = outputTensor
+	t.Graph.Tensors[name] = outputTensor
 	node.output = outputTensor
-	t.graph.nodes = append(t.graph.nodes, node)
+	t.Graph.Nodes = append(t.Graph.Nodes, node)
 	return outputTensor
 }
 
@@ -54,8 +54,8 @@ func (m *Pow) Forward() *tensor.Tensor {
 		return m.output.value
 	}
 
-	base := m.Children[0].node.Forward()
-	exponent := m.Children[1].node.Forward()
+	base := m.Children[0].Node.Forward()
+	exponent := m.Children[1].Node.Forward()
 
 	if len(base.Data) != len(exponent.Data) {
 		panic("tensor sizes must match for power operation")
@@ -97,6 +97,6 @@ func (m *Pow) Backward(grad *tensor.Tensor) {
 			(math.Log(baseVal.Data[i]))
 	}
 
-	m.Children[0].node.Backward(tensor.NewTensor(gradBase, baseVal.GetShape()))
-	m.Children[1].node.Backward(tensor.NewTensor(gradExp, exponentVal.GetShape()))
+	m.Children[0].Node.Backward(tensor.NewTensor(gradBase, baseVal.GetShape()))
+	m.Children[1].Node.Backward(tensor.NewTensor(gradExp, exponentVal.GetShape()))
 }
