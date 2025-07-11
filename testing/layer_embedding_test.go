@@ -28,12 +28,12 @@ func TestNewEmbedding(t *testing.T) {
 	embDim := 3
 	emb := torch.NewEmbedding(vocabSize, embDim)
 
-	if emb.Weights.shape[0] != vocabSize || emb.Weights.shape[1] != embDim {
-		t.Errorf("Expected weights shape [%d,%d], got %v", vocabSize, embDim, emb.Weights.shape)
+	if emb.Weights.GetShape()[0] != vocabSize || emb.Weights.GetShape()[1] != embDim {
+		t.Errorf("Expected weights shape [%d,%d], got %v", vocabSize, embDim, emb.Weights.GetShape())
 	}
 
-	if emb.GradWeights.shape[0] != vocabSize || emb.GradWeights.shape[1] != embDim {
-		t.Errorf("Expected gradWeights shape [%d,%d], got %v", vocabSize, embDim, emb.GradWeights.shape)
+	if emb.GradWeights.GetShape()[0] != vocabSize || emb.GradWeights.GetShape()[1] != embDim {
+		t.Errorf("Expected gradWeights shape [%d,%d], got %v", vocabSize, embDim, emb.GradWeights.GetShape())
 	}
 }
 
@@ -99,9 +99,9 @@ func TestEmbeddingForward(t *testing.T) {
 			output := emb.Forward(tt.input)
 
 			if !tt.shouldPanic {
-				if !reflect.DeepEqual(output.shape, tt.expectedShape) {
+				if !reflect.DeepEqual(output.GetShape(), tt.expectedShape) {
 					t.Errorf("shape mismatch\nexpected: %v\ngot: %v",
-						tt.expectedShape, output.shape)
+						tt.expectedShape, output.GetShape())
 				}
 
 				expectedTensor := tensor.NewTensor(tt.expected, tt.expectedShape)
@@ -268,9 +268,9 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			const epsilon = 1e-6
 			const relativeTol = 1e-4
 
-			if !reflect.DeepEqual(goResult.shape, pyResult.shape) {
+			if !reflect.DeepEqual(goResult.GetShape(), pyResult.GetShape()) {
 				t.Errorf("shape mismatch\nGo: %v\nPyTorch: %v",
-					goResult.shape, pyResult.shape)
+					goResult.GetShape(), pyResult.GetShape())
 			}
 
 			if len(goResult.Data) != len(pyResult.Data) {
