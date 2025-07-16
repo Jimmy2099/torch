@@ -8,11 +8,10 @@ import (
 )
 
 type LpPool struct {
-	OPS
+	OPS     // 嵌入OPS结构体，继承output字段
 	kernel  []int
 	strides []int
 	p       float32
-	output  *tensor.Tensor
 }
 
 func (m *LpPool) Forward() *tensor.Tensor {
@@ -150,7 +149,7 @@ func (t *GraphTensor) LpPool(kernel, strides []int, p float32, names ...string) 
 		panic("tensor name already exists: " + name)
 	}
 	g.Tensors[name] = outputTensor
-	node.output = outputTensor
+	node.output = outputTensor // 设置嵌入的OPS中的output字段
 	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
