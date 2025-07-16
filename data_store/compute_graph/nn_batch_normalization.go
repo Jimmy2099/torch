@@ -24,21 +24,33 @@ func (bn *BatchNormalization) Forward() *tensor.Tensor {
 	gamma := bn.gamma.Node.Forward()
 	beta := bn.beta.Node.Forward()
 
-	// Calculate mean and variance
-	mean := input.Mean()
-	variance := input.Variance(mean)
+	sum := float32(0.0)
+	for _, v := range input.Data {
+		sum += v
+	}
+	meanVal := sum / float32(len(input.Data))
+	meanTensor := tensor.NewTensor([]float32{meanVal}, []int{1})
 
-	// Update running stats
+	varianceVal := float32(0.0)
+	for _, v := range input.Data {
+		diff := v - meanVal
+		varianceVal += diff * diff
+	}
+	varianceVal /= float32(len(input.Data))
+	varianceTensor := tensor.NewTensor([]float32{varianceVal}, []int{1})
+
 	if bn.runningMean == nil {
-		bn.runningMean = mean.Copy()
-		bn.runningVar = variance.Copy()
+		bn.runningMean = tensor.NewTensor([]float32{meanVal}, []int{1})
+		bn.runningVar = tensor.NewTensor([]float32{varianceVal}, []int{1})
 	} else {
-		bn.runningMean = bn.runningMean.MulScalar(bn.momentum).Add(mean.MulScalar(1 - bn.momentum))
-		bn.runningVar = bn.runningVar.MulScalar(bn.momentum).Add(variance.MulScalar(1 - bn.momentum))
+		newRunningMean := bn.runningMean.MulScalar(bn.momentum).Add(meanTensor.MulScalar(1 - bn.momentum))
+		newRunningVar := bn.runningVar.MulScalar(bn.momentum).Add(varianceTensor.MulScalar(1 - bn.momentum))
+		bn.runningMean = newRunningMean
+		bn.runningVar = newRunningVar
 	}
 
-	// Normalize
-	normalized := input.Sub(mean).Div(variance.AddScalar(bn.epsilon).Sqrt())
+	stdDev := varianceTensor.AddScalar(bn.epsilon).Sqrt()
+	normalized := input.Sub(meanTensor).Div(stdDev)
 	result := normalized.Mul(gamma).Add(beta)
 
 	bn.output.value = result
@@ -49,22 +61,28 @@ func (bn *BatchNormalization) Forward() *tensor.Tensor {
 func (bn *BatchNormalization) Backward(grad *tensor.Tensor) {
 	input := bn.Children[0].value
 	gamma := bn.gamma.value
-	normalized := bn.output.value.Sub(bn.beta.value).Div(gamma)
+	beta := bn.beta.value
 
-	// Calculate gradients
+	normalized := bn.output.value.Sub(beta).Div(gamma)
+
+	stdDev := normalized.AddScalar(bn.epsilon).Sqrt()
+	invStd := tensor.Ones(stdDev.GetShape()).Div(stdDev)
+
 	N := float32(len(input.Data))
-	invStd := normalized.AddScalar(bn.epsilon).Sqrt().Reciprocal()
-
 	dNormalized := grad.Mul(gamma)
-	dInput := dNormalized.Mul(invStd).Add(
-		normalized.Mul(
-			dNormalized.Mul(normalized).Mean().MulScalar(-2.0 / N),
-		),
-	).Add(
-		dNormalized.Mean().MulScalar(-1.0),
-	)
-	dGamma := grad.Mul(normalized).SumDims(0)
-	dBeta := grad.SumDims(0)
+
+	dNormalizedMean := dNormalized.MeanTensor()
+	dNormalizedMulNormalizedMean := dNormalized.Mul(normalized).MeanTensor()
+
+	dInput := dNormalized.Mul(invStd)
+
+	term2 := normalized.Mul(dNormalizedMulNormalizedMean.MulScalar(-2.0 / N))
+	dInput = dInput.Add(term2)
+
+	dInput = dInput.Add(dNormalizedMean.MulScalar(-1.0))
+
+	dGamma := grad.Mul(normalized).ReduceSum()
+	dBeta := grad.ReduceSum()
 
 	bn.Children[0].Node.Backward(dInput)
 	bn.gamma.Node.Backward(dGamma)

@@ -289,3 +289,23 @@ func (t *Tensor) Tanh() *Tensor {
 
 	return NewTensor(data, t.shape)
 }
+
+func (t *Tensor) ReduceSum() *Tensor {
+	sum := float32(0.0)
+	for _, v := range t.Data {
+		sum += v
+	}
+	return NewTensor([]float32{sum}, []int{1})
+}
+
+func (t *Tensor) Reciprocal() *Tensor {
+	data := make([]float32, len(t.Data))
+	for i, v := range t.Data {
+		if v != 0 {
+			data[i] = 1.0 / v
+		} else {
+			data[i] = 0
+		}
+	}
+	return NewTensor(data, t.GetShape())
+}

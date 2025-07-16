@@ -215,6 +215,10 @@ func (t *Tensor) Mean() float32 {
 	return t.Sum() / float32(len(t.Data))
 }
 
+func (t *Tensor) MeanTensor() *Tensor {
+	return NewTensor([]float32{t.Sum() / float32(len(t.Data))}, []int{1})
+}
+
 func (t *Tensor) Max() float32 {
 	maxVal := math.Inf(-1)
 	for _, val := range t.Data {
