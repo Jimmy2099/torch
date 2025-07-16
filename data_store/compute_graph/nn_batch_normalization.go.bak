@@ -1,0 +1,119 @@
+package compute_graph
+
+import (
+	"fmt"
+	"github.com/Jimmy2099/torch/data_store/tensor"
+)
+
+type BatchNormalization struct {
+	OPS
+	gamma       *GraphTensor
+	beta        *GraphTensor
+	epsilon     float32
+	momentum    float32
+	runningMean *tensor.Tensor
+	runningVar  *tensor.Tensor
+}
+
+func (bn *BatchNormalization) Forward() *tensor.Tensor {
+	if bn.output.computed {
+		return bn.output.value
+	}
+
+	input := bn.Children[0].Node.Forward()
+	gamma := bn.gamma.Node.Forward()
+	beta := bn.beta.Node.Forward()
+
+	// Calculate mean and variance
+	mean := input.Mean()
+	variance := input.Variance(mean)
+
+	// Update running stats
+	if bn.runningMean == nil {
+		bn.runningMean = mean.Copy()
+		bn.runningVar = variance.Copy()
+	} else {
+		bn.runningMean = bn.runningMean.MulScalar(bn.momentum).Add(mean.MulScalar(1 - bn.momentum))
+		bn.runningVar = bn.runningVar.MulScalar(bn.momentum).Add(variance.MulScalar(1 - bn.momentum))
+	}
+
+	// Normalize
+	normalized := input.Sub(mean).Div(variance.AddScalar(bn.epsilon).Sqrt())
+	result := normalized.Mul(gamma).Add(beta)
+
+	bn.output.value = result
+	bn.output.computed = true
+	return result
+}
+
+func (bn *BatchNormalization) Backward(grad *tensor.Tensor) {
+	input := bn.Children[0].value
+	gamma := bn.gamma.value
+	normalized := bn.output.value.Sub(bn.beta.value).Div(gamma)
+
+	// Calculate gradients
+	N := float32(len(input.Data))
+	invStd := normalized.AddScalar(bn.epsilon).Sqrt().Reciprocal()
+
+	dNormalized := grad.Mul(gamma)
+	dInput := dNormalized.Mul(invStd).Add(
+		normalized.Mul(
+			dNormalized.Mul(normalized).Mean().MulScalar(-2.0 / N),
+		),
+	).Add(
+		dNormalized.Mean().MulScalar(-1.0),
+	)
+	dGamma := grad.Mul(normalized).SumDims(0)
+	dBeta := grad.SumDims(0)
+
+	bn.Children[0].Node.Backward(dInput)
+	bn.gamma.Node.Backward(dGamma)
+	bn.beta.Node.Backward(dBeta)
+}
+
+func (t *GraphTensor) BatchNormalization(gamma, beta *GraphTensor, epsilon, momentum float32, names ...string) *GraphTensor {
+	var name string
+	if len(names) > 0 {
+		name = names[0]
+	} else {
+		name = fmt.Sprintf("batchnorm_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
+	}
+
+	if t.Graph != gamma.Graph || t.Graph != beta.Graph {
+		panic("tensors belong to different graphs")
+	}
+	g := t.Graph
+
+	node := NewBatchNormalization(name, t, gamma, beta, epsilon, momentum)
+
+	outputTensor := &GraphTensor{
+		Name:  name,
+		value: tensor.NewTensor([]float32{}, []int{0}),
+		grad:  tensor.NewTensor([]float32{}, []int{0}),
+		Shape: t.Shape,
+		Graph: g,
+		Node:  node,
+	}
+
+	if _, exists := g.Tensors[name]; exists {
+		panic("tensor name already exists: " + name)
+	}
+	g.Tensors[name] = outputTensor
+	node.output = outputTensor
+	g.Nodes = append(g.Nodes, node)
+	return outputTensor
+}
+
+func NewBatchNormalization(name string, input, gamma, beta *GraphTensor, epsilon, momentum float32) *BatchNormalization {
+	return &BatchNormalization{
+		OPS: OPS{
+			Name:     name,
+			Children: []*GraphTensor{input},
+		},
+		gamma:    gamma,
+		beta:     beta,
+		epsilon:  epsilon,
+		momentum: momentum,
+	}
+}

@@ -1,6 +1,9 @@
 package tensor
 
-import "github.com/Jimmy2099/torch/pkg/fmt"
+import (
+	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/chewxy/math32"
+)
 
 func (t *Tensor) Sub(other *Tensor) *Tensor {
 	if false {
@@ -272,4 +275,17 @@ func matrixMultiply(a, b []float32, m, n, p int) []float32 {
 		}
 	}
 	return result
+}
+
+func (t *Tensor) Tanh() *Tensor {
+	if t == nil {
+		return nil
+	}
+
+	data := make([]float32, len(t.Data))
+	for i, v := range t.Data {
+		data[i] = math32.Tanh(v)
+	}
+
+	return NewTensor(data, t.shape)
 }

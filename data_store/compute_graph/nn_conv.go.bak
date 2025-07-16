@@ -1,0 +1,91 @@
+package compute_graph
+
+import (
+	"fmt"
+	"github.com/Jimmy2099/torch/data_store/tensor"
+)
+
+type Conv struct {
+	OPS
+	Stride  []int
+	Padding []int
+}
+
+func (m *Conv) Forward() *tensor.Tensor {
+	if m.output.computed {
+		return m.output.value
+	}
+
+	input := m.Children[0].Node.Forward()
+	weight := m.Children[1].Node.Forward()
+
+	// Implement convolution using existing tensor operations
+	result, err := input.Conv2D(weight, m.Stride, m.Padding)
+	if err != nil {
+		panic(err)
+	}
+	m.output.value = result
+	m.output.computed = true
+	return result
+}
+
+func (m *Conv) Backward(grad *tensor.Tensor) {
+	input := m.Children[0].value
+	weight := m.Children[1].value
+
+	if input == nil || weight == nil || grad == nil {
+		panic("nil tensor in convolution backward pass")
+	}
+
+	// Calculate gradients using existing tensor operations
+	gradInput := grad.Conv2dInput(input.GetShape(), weight, m.Stride, m.Padding)
+	gradWeight := input.Conv2dWeight(grad, weight.GetShape(), m.Stride, m.Padding)
+
+	m.Children[0].Node.Backward(gradInput)
+	m.Children[1].Node.Backward(gradWeight)
+}
+
+func (t *GraphTensor) Conv(weight *GraphTensor, stride, padding []int, names ...string) *GraphTensor {
+	var name string
+	if len(names) > 0 {
+		name = names[0]
+	} else {
+		name = fmt.Sprintf("conv_%d", t.Graph.NodeCount)
+		t.Graph.NodeCount++
+	}
+
+	if t.Graph != weight.Graph {
+		panic("tensors belong to different graphs")
+	}
+	g := t.Graph
+
+	node := NewConv(name, stride, padding, t, weight)
+
+	outputTensor := &GraphTensor{
+		Name:  name,
+		value: tensor.NewTensor([]float32{}, []int{0}),
+		grad:  tensor.NewTensor([]float32{}, []int{0}),
+		Shape: []int{0}, // Actual shape set during forward pass
+		Graph: g,
+		Node:  node,
+	}
+
+	if _, exists := g.Tensors[name]; exists {
+		panic("tensor name already exists: " + name)
+	}
+	g.Tensors[name] = outputTensor
+	node.output = outputTensor
+	g.Nodes = append(g.Nodes, node)
+	return outputTensor
+}
+
+func NewConv(name string, stride, padding []int, input, weight *GraphTensor) *Conv {
+	return &Conv{
+		OPS: OPS{
+			Name:     name,
+			Children: []*GraphTensor{input, weight},
+		},
+		Stride:  stride,
+		Padding: padding,
+	}
+}

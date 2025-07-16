@@ -515,3 +515,7 @@ func getNodeType(node Node) string {
 		return "Operation"
 	}
 }
+
+func (g *ComputationalGraph) Reset() {
+	//TODO
+}

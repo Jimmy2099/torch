@@ -17,3 +17,4 @@ restricted
 *.json
 *.bin
 *.onnx
+*.bak
