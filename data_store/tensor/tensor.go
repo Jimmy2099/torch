@@ -2,6 +2,7 @@ package tensor
 
 import (
 	"encoding/gob"
+	"fmt"
 	"os"
 )
 
@@ -26,7 +27,7 @@ func NewTensor(data []float32, shape []int) *Tensor {
 	sum := ShapeSum(shape)
 
 	if len(data) != sum {
-		panic("shape length mismatch")
+		panic(fmt.Sprintln("shape length mismatch", data, sum))
 	}
 
 	t := &Tensor{

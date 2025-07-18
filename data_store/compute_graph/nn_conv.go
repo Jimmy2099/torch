@@ -7,8 +7,10 @@ import (
 
 type Conv struct {
 	OPS
-	Stride  []int
-	Padding []int
+	StrideH int
+	StrideW int
+	PadH    int
+	PadW    int
 }
 
 func (m *Conv) Forward() *tensor.Tensor {
@@ -19,8 +21,13 @@ func (m *Conv) Forward() *tensor.Tensor {
 	input := m.Children[0].Node.Forward()
 	weight := m.Children[1].Node.Forward()
 
-	// Implement convolution using existing tensor operations
-	result, err := input.Conv2D(weight, m.Stride, m.Padding)
+	result, err := input.Conv2D(
+		weight,
+		m.StrideH,
+		m.StrideW,
+		m.PadH,
+		m.PadW,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -37,9 +44,20 @@ func (m *Conv) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in convolution backward pass")
 	}
 
-	// Calculate gradients using existing tensor operations
-	gradInput := grad.Conv2dInput(input.GetShape(), weight, m.Stride, m.Padding)
-	gradWeight := input.Conv2dWeight(grad, weight.GetShape(), m.Stride, m.Padding)
+	gradInput, _ := grad.Conv2D(
+		weight,
+		m.StrideH,
+		m.StrideW,
+		m.PadH,
+		m.PadW,
+	)
+	gradWeight, _ := input.Conv2D(
+		grad,
+		m.StrideH,
+		m.StrideW,
+		m.PadH,
+		m.PadW,
+	)
 
 	m.Children[0].Node.Backward(gradInput)
 	m.Children[1].Node.Backward(gradWeight)
@@ -59,13 +77,15 @@ func (t *GraphTensor) Conv(weight *GraphTensor, stride, padding []int, names ...
 	}
 	g := t.Graph
 
-	node := NewConv(name, stride, padding, t, weight)
+	sH, sW, padH, padW := processConvParams(stride, padding)
+
+	node := NewConv(name, sH, sW, padH, padW, t, weight)
 
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: []int{0}, // Actual shape set during forward pass
+		Shape: []int{0},
 		Graph: g,
 		Node:  node,
 	}
@@ -79,13 +99,43 @@ func (t *GraphTensor) Conv(weight *GraphTensor, stride, padding []int, names ...
 	return outputTensor
 }
 
-func NewConv(name string, stride, padding []int, input, weight *GraphTensor) *Conv {
+func processConvParams(stride, padding []int) (sH, sW, padH, padW int) {
+	switch len(stride) {
+	case 1:
+		sH = stride[0]
+		sW = stride[0]
+	case 2:
+		sH = stride[0]
+		sW = stride[1]
+	default:
+		panic("stride must have 1 or 2 elements")
+	}
+
+	switch len(padding) {
+	case 0:
+		padH = 0
+		padW = 0
+	case 1:
+		padH = padding[0]
+		padW = padding[0]
+	case 2:
+		padH = padding[0]
+		padW = padding[1]
+	default:
+		panic("padding must have 0, 1, or 2 elements")
+	}
+	return
+}
+
+func NewConv(name string, strideH, strideW, padH, padW int, input, weight *GraphTensor) *Conv {
 	return &Conv{
 		OPS: OPS{
 			Name:     name,
 			Children: []*GraphTensor{input, weight},
 		},
-		Stride:  stride,
-		Padding: padding,
+		StrideH: strideH,
+		StrideW: strideW,
+		PadH:    padH,
+		PadW:    padW,
 	}
 }

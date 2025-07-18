@@ -689,7 +689,7 @@ func TestConv2D_Simple(t *testing.T) {
 
 	expected := NewTensor([]float32{1, 2, 4, 5}, []int{1, 1, 2, 2})
 
-	result, err := input.Conv2D(weights, kernelSize, stride, pad)
+	result, err := input.Conv2D(weights, kernelSize, stride, pad, pad)
 	if err != nil {
 		t.Fatalf("Conv2D failed with error: %v", err)
 	}
@@ -699,7 +699,7 @@ func TestConv2D_Simple(t *testing.T) {
 	}
 
 	input3D := NewTensor(input.Data, []int{1, 3, 3})
-	result3D, err3D := input3D.Conv2D(weights, kernelSize, stride, pad)
+	result3D, err3D := input3D.Conv2D(weights, kernelSize, stride, pad, pad)
 	if err3D != nil {
 		t.Fatalf("Conv2D (3D input) failed with error: %v", err3D)
 	}
@@ -711,7 +711,7 @@ func TestConv2D_Simple(t *testing.T) {
 	inputPad := NewTensor([]float32{5}, []int{1, 1, 1, 1})
 	weightsPad := NewTensor([]float32{1}, []int{1, 1, 1, 1})
 	expectedPad := NewTensor([]float32{0, 0, 0, 0, 5, 0, 0, 0, 0}, []int{1, 1, 3, 3})
-	resultPad, errPad := inputPad.Conv2D(weightsPad, 1, 1, pad)
+	resultPad, errPad := inputPad.Conv2D(weightsPad, 1, 1, pad, pad)
 	if errPad != nil {
 		t.Fatalf("Conv2D (padding) failed with error: %v", errPad)
 	}
@@ -720,13 +720,13 @@ func TestConv2D_Simple(t *testing.T) {
 	}
 
 	badWeights := NewTensor(make([]float32, 8), []int{1, 2, 2, 2})
-	_, errMismatch := input.Conv2D(badWeights, kernelSize, stride, pad)
+	_, errMismatch := input.Conv2D(badWeights, kernelSize, stride, pad, pad)
 	if errMismatch == nil || !contains(errMismatch.Error(), "weights shape mismatch") {
 		t.Errorf("Conv2D did not return expected error for mismatched channels")
 	}
 
 	input2D := NewTensor([]float32{1, 2, 3, 4}, []int{2, 2})
-	_, errInputDim := input2D.Conv2D(weights, kernelSize, stride, pad)
+	_, errInputDim := input2D.Conv2D(weights, kernelSize, stride, pad, pad)
 	if errInputDim == nil || !contains(errInputDim.Error(), "must be 3D or 4D") {
 		t.Errorf("Conv2D did not return expected error for 2D input")
 	}

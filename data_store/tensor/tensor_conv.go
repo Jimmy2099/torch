@@ -181,9 +181,8 @@ func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
 
 	return cols, nil
 }
-
-func (t *Tensor) Pad2D(pad int) *Tensor {
-	if pad == 0 {
+func (t *Tensor) Pad2D(padH, padW int) *Tensor {
+	if padH == 0 && padW == 0 {
 		return t.Clone()
 	}
 
@@ -201,8 +200,8 @@ func (t *Tensor) Pad2D(pad int) *Tensor {
 		panic("Pad2D only works for 3D or 4D tensors")
 	}
 
-	newHeight := height + 2*pad
-	newWidth := width + 2*pad
+	newHeight := height + 2*padH
+	newWidth := width + 2*padW
 
 	var padded *Tensor
 	if is4D {
@@ -226,9 +225,9 @@ func (t *Tensor) Pad2D(pad int) *Tensor {
 						srcIdx = c*height*width + i*width + j
 					}
 
-					targetIdx := b*channels*newHeight*newWidth + c*newHeight*newWidth + (i+pad)*newWidth + (j + pad)
+					targetIdx := b*channels*newHeight*newWidth + c*newHeight*newWidth + (i+padH)*newWidth + (j + padW)
 					if !is4D {
-						targetIdx = c*newHeight*newWidth + (i+pad)*newWidth + (j + pad)
+						targetIdx = c*newHeight*newWidth + (i+padH)*newWidth + (j + padW)
 					}
 
 					padded.Data[targetIdx] = t.Data[srcIdx]
@@ -506,7 +505,7 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 	panic("Invalid dimension for sum")
 }
 
-func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
+func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, padH, padW int) (*Tensor, error) {
 	var input *Tensor
 	if len(t.shape) == 3 {
 		input = t.Reshape([]int{1, t.shape[0], t.shape[1], t.shape[2]})
@@ -526,12 +525,12 @@ func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, pad int) (*Tensor, 
 		return nil, errors.New("weights shape mismatch")
 	}
 
-	outHeight := (height-kernelSize+2*pad)/stride + 1
-	outWidth := (width-kernelSize+2*pad)/stride + 1
+	outHeight := (height-kernelSize+2*padH)/stride + 1
+	outWidth := (width-kernelSize+2*padW)/stride + 1
 
 	var padded *Tensor
-	if pad > 0 {
-		padded = t.Pad2D(pad)
+	if padH > 0 || padW > 0 {
+		padded = t.Pad2D(padH, padW)
 	} else {
 		padded = t.Clone()
 	}
@@ -606,66 +605,6 @@ func (t *Tensor) Expand(targetShape []int) *Tensor {
 		Data:  newData,
 		shape: targetShape,
 	}
-}
-
-func (t *Tensor) Conv2D1(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
-
-	if len(t.shape) != 3 && len(t.shape) != 4 {
-		return nil, errors.New("input tensor must have shape [batch, channels, height, width] or [channels, height, width]")
-	}
-	if len(weights.shape) != 4 {
-		return nil, errors.New("weights tensor must have shape [out_channels, in_channels, kernel_height, kernel_width]")
-	}
-
-	var batchSize, channels, height, width int
-	if len(t.shape) == 4 {
-		batchSize, channels, height, width = t.shape[0], t.shape[1], t.shape[2], t.shape[3]
-	} else {
-		batchSize = 1
-		channels, height, width = t.shape[0], t.shape[1], t.shape[2]
-	}
-
-	outChannels, inChannels, kernelHeight, kernelWidth := weights.shape[0], weights.shape[1], weights.shape[2], weights.shape[3]
-
-	if inChannels != channels {
-		return nil, errors.New("input channels must match weight in_channels")
-	}
-	if kernelSize != kernelHeight || kernelSize != kernelWidth {
-		return nil, errors.New("kernel size must be the same for both height and width in weights")
-	}
-
-	outHeight := (height+2*pad-kernelSize)/stride + 1
-	outWidth := (width+2*pad-kernelSize)/stride + 1
-
-	var results []*Tensor
-	for b := 0; b < batchSize; b++ {
-		var sample *Tensor
-		if len(t.shape) == 4 {
-			sample = t.GetSample(b)
-		} else {
-			sample = t
-		}
-
-		paddedInput := sample.Pad2D(pad)
-
-		unfolded, err := paddedInput.im2col(kernelSize, stride)
-		if err != nil {
-			return nil, err
-		}
-
-		reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
-
-		result := reshapedWeights.Multiply(unfolded)
-
-		reshapedResult := result.Reshape([]int{outChannels, outHeight * outWidth})
-		results = append(results, reshapedResult)
-	}
-
-	if batchSize == 1 {
-		return results[0], nil
-	}
-
-	return StackTensors(results, 0)
 }
 
 func (t *Tensor) GetRow(row int) *Tensor {
