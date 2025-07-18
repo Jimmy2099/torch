@@ -147,40 +147,6 @@ func (t *Tensor) im2col_get_pixel(row, col, channel, pad int) float32 {
 	return t.Data[col+width*(row+height*channel)]
 }
 
-func (t *Tensor) im2col(kernelSize, stride int) (*Tensor, error) {
-	var channels, height, width int
-	if len(t.shape) == 3 {
-		channels, height, width = t.shape[0], t.shape[1], t.shape[2]
-	} else if len(t.shape) == 4 {
-		channels, height, width = t.shape[1], t.shape[2], t.shape[3]
-	} else {
-		return nil, errors.New("input tensor must be 3D or 4D")
-	}
-
-	heightCol := (height-kernelSize)/stride + 1
-	widthCol := (width-kernelSize)/stride + 1
-	channelsCol := channels * kernelSize * kernelSize
-
-	cols := NewTensor(make([]float32, channelsCol*heightCol*widthCol), []int{channelsCol, heightCol * widthCol})
-	dataCol := cols.Data
-
-	for c := 0; c < channelsCol; c++ {
-		wOffset := c % kernelSize
-		hOffset := (c / kernelSize) % kernelSize
-		cIm := c / kernelSize / kernelSize
-
-		for h := 0; h < heightCol; h++ {
-			for w := 0; w < widthCol; w++ {
-				imRow := hOffset + h*stride
-				imCol := wOffset + w*stride
-				colIndex := (c*heightCol+h)*widthCol + w
-				dataCol[colIndex] = t.im2col_get_pixel(imRow, imCol, cIm, 0)
-			}
-		}
-	}
-
-	return cols, nil
-}
 func (t *Tensor) Pad2D(padH, padW int) *Tensor {
 	if padH == 0 && padW == 0 {
 		return t.Clone()
@@ -299,58 +265,33 @@ func (t *Tensor) Repeat(dim int, repeats int) *Tensor {
 	}
 }
 
-func (t *Tensor) Conv2DGradWeights(gradOutput *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
-
-	unfolded, err := t.im2col(kernelSize, stride)
-	if err != nil {
-		return nil, err
-	}
-
-	return gradOutput.Multiply(unfolded.Transpose()), nil
-}
-
-func (t *Tensor) Conv2DGradInput(weights *Tensor, kernelSize, stride, pad int) (*Tensor, error) {
-
-	wT := weights.Transpose()
-
-	result := wT.Multiply(t)
-
-	return result.col2im(kernelSize, stride, pad, t.shape[1], t.shape[2])
-}
-
-func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) (*Tensor, error) {
-
+func (t *Tensor) col2im(kernelSize, stride, pad, inHeight, inWidth int) *Tensor {
 	if len(t.shape) != 2 {
-		return nil, fmt.Errorf("input tensor must be 2D for col2im operation")
+		panic("input tensor must be 2D for col2im operation")
 	}
 
 	origHeight := inHeight + 2*pad
 	origWidth := inWidth + 2*pad
-
 	output := NewTensor(make([]float32, origHeight*origWidth), []int{origHeight, origWidth})
 
 	for i := 0; i < t.shape[1]; i++ {
 		h := (i / origWidth) * stride
 		w := (i % origWidth) * stride
-
 		patchData := t.GetCol(i)
 
 		for dh := 0; dh < kernelSize; dh++ {
 			for dw := 0; dw < kernelSize; dw++ {
 				index := dh*kernelSize + dw
-				if index < len(patchData.Data) {
-					output.Data[h+dh+(w+dw)*origHeight] += patchData.Data[index]
-				} else {
-					fmt.Printf("index out of bounds %d \n", index)
+				if index >= len(patchData.Data) {
+					continue
 				}
-
+				output.Data[h+dh+(w+dw)*origHeight] += patchData.Data[index]
 			}
 		}
 	}
 
 	cropped := output.Crop(pad)
-
-	return cropped, nil
+	return cropped
 }
 
 func (t *Tensor) Pad(padding int) *Tensor {
@@ -505,58 +446,6 @@ func (t *Tensor) SumByDim(dim int) *Tensor {
 	panic("Invalid dimension for sum")
 }
 
-func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, padH, padW int) (*Tensor, error) {
-	var input *Tensor
-	if len(t.shape) == 3 {
-		input = t.Reshape([]int{1, t.shape[0], t.shape[1], t.shape[2]})
-	} else if len(t.shape) == 4 {
-		input = t.Clone()
-	} else {
-		return nil, errors.New("input tensor must be 3D or 4D")
-	}
-
-	batchSize := input.shape[0]
-	inChannels := input.shape[1]
-	height := input.shape[2]
-	width := input.shape[3]
-
-	outChannels := weights.shape[0]
-	if weights.shape[1] != inChannels || weights.shape[2] != kernelSize || weights.shape[3] != kernelSize {
-		return nil, errors.New("weights shape mismatch")
-	}
-
-	outHeight := (height-kernelSize+2*padH)/stride + 1
-	outWidth := (width-kernelSize+2*padW)/stride + 1
-
-	var padded *Tensor
-	if padH > 0 || padW > 0 {
-		padded = t.Pad2D(padH, padW)
-	} else {
-		padded = t.Clone()
-	}
-
-	output := NewTensor(make([]float32, batchSize*outChannels*outHeight*outWidth),
-		[]int{batchSize, outChannels, outHeight, outWidth})
-
-	for b := 0; b < batchSize; b++ {
-		sample := padded.GetSample(b)
-		unfolded, err := sample.im2col(kernelSize, stride)
-		if err != nil {
-			return nil, err
-		}
-
-		reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
-
-		result := reshapedWeights.MatMul(unfolded)
-
-		reshapedResult := result.Reshape([]int{outChannels, outHeight, outWidth})
-
-		copy(output.Data[b*outChannels*outHeight*outWidth:], reshapedResult.Data)
-	}
-
-	return output, nil
-}
-
 func (t *Tensor) Expand(targetShape []int) *Tensor {
 	if len(t.shape) != len(targetShape) {
 		panic("expand dimensions must match")
@@ -666,3 +555,155 @@ func (t *Tensor) Log() *Tensor {
 		shape: t.shape,
 	}
 }
+
+func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, padH, padW int) *Tensor {
+	var input *Tensor
+	if len(t.shape) == 3 {
+		input = t.Reshape([]int{1, t.shape[0], t.shape[1], t.shape[2]})
+	} else if len(t.shape) == 4 {
+		input = t.Clone()
+	} else {
+		panic("input tensor must be 3D or 4D")
+	}
+
+	batchSize := input.shape[0]
+	inChannels := input.shape[1]
+	height := input.shape[2]
+	width := input.shape[3]
+
+	outChannels := weights.shape[0]
+	if weights.shape[1] != inChannels || weights.shape[2] != kernelSize || weights.shape[3] != kernelSize {
+		panic("weights shape mismatch")
+	}
+
+	outHeight := (height-kernelSize+2*padH)/stride + 1
+	outWidth := (width-kernelSize+2*padW)/stride + 1
+
+	var padded *Tensor
+	if padH > 0 || padW > 0 {
+		padded = t.Pad2D(padH, padW)
+	} else {
+		padded = t.Clone()
+	}
+
+	output := NewTensor(make([]float32, batchSize*outChannels*outHeight*outWidth),
+		[]int{batchSize, outChannels, outHeight, outWidth})
+
+	for b := 0; b < batchSize; b++ {
+		sample := padded.GetSample(b)
+		unfolded, err := sample.im2col(kernelSize, kernelSize, stride, stride)
+		if err != nil {
+			panic(err)
+		}
+
+		reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
+
+		result := reshapedWeights.MatMul(unfolded)
+
+		reshapedResult := result.Reshape([]int{outChannels, outHeight, outWidth})
+
+		copy(output.Data[b*outChannels*outHeight*outWidth:], reshapedResult.Data)
+	}
+
+	return output
+}
+
+func (t *Tensor) Conv2DTranspose(weight *Tensor, kernelH, kernelW, strideH, strideW, padH, padW int) *Tensor {
+
+	if len(t.GetShape()) != 4 || len(weight.GetShape()) != 4 {
+		weight = weight.Reshape([]int{1, 1, kernelH, kernelW})
+		//panic("both tensors must be 4D (NCHW format)")
+	}
+
+	transposedWeight := weight.TransposeByDim(0, 1)
+
+	adjPadH := kernelH - padH - 1
+	adjPadW := kernelW - padW - 1
+
+	return t.Conv2D(transposedWeight, kernelH, strideH, adjPadH, adjPadW)
+}
+
+func (t *Tensor) Conv2DGradientWeight(input *Tensor, kernelH, kernelW, strideH, strideW, padH, padW int) *Tensor {
+	fmt.Println()
+	strideH = 2
+	strideW = 2
+	if len(t.GetShape()) != 4 || len(input.GetShape()) != 4 {
+		panic("both tensors must be 4D (NCHW format)")
+	}
+
+	reshapedInput := input.TransposeByDim(0, 1)
+	reshapedGrad := t.TransposeByDim(0, 1)
+
+	kernelH = reshapedGrad.GetShape()[2]
+	kernelW = reshapedGrad.GetShape()[3]
+
+	fmt.Println("kernelH,kernelW:", kernelH, kernelW)
+
+	return reshapedInput.Conv2D(reshapedGrad, kernelH, strideH, padH, padW)
+}
+
+//func (t *Tensor) Conv2DGradientWeight(input *Tensor, strideH, strideW, padH, padW int) *Tensor {
+//	if len(t.GetShape()) != 4 || len(input.GetShape()) != 4 {
+//		panic("both tensors must be 4D (NCHW format)")
+//	}
+//
+//	reshapedInput := input.TransposeByDim(0, 1)
+//	reshapedGrad := t.TransposeByDim(0, 1)
+//
+//	kernelH := reshapedGrad.GetShape()[2]
+//	kernelW := reshapedGrad.GetShape()[3]
+//
+//	fmt.Println("kernelH,kernelW:", kernelH, kernelW)
+//
+//	return reshapedInput.Conv2D(reshapedGrad, kernelH, strideH, padH, padW)
+//}
+
+func (t *Tensor) im2col(kernelH, kernelW, strideH, strideW int) (*Tensor, error) {
+	if len(t.GetShape()) != 3 {
+		return nil, errors.New("im2col requires 3D tensor [C, H, W]")
+	}
+
+	channels := t.GetShape()[0]
+	height := t.GetShape()[1]
+	width := t.GetShape()[2]
+
+	outHeight := (height-kernelH)/strideH + 1
+	outWidth := (width-kernelW)/strideW + 1
+
+	unfoldedSize := channels * kernelH * kernelW
+	blocks := outHeight * outWidth
+
+	data := make([]float32, unfoldedSize*blocks)
+	idx := 0
+
+	for c := 0; c < channels; c++ {
+		for kh := 0; kh < kernelH; kh++ {
+			for kw := 0; kw < kernelW; kw++ {
+				for h := 0; h < outHeight; h++ {
+					for w := 0; w < outWidth; w++ {
+						srcH := h*strideH + kh
+						srcW := w*strideW + kw
+						if srcH >= height || srcW >= width {
+							data[idx] = 0
+						} else {
+							srcIdx := c*height*width + srcH*width + srcW
+							data[idx] = t.Data[srcIdx]
+						}
+						idx++
+					}
+				}
+			}
+		}
+	}
+
+	return &Tensor{
+		Data:  data,
+		shape: []int{unfoldedSize, blocks},
+	}, nil
+}
+
+//func (t *Tensor) Conv2DGradientWeight(input *Tensor, kernelH, kernelW, strideH, strideW, padH, padW int) *Tensor {
+//	reshapedInput := input.TransposeByDim(0, 1)
+//	reshapedGrad := t.TransposeByDim(0, 1)
+//	return reshapedInput.Conv2D(reshapedGrad, kernelH, strideH, padH, padW)
+//}

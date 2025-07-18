@@ -10,8 +10,27 @@ import (
 func TestConv(t *testing.T) {
 	graph := NewComputationalGraph()
 
-	input := graph.NewGraphTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{1, 1, 3, 3}, "input")
-	kernel := graph.NewGraphTensor([]float32{1, 0, 0, 1}, []int{1, 1, 2, 2}, "kernel")
+	inputData := []float32{
+		1, 2, 3, 4,
+		1, 2, 3, 4,
+		1, 2, 3, 4,
+		1, 2, 3, 4,
+	}
+	input := graph.NewGraphTensor(
+		inputData,
+		[]int{1, 1, 4, 4},
+		"input",
+	)
+
+	kernelData := []float32{
+		1, 0,
+		0, 1,
+	}
+	kernel := graph.NewGraphTensor(
+		kernelData,
+		[]int{1, 1, 2, 2},
+		"kernel",
+	)
 
 	output := input.Conv(kernel, []int{1, 1}, []int{0, 0}, "conv_output")
 	graph.SetOutput(output)
@@ -45,9 +64,10 @@ class ComputationalGraph(nn.Module):
     def __init__(self):
         super().__init__()
         self.input = torch.tensor([[[
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
         ]]], dtype=torch.float32, requires_grad=True)
         
         self.kernel = torch.tensor([[[

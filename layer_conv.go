@@ -83,10 +83,7 @@ func NewConvLayer(inCh, outCh, kSize, stride, pad int) *ConvLayer {
 func (c *ConvLayer) Forward(x *tensor.Tensor) *tensor.Tensor {
 	c.InputCache = x.Clone()
 
-	convOut, err := x.Conv2D(c.Weights, c.KernelSize, c.Stride, c.Padding, c.Padding)
-	if err != nil {
-		panic(err)
-	}
+	convOut := x.Conv2D(c.Weights, c.KernelSize, c.Stride, c.Padding, c.Padding)
 
 	var biasBroadcast *tensor.Tensor
 	switch len(convOut.GetShape()) {

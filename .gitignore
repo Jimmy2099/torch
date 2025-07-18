@@ -13,6 +13,7 @@ restricted
 *.exe
 *.zip.*
 *.zip
+*.tar.gz
 *_result.txt
 *.json
 *.bin
