@@ -6,7 +6,8 @@ import (
 )
 
 type Conv struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	StrideH     int
 	StrideW     int
 	PadH        int
@@ -161,7 +162,11 @@ func NewConv(name string, strideH, strideW, padH, padW int, input, weight *Graph
 	}
 
 	return &Conv{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Conv",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input, weight},
 		},
@@ -216,4 +221,8 @@ func computeKernelGradient(input, grad *tensor.Tensor, kernelH, kernelW, strideH
 		}
 	}
 	return gradWeight
+}
+
+func (m *Conv) GetOutput() *GraphTensor {
+	return m.output
 }

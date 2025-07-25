@@ -37,12 +37,17 @@ func (t *GraphTensor) Pow(exponent *GraphTensor, names ...string) *GraphTensor {
 }
 
 type Pow struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func NewPow(name string, base, exponent *GraphTensor) *Pow {
 	return &Pow{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Pow",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{base, exponent},
 		},
@@ -83,7 +88,7 @@ func (m *Pow) Backward(grad *tensor.Tensor) {
 	gradBase := make([]float32, len(baseVal.Data))
 	for i := range baseVal.Data {
 		gradBase[i] = grad.Data[i] * exponentVal.Data[i] *
-			float32(math.Pow((baseVal.Data[i]), (exponentVal.Data[i]-1)))
+			math.Pow(baseVal.Data[i], exponentVal.Data[i]-1)
 	}
 
 	// Gradient for exponent: dexp = grad * base^exponent * ln(base)
@@ -99,4 +104,8 @@ func (m *Pow) Backward(grad *tensor.Tensor) {
 
 	m.Children[0].Node.Backward(tensor.NewTensor(gradBase, baseVal.GetShape()))
 	m.Children[1].Node.Backward(tensor.NewTensor(gradExp, exponentVal.GetShape()))
+}
+
+func (m *Pow) GetOutput() *GraphTensor {
+	return m.output
 }

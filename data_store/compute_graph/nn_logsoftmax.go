@@ -7,7 +7,8 @@ import (
 )
 
 type LogSoftmax struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	softmax *tensor.Tensor
 }
 
@@ -138,10 +139,18 @@ func (t *GraphTensor) LogSoftmax(names ...string) *GraphTensor {
 
 func NewLogSoftmax(name string, a *GraphTensor) *LogSoftmax {
 	return &LogSoftmax{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "LogSoftmax",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		softmax: nil,
 	}
+}
+
+func (m *LogSoftmax) GetOutput() *GraphTensor {
+	return m.output
 }

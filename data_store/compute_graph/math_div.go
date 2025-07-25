@@ -6,7 +6,8 @@ import (
 )
 
 type Div struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Div) Forward() *tensor.Tensor {
@@ -89,9 +90,17 @@ func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 
 func NewDiv(name string, a, b *GraphTensor) *Div {
 	return &Div{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Div",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b},
 		},
 	}
+}
+
+func (m *Div) GetOutput() *GraphTensor {
+	return m.output
 }

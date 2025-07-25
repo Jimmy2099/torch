@@ -7,7 +7,8 @@ import (
 )
 
 type Ceil struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Ceil) Forward() *tensor.Tensor {
@@ -65,9 +66,17 @@ func (t *GraphTensor) Ceil(names ...string) *GraphTensor {
 
 func NewCeil(name string, a *GraphTensor) *Ceil {
 	return &Ceil{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Ceil",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Ceil) GetOutput() *GraphTensor {
+	return m.output
 }

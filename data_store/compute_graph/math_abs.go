@@ -7,7 +7,8 @@ import (
 )
 
 type Abs struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Abs) Forward() *tensor.Tensor {
@@ -83,9 +84,17 @@ func (t *GraphTensor) Abs(names ...string) *GraphTensor {
 
 func NewAbs(name string, a *GraphTensor) *Abs {
 	return &Abs{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Abs",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Abs) GetOutput() *GraphTensor {
+	return m.output
 }

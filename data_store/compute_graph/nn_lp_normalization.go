@@ -8,7 +8,8 @@ import (
 )
 
 type LpNormalization struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	p       float32
 	axis    int
 	epsilon float32
@@ -146,7 +147,11 @@ func (t *GraphTensor) LpNormalization(p float32, axis int, epsilon float32, name
 
 func NewLpNormalization(name string, input *GraphTensor, p float32, axis int, epsilon float32) *LpNormalization {
 	return &LpNormalization{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "LpNormalization",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -154,4 +159,8 @@ func NewLpNormalization(name string, input *GraphTensor, p float32, axis int, ep
 		axis:    axis,
 		epsilon: epsilon,
 	}
+}
+
+func (m *LpNormalization) GetOutput() *GraphTensor {
+	return m.output
 }

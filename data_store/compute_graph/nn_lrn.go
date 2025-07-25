@@ -6,7 +6,8 @@ import (
 )
 
 type LRN struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	size   int
 	alpha  float32
 	beta   float32
@@ -82,7 +83,11 @@ func (t *GraphTensor) LRN(size int, alpha, beta, k float32, names ...string) *Gr
 
 func NewLRN(name string, input *GraphTensor, size int, alpha, beta, k float32) *LRN {
 	return &LRN{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "LRN",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -93,16 +98,6 @@ func NewLRN(name string, input *GraphTensor, size int, alpha, beta, k float32) *
 	}
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+func (m *LRN) GetOutput() *GraphTensor {
+	return m.output
 }

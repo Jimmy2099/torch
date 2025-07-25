@@ -6,7 +6,8 @@ import (
 )
 
 type Exp struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Exp) Forward() *tensor.Tensor {
@@ -65,9 +66,16 @@ func (t *GraphTensor) Exp(names ...string) *GraphTensor {
 
 func NewExp(name string, a *GraphTensor) *Exp {
 	return &Exp{
-		OPS{
-			Name:     name,
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Exp",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{Name: name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Exp) GetOutput() *GraphTensor {
+	return m.output
 }

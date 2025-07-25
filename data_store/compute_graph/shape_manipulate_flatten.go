@@ -6,7 +6,8 @@ import (
 )
 
 type Flatten struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	originalShape []int
 }
 
@@ -65,9 +66,17 @@ func (t *GraphTensor) Flatten(names ...string) *GraphTensor {
 
 func NewFlatten(name string, a *GraphTensor) *Flatten {
 	return &Flatten{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Flatten",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Flatten) GetOutput() *GraphTensor {
+	return m.output
 }

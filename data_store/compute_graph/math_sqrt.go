@@ -6,7 +6,8 @@ import (
 )
 
 type Sqrt struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Sqrt) Forward() *tensor.Tensor {
@@ -67,9 +68,17 @@ func (t *GraphTensor) Sqrt(names ...string) *GraphTensor {
 
 func NewSqrt(name string, a *GraphTensor) *Sqrt {
 	return &Sqrt{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Sqrt",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Sqrt) GetOutput() *GraphTensor {
+	return m.output
 }

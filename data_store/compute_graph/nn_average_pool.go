@@ -6,7 +6,8 @@ import (
 )
 
 type AveragePool struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	kernel     []int
 	stride     []int
 	padding    []int
@@ -133,7 +134,11 @@ func (t *GraphTensor) AveragePool(kernel, stride, padding []int, name string) *G
 
 func NewAveragePool(name string, input *GraphTensor, kernel, stride, padding []int) *AveragePool {
 	return &AveragePool{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "AveragePool",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -147,4 +152,8 @@ func calculatePoolOutputShape(shape []int, kernel, stride, padding []int) []int 
 	Hout := (shape[2]+2*padding[0]-kernel[0])/stride[0] + 1
 	Wout := (shape[3]+2*padding[1]-kernel[1])/stride[1] + 1
 	return []int{shape[0], shape[1], Hout, Wout}
+}
+
+func (m *AveragePool) GetOutput() *GraphTensor {
+	return m.output
 }

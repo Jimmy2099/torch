@@ -91,7 +91,8 @@ func untileTensor(grad *tensor.Tensor, inputShape []int) *tensor.Tensor {
 }
 
 type Tile struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	Repeats []int
 }
 
@@ -153,10 +154,18 @@ func (t *GraphTensor) Tile(repeats []int, names ...string) *GraphTensor {
 
 func NewTile(name string, a *GraphTensor, repeats []int) *Tile {
 	return &Tile{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Tile",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		Repeats: repeats,
 	}
+}
+
+func (m *Tile) GetOutput() *GraphTensor {
+	return m.output
 }

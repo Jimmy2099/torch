@@ -6,12 +6,17 @@ import (
 )
 
 type Sub struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func NewSub(name string, a, b *GraphTensor) *Sub {
 	return &Sub{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Sub",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b},
 		},
@@ -83,4 +88,8 @@ func (t *GraphTensor) Sub(other *GraphTensor, names ...string) *GraphTensor {
 	node.output = outputTensor
 	g.Nodes = append(g.Nodes, node)
 	return outputTensor
+}
+
+func (m *Sub) GetOutput() *GraphTensor {
+	return m.output
 }

@@ -6,7 +6,8 @@ import (
 )
 
 type Not struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Not) Forward() *tensor.Tensor {
@@ -66,9 +67,17 @@ func (t *GraphTensor) Not(names ...string) *GraphTensor {
 
 func NewNot(name string, a *GraphTensor) *Not {
 	return &Not{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "And",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Not) GetOutput() *GraphTensor {
+	return m.output
 }

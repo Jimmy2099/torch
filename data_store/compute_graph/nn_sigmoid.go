@@ -6,7 +6,8 @@ import (
 )
 
 type Sigmoid struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Sigmoid) Forward() *tensor.Tensor {
@@ -63,9 +64,17 @@ func (t *GraphTensor) Sigmoid(names ...string) *GraphTensor {
 
 func NewSigmoid(name string, a *GraphTensor) *Sigmoid {
 	return &Sigmoid{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Sigmoid",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Sigmoid) GetOutput() *GraphTensor {
+	return m.output
 }

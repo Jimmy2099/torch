@@ -7,7 +7,8 @@ import (
 )
 
 type Dropout struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	p    float32
 	mask *tensor.Tensor
 }
@@ -76,10 +77,18 @@ func (t *GraphTensor) Dropout(p float32, names ...string) *GraphTensor {
 
 func NewDropout(name string, input *GraphTensor, p float32) *Dropout {
 	return &Dropout{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Dropout",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
 		p: p,
 	}
+}
+
+func (m *Dropout) GetOutput() *GraphTensor {
+	return m.output
 }

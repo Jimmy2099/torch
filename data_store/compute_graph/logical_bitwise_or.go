@@ -6,7 +6,8 @@ import (
 )
 
 type Or struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Or) Forward() *tensor.Tensor {
@@ -88,9 +89,17 @@ func (t *GraphTensor) Or(other *GraphTensor, names ...string) *GraphTensor {
 
 func NewOr(name string, a, b *GraphTensor) *Or {
 	return &Or{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Or",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b},
 		},
 	}
+}
+
+func (m *Or) GetOutput() *GraphTensor {
+	return m.output
 }

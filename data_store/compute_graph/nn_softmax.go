@@ -7,7 +7,8 @@ import (
 )
 
 type Softmax struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Softmax) Forward() *tensor.Tensor {
@@ -136,9 +137,17 @@ func (t *GraphTensor) Softmax(names ...string) *GraphTensor {
 
 func NewSoftmax(name string, a *GraphTensor) *Softmax {
 	return &Softmax{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Softmax",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Softmax) GetOutput() *GraphTensor {
+	return m.output
 }

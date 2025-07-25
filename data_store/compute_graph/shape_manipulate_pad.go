@@ -6,7 +6,8 @@ import (
 )
 
 type Pad struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	Pads [][2]int
 	Val  float32
 }
@@ -145,11 +146,19 @@ func (t *GraphTensor) Pad(pads [][2]int, val float32, names ...string) *GraphTen
 
 func NewPad(name string, a *GraphTensor, pads [][2]int, val float32) *Pad {
 	return &Pad{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Pad",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		Pads: pads,
 		Val:  val,
 	}
+}
+
+func (m *Pad) GetOutput() *GraphTensor {
+	return m.output
 }

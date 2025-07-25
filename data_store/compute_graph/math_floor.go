@@ -7,7 +7,8 @@ import (
 )
 
 type Floor struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Floor) Forward() *tensor.Tensor {
@@ -65,9 +66,16 @@ func (t *GraphTensor) Floor(names ...string) *GraphTensor {
 
 func NewFloor(name string, a *GraphTensor) *Floor {
 	return &Floor{
-		OPS{
-			Name:     name,
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Floor",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{Name: name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Floor) GetOutput() *GraphTensor {
+	return m.output
 }

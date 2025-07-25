@@ -11,6 +11,13 @@ type Sum struct {
 	output   *GraphTensor
 }
 
+func (m *Sum) GetONNXNodeInfo() *ONNXNodeInfo {
+	return &ONNXNodeInfo{
+		Name:           "Sum",
+		ProducedTensor: true,
+	}
+}
+
 func NewSum(name string, a *GraphTensor) *Sum {
 	return &Sum{
 		Name:     name,
@@ -18,12 +25,12 @@ func NewSum(name string, a *GraphTensor) *Sum {
 	}
 }
 
-func (s *Sum) Forward() *tensor.Tensor {
-	if s.output.computed {
-		return s.output.value
+func (m *Sum) Forward() *tensor.Tensor {
+	if m.output.computed {
+		return m.output.value
 	}
 
-	a := s.Children[0].Node.Forward()
+	a := m.Children[0].Node.Forward()
 
 	sum := float32(0)
 	for _, val := range a.Data {
@@ -31,34 +38,35 @@ func (s *Sum) Forward() *tensor.Tensor {
 	}
 
 	result := tensor.NewTensor([]float32{sum}, []int{1})
-	s.output.value = result
-	s.output.computed = true
+	m.output.value = result
+	m.output.computed = true
 	return result
 }
 
-func (s *Sum) Backward(grad *tensor.Tensor) {
+func (m *Sum) Backward(grad *tensor.Tensor) {
 	if len(grad.Data) != 1 {
 		panic("gradient for sum must be scalar")
 	}
 
 	gradValue := grad.Data[0]
-	gradData := make([]float32, len(s.Children[0].value.Data))
+	gradData := make([]float32, len(m.Children[0].value.Data))
 	for i := range gradData {
 		gradData[i] = gradValue
 	}
 
-	gradTensor := tensor.NewTensor(gradData, s.Children[0].value.GetShape())
-	s.Children[0].Node.Backward(gradTensor)
+	gradTensor := tensor.NewTensor(gradData, m.Children[0].value.GetShape())
+	m.Children[0].Node.Backward(gradTensor)
 }
 
-func (s *Sum) ResetComputed() {
-	s.output.computed = false
+func (m *Sum) ResetComputed() {
+	m.output.computed = false
 }
 
-func (s *Sum) GetName() string { return s.Name }
-func (s *Sum) GetChildren() []Node {
-	nodes := make([]Node, len(s.Children))
-	for i, t := range s.Children {
+func (m *Sum) GetName() string { return m.Name }
+
+func (m *Sum) GetChildren() []Node {
+	nodes := make([]Node, len(m.Children))
+	for i, t := range m.Children {
 		nodes[i] = t.Node
 	}
 	return nodes
@@ -89,4 +97,8 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 	sumNode.output = outputTensor
 	g.Nodes = append(g.Nodes, sumNode)
 	return outputTensor
+}
+
+func (m *Sum) GetOutput() *GraphTensor {
+	return m.output
 }

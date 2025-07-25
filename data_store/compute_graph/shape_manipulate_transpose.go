@@ -6,7 +6,8 @@ import (
 )
 
 type Transpose struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	permutation        []int
 	inversePermutation []int
 }
@@ -65,11 +66,19 @@ func (t *GraphTensor) Transpose(perm []int, names ...string) *GraphTensor {
 
 func NewTranspose(name string, a *GraphTensor, perm, inverse []int) *Transpose {
 	return &Transpose{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Transpose",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		permutation:        perm,
 		inversePermutation: inverse,
 	}
+}
+
+func (m *Transpose) GetOutput() *GraphTensor {
+	return m.output
 }

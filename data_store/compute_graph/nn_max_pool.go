@@ -6,7 +6,8 @@ import (
 )
 
 type MaxPool struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	kernel       []int
 	stride       []int
 	padding      []int
@@ -141,7 +142,11 @@ func (t *GraphTensor) MaxPool(kernel, stride, padding []int, name string) *Graph
 
 func NewMaxPool(name string, input *GraphTensor, kernel, stride, padding []int) *MaxPool {
 	return &MaxPool{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "MaxPool",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -149,4 +154,8 @@ func NewMaxPool(name string, input *GraphTensor, kernel, stride, padding []int) 
 		stride:  stride,
 		padding: padding,
 	}
+}
+
+func (m *MaxPool) GetOutput() *GraphTensor {
+	return m.output
 }

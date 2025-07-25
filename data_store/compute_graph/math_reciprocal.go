@@ -6,7 +6,8 @@ import (
 )
 
 type Reciprocal struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Reciprocal) Forward() *tensor.Tensor {
@@ -79,9 +80,17 @@ func (t *GraphTensor) Reciprocal(names ...string) *GraphTensor {
 
 func NewReciprocal(name string, a *GraphTensor) *Reciprocal {
 	return &Reciprocal{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Reciprocal",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Reciprocal) GetOutput() *GraphTensor {
+	return m.output
 }

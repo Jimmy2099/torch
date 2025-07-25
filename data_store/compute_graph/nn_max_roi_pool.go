@@ -8,7 +8,8 @@ import (
 )
 
 type MaxRoiPool struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	PooledHeight int
 	PooledWidth  int
 	argmax       []int
@@ -177,11 +178,19 @@ func (t *GraphTensor) MaxRoiPool(rois *GraphTensor, pooledHeight, pooledWidth in
 
 func NewMaxRoiPool(name string, featureMap, rois *GraphTensor, pooledHeight, pooledWidth int) *MaxRoiPool {
 	return &MaxRoiPool{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "MaxRoiPool",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{featureMap, rois},
 		},
 		PooledHeight: pooledHeight,
 		PooledWidth:  pooledWidth,
 	}
+}
+
+func (m *MaxRoiPool) GetOutput() *GraphTensor {
+	return m.output
 }

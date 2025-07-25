@@ -11,6 +11,11 @@ type ONNX struct {
 	model *onnx_ir.ModelProto
 }
 
+type ONNXNodeInfo struct {
+	Name           string
+	ProducedTensor bool
+}
+
 func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	model := &onnx_ir.ModelProto{}
 	model.IrVersion = 7 // ONNX IR version
@@ -29,25 +34,10 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		Name: "computational_graph",
 	}
 
-	// Track tensors produced by operations
-	producedTensors := make(map[string]bool)
-	for _, node := range g.Nodes {
-		switch n := node.(type) {
-		case *Multiply:
-			producedTensors[n.output.Name] = true
-		case *Add:
-			producedTensors[n.output.Name] = true
-		case *Sub:
-			producedTensors[n.output.Name] = true
-		case *Div:
-			producedTensors[n.output.Name] = true
-		}
-	}
-
 	// 1. Add ONLY initial tensors as inputs (exclude intermediates)
 	for name, t := range g.Tensors {
-		if producedTensors[name] {
-			continue // Skip tensors produced by operations
+		if t.Node.GetONNXNodeInfo().ProducedTensor {
+			continue
 		}
 
 		// Create type info
@@ -87,42 +77,54 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	for _, node := range g.Nodes {
 		var onnxNode *onnx_ir.NodeProto
 		var nodeType string
-
-		switch n := node.(type) {
-		case *Multiply:
-			nodeType = "Mul"
-			onnxNode = &onnx_ir.NodeProto{
-				OpType: "Mul",
-				Input:  []string{n.Children[0].Name, n.Children[1].Name},
-				Output: []string{n.output.Name},
-			}
-		case *Add:
-			nodeType = "Add"
-			onnxNode = &onnx_ir.NodeProto{
-				OpType: "Add",
-				Input:  []string{n.Children[0].Name, n.Children[1].Name},
-				Output: []string{n.output.Name},
-			}
-		case *Sub:
-			nodeType = "Sub"
-			onnxNode = &onnx_ir.NodeProto{
-				OpType: "Sub",
-				Input:  []string{n.Children[0].Name, n.Children[1].Name},
-				Output: []string{n.output.Name},
-			}
-		case *Div:
-			nodeType = "Div"
-			onnxNode = &onnx_ir.NodeProto{
-				OpType: "Div",
-				Input:  []string{n.Children[0].Name, n.Children[1].Name},
-				Output: []string{n.output.Name},
-			}
-		case *InputNode:
-			// Skip input nodes (no operation needed)
+		//
+		//switch n := node.(type) {
+		//case *Multiply:
+		//	nodeType = "Mul"
+		//	onnxNode = &onnx_ir.NodeProto{
+		//		OpType: "Mul",
+		//		Input:  []string{n.Children[0].Name, n.Children[1].Name},
+		//		Output: []string{n.output.Name},
+		//	}
+		//case *Add:
+		//	nodeType = "Add"
+		//	onnxNode = &onnx_ir.NodeProto{
+		//		OpType: "Add",
+		//		Input:  []string{n.Children[0].Name, n.Children[1].Name},
+		//		Output: []string{n.output.Name},
+		//	}
+		//case *Sub:
+		//	nodeType = "Sub"
+		//	onnxNode = &onnx_ir.NodeProto{
+		//		OpType: "Sub",
+		//		Input:  []string{n.Children[0].Name, n.Children[1].Name},
+		//		Output: []string{n.output.Name},
+		//	}
+		//case *Div:
+		//	nodeType = "Div"
+		//	onnxNode = &onnx_ir.NodeProto{
+		//		OpType: "Div",
+		//		Input:  []string{n.Children[0].Name, n.Children[1].Name},
+		//		Output: []string{n.output.Name},
+		//	}
+		//case *InputNode:
+		//	// Skip input nodes (no operation needed)
+		//	continue
+		//default:
+		//	return nil, fmt.Errorf("unsupported node type: %T", node)
+		//}
+		//
+		if node.GetONNXNodeInfo().ProducedTensor != true {
 			continue
-		default:
-			return nil, fmt.Errorf("unsupported node type: %T", node)
 		}
+		nodeType = node.GetONNXNodeInfo().Name
+		onnxNode = &onnx_ir.NodeProto{
+			OpType: nodeType,
+			Input:  []string{node.GetChildren()[0].GetName(), node.GetChildren()[1].GetName()},
+			Output: []string{node.GetOutput().Name},
+		}
+
+		//log.Println(onnxNode)
 
 		// Generate unique node name
 		count := nodeCounter[nodeType]

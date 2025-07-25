@@ -7,7 +7,8 @@ import (
 )
 
 type Log struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Log) Forward() *tensor.Tensor {
@@ -74,9 +75,16 @@ func (t *GraphTensor) Log(names ...string) *GraphTensor {
 
 func NewLog(name string, a *GraphTensor) *Log {
 	return &Log{
-		OPS{
-			Name:     name,
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Log",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{Name: name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Log) GetOutput() *GraphTensor {
+	return m.output
 }

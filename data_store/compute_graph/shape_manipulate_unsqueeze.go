@@ -6,7 +6,8 @@ import (
 )
 
 type Unsqueeze struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	originalShape []int
 	axis          int
 }
@@ -70,10 +71,18 @@ func (t *GraphTensor) Unsqueeze(axis int, names ...string) *GraphTensor {
 
 func NewUnsqueeze(name string, a *GraphTensor, axis int) *Unsqueeze {
 	return &Unsqueeze{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Unsqueeze",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		axis: axis,
 	}
+}
+
+func (m *Unsqueeze) GetOutput() *GraphTensor {
+	return m.output
 }

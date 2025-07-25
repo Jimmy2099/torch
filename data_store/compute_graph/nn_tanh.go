@@ -6,7 +6,8 @@ import (
 )
 
 type Tanh struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Tanh) Forward() *tensor.Tensor {
@@ -63,9 +64,17 @@ func (t *GraphTensor) Tanh(names ...string) *GraphTensor {
 
 func NewTanh(name string, a *GraphTensor) *Tanh {
 	return &Tanh{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Tanh",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Tanh) GetOutput() *GraphTensor {
+	return m.output
 }

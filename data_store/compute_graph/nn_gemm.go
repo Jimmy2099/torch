@@ -6,7 +6,8 @@ import (
 )
 
 type Gemm struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	TransA bool
 	TransB bool
 	Alpha  float32
@@ -87,7 +88,11 @@ func (t *GraphTensor) Gemm(b, c *GraphTensor, transA, transB bool, alpha, beta f
 
 func NewGemm(name string, transA, transB bool, alpha, beta float32, a, b, c *GraphTensor) *Gemm {
 	return &Gemm{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Gemm",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b, c},
 		},
@@ -96,6 +101,10 @@ func NewGemm(name string, transA, transB bool, alpha, beta float32, a, b, c *Gra
 		Alpha:  alpha,
 		Beta:   beta,
 	}
+}
+
+func (m *Gemm) GetOutput() *GraphTensor {
+	return m.output
 }
 
 func gemm(a, b, c *tensor.Tensor, transA, transB bool, alpha, beta float32) *tensor.Tensor {

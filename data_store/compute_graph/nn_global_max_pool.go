@@ -6,7 +6,8 @@ import (
 )
 
 type GlobalMaxPool struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	maxPositions [][]int
 }
 
@@ -105,9 +106,13 @@ func (t *GraphTensor) GlobalMaxPool(name string) *GraphTensor {
 
 func NewGlobalMaxPool(name string, input *GraphTensor) *GlobalMaxPool {
 	return &GlobalMaxPool{
-		OPS: OPS{
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
 	}
+}
+
+func (m *GlobalMaxPool) GetOutput() *GraphTensor {
+	return m.output
 }

@@ -8,7 +8,8 @@ import (
 )
 
 type LpPool struct {
-	OPS     // 嵌入OPS结构体，继承output字段
+	*OPSNode
+	OPSTensor
 	kernel  []int
 	strides []int
 	p       float32
@@ -156,7 +157,11 @@ func (t *GraphTensor) LpPool(kernel, strides []int, p float32, names ...string) 
 
 func NewLpPool(name string, input *GraphTensor, kernel, strides []int, p float32) *LpPool {
 	return &LpPool{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "LpPool",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -164,4 +169,8 @@ func NewLpPool(name string, input *GraphTensor, kernel, strides []int, p float32
 		strides: strides,
 		p:       p,
 	}
+}
+
+func (m *LpPool) GetOutput() *GraphTensor {
+	return m.output
 }

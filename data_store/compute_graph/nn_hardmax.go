@@ -6,7 +6,8 @@ import (
 )
 
 type Hardmax struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Hardmax) Forward() *tensor.Tensor {
@@ -100,9 +101,13 @@ func (t *GraphTensor) Hardmax(names ...string) *GraphTensor {
 
 func NewHardmax(name string, a *GraphTensor) *Hardmax {
 	return &Hardmax{
-		OPS{
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Hardmax) GetOutput() *GraphTensor {
+	return m.output
 }

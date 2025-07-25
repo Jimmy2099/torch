@@ -6,7 +6,8 @@ import (
 )
 
 type GlobalAveragePool struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *GlobalAveragePool) Forward() *tensor.Tensor {
@@ -96,9 +97,17 @@ func (t *GraphTensor) GlobalAveragePool(name string) *GraphTensor {
 
 func NewGlobalAveragePool(name string, input *GraphTensor) *GlobalAveragePool {
 	return &GlobalAveragePool{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "GlobalAveragePool",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
 	}
+}
+
+func (m *GlobalAveragePool) GetOutput() *GraphTensor {
+	return m.output
 }

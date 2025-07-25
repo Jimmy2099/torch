@@ -1,18 +1,19 @@
 package compute_graph
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"os"
 )
 
 type Node interface {
 	Forward() *tensor.Tensor
 	Backward(grad *tensor.Tensor)
 	GetName() string
-	GetChildren() []Node
 	ResetComputed()
+	//OPSNode
+	GetONNXNodeInfo() *ONNXNodeInfo
+	GetChildren() []Node
+	GetOutput() *GraphTensor
 }
 
 type ComputationalGraph struct {
@@ -84,7 +85,7 @@ func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name st
 	g.Tensors[name] = tensor
 
 	node := &InputNode{
-		Name:   "input:" + name,
+		Name:   name,
 		output: tensor,
 	}
 	tensor.Node = node
@@ -120,88 +121,88 @@ type TensorExport struct {
 	Grad  []float32 `json:"grad"`
 }
 
-func LoadFromFile(filename string) (*ComputationalGraph, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-
-	var exportData GraphExport
-	if err := json.Unmarshal(data, &exportData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal graph: %w", err)
-	}
-
-	graph := NewComputationalGraph()
-
-	tensorMap := make(map[string]*GraphTensor)
-	for _, te := range exportData.Tensors {
-		t := &GraphTensor{
-			Name:  te.Name,
-			value: &tensor.Tensor{Data: te.Value},
-			grad:  &tensor.Tensor{Data: te.Grad},
-			Graph: graph,
-		}
-		tensorMap[te.Name] = t
-		graph.Tensors[te.Name] = t
-	}
-
-	for _, ne := range exportData.Nodes {
-		var node Node
-		var inputs []*GraphTensor
-
-		for _, inputName := range ne.Inputs {
-			if inputTensor, ok := tensorMap[inputName]; ok {
-				inputs = append(inputs, inputTensor)
-			} else {
-				return nil, fmt.Errorf("input tensor %s not found for node %s", inputName, ne.Name)
-			}
-		}
-
-		outputTensor := tensorMap[ne.Output]
-		if outputTensor == nil {
-			return nil, fmt.Errorf("output tensor %s not found for node %s", ne.Output, ne.Name)
-		}
-
-		switch ne.Type {
-		case "Input":
-			node = &InputNode{
-				Name:   ne.Name,
-				output: outputTensor,
-			}
-		case "Multiply":
-			if len(inputs) != 2 {
-				return nil, fmt.Errorf("multiply node requires exactly 2 inputs")
-			}
-			node = &Multiply{
-				Name:     ne.Name,
-				Children: []*GraphTensor{inputs[0], inputs[1]},
-				output:   outputTensor,
-			}
-		case "Add":
-			if len(inputs) != 2 {
-				return nil, fmt.Errorf("add node requires exactly 2 inputs")
-			}
-			node = &Add{
-				Name:     ne.Name,
-				Children: []*GraphTensor{inputs[0], inputs[1]},
-				output:   outputTensor,
-			}
-		default:
-			return nil, fmt.Errorf("unknown node type: %s", ne.Type)
-		}
-
-		outputTensor.Node = node
-		graph.Nodes = append(graph.Nodes, node)
-	}
-
-	if outputTensor, ok := tensorMap[exportData.Output]; ok {
-		graph.output = outputTensor
-	} else {
-		return nil, fmt.Errorf("output tensor %s not found", exportData.Output)
-	}
-
-	return graph, nil
-}
+//func LoadFromFile(filename string) (*ComputationalGraph, error) {
+//	data, err := os.ReadFile(filename)
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to read file: %w", err)
+//	}
+//
+//	var exportData GraphExport
+//	if err := json.Unmarshal(data, &exportData); err != nil {
+//		return nil, fmt.Errorf("failed to unmarshal graph: %w", err)
+//	}
+//
+//	graph := NewComputationalGraph()
+//
+//	tensorMap := make(map[string]*GraphTensor)
+//	for _, te := range exportData.Tensors {
+//		t := &GraphTensor{
+//			Name:  te.Name,
+//			value: &tensor.Tensor{Data: te.Value},
+//			grad:  &tensor.Tensor{Data: te.Grad},
+//			Graph: graph,
+//		}
+//		tensorMap[te.Name] = t
+//		graph.Tensors[te.Name] = t
+//	}
+//
+//	for _, ne := range exportData.Nodes {
+//		var node Node
+//		var inputs []*GraphTensor
+//
+//		for _, inputName := range ne.Inputs {
+//			if inputTensor, ok := tensorMap[inputName]; ok {
+//				inputs = append(inputs, inputTensor)
+//			} else {
+//				return nil, fmt.Errorf("input tensor %s not found for node %s", inputName, ne.Name)
+//			}
+//		}
+//
+//		outputTensor := tensorMap[ne.Output]
+//		if outputTensor == nil {
+//			return nil, fmt.Errorf("output tensor %s not found for node %s", ne.Output, ne.Name)
+//		}
+//
+//		switch ne.Type {
+//		case "Input":
+//			node = &InputNode{
+//				Name:   ne.Name,
+//				output: outputTensor,
+//			}
+//		case "Multiply":
+//			if len(inputs) != 2 {
+//				return nil, fmt.Errorf("multiply node requires exactly 2 inputs")
+//			}
+//			node = &Multiply{
+//				Name:     ne.Name,
+//				Children: []*GraphTensor{inputs[0], inputs[1]},
+//				output:   outputTensor,
+//			}
+//		case "Add":
+//			if len(inputs) != 2 {
+//				return nil, fmt.Errorf("add node requires exactly 2 inputs")
+//			}
+//			node = &Add{
+//				Name:     ne.Name,
+//				Children: []*GraphTensor{inputs[0], inputs[1]},
+//				output:   outputTensor,
+//			}
+//		default:
+//			return nil, fmt.Errorf("unknown node type: %s", ne.Type)
+//		}
+//
+//		outputTensor.Node = node
+//		graph.Nodes = append(graph.Nodes, node)
+//	}
+//
+//	if outputTensor, ok := tensorMap[exportData.Output]; ok {
+//		graph.output = outputTensor
+//	} else {
+//		return nil, fmt.Errorf("output tensor %s not found", exportData.Output)
+//	}
+//
+//	return graph, nil
+//}
 
 func (g *ComputationalGraph) GetTensors() map[string]*GraphTensor {
 	return g.Tensors
@@ -317,6 +318,13 @@ type InputNode struct {
 	output *GraphTensor
 }
 
+func (m *InputNode) GetONNXNodeInfo() *ONNXNodeInfo {
+	return &ONNXNodeInfo{
+		Name:           "Input",
+		ProducedTensor: false,
+	}
+}
+
 func (n *InputNode) Forward() *tensor.Tensor {
 	if n.output.computed {
 		return n.output.value
@@ -346,12 +354,15 @@ func (n *InputNode) ResetComputed() {
 	n.output.computed = false
 }
 
-func (n *InputNode) GetOutput() *tensor.Tensor { return n.output.value }
-func (n *InputNode) GetGrad() *tensor.Tensor   { return n.Grad }
-func (n *InputNode) GetName() string           { return n.Name }
-func (n *InputNode) GetChildren() []Node       { return nil }
+func (n *InputNode) GetGrad() *tensor.Tensor { return n.Grad }
+func (n *InputNode) GetName() string         { return n.Name }
+func (n *InputNode) GetChildren() []Node     { return nil }
+func (n *InputNode) GetOutput() *GraphTensor {
+	return n.output
+}
 
 type Multiply struct {
+	*OPSNode
 	Name     string
 	Children []*GraphTensor
 	output   *GraphTensor
@@ -359,6 +370,10 @@ type Multiply struct {
 
 func NewMultiply(name string, a, b *GraphTensor) *Multiply {
 	return &Multiply{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Mul",
+			ONNXProducedTensor: true,
+		}),
 		Name:     name,
 		Children: []*GraphTensor{a, b},
 	}
@@ -409,18 +424,26 @@ func (m *Multiply) GetChildren() []Node {
 	}
 	return nodes
 }
-func (m *Multiply) GetOutput() *tensor.Tensor { return m.output.value }
 
-func (a *Add) GetOutput() *tensor.Tensor { return a.output.value }
+func (m *Multiply) GetOutput() *GraphTensor { return m.output }
 
 type Add struct {
+	*OPSNode
 	Name     string
 	Children []*GraphTensor
 	output   *GraphTensor
 }
 
+func (m *Add) GetOutput() *GraphTensor {
+	return m.output
+}
+
 func NewAdd(name string, a, b *GraphTensor) *Add {
 	return &Add{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Add",
+			ONNXProducedTensor: true,
+		}),
 		Name:     name,
 		Children: []*GraphTensor{a, b},
 	}

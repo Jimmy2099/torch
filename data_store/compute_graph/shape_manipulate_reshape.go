@@ -6,7 +6,8 @@ import (
 )
 
 type Reshape struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	originalShape []int
 	newShape      []int
 }
@@ -61,10 +62,18 @@ func (t *GraphTensor) Reshape(shape []int, names ...string) *GraphTensor {
 
 func NewReshape(name string, a *GraphTensor, shape []int) *Reshape {
 	return &Reshape{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Reshape",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		newShape: shape,
 	}
+}
+
+func (m *Reshape) GetOutput() *GraphTensor {
+	return m.output
 }

@@ -6,7 +6,8 @@ import (
 )
 
 type Neg struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Neg) Forward() *tensor.Tensor {
@@ -56,9 +57,17 @@ func (t *GraphTensor) Neg(names ...string) *GraphTensor {
 
 func NewNeg(name string, a *GraphTensor) *Neg {
 	return &Neg{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Neg",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
+}
+
+func (m *Neg) GetOutput() *GraphTensor {
+	return m.output
 }

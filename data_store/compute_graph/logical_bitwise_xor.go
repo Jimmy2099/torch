@@ -6,7 +6,8 @@ import (
 )
 
 type Xor struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *Xor) Forward() *tensor.Tensor {
@@ -88,9 +89,17 @@ func (t *GraphTensor) Xor(other *GraphTensor, names ...string) *GraphTensor {
 
 func NewXor(name string, a, b *GraphTensor) *Xor {
 	return &Xor{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Xor",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b},
 		},
 	}
+}
+
+func (m *Xor) GetOutput() *GraphTensor {
+	return m.output
 }

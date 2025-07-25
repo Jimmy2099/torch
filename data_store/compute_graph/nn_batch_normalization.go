@@ -6,7 +6,8 @@ import (
 )
 
 type BatchNormalization struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	gamma       *GraphTensor
 	beta        *GraphTensor
 	epsilon     float32
@@ -125,7 +126,11 @@ func (t *GraphTensor) BatchNormalization(gamma, beta *GraphTensor, epsilon, mome
 
 func NewBatchNormalization(name string, input, gamma, beta *GraphTensor, epsilon, momentum float32) *BatchNormalization {
 	return &BatchNormalization{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Sub",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
@@ -134,4 +139,8 @@ func NewBatchNormalization(name string, input, gamma, beta *GraphTensor, epsilon
 		epsilon:  epsilon,
 		momentum: momentum,
 	}
+}
+
+func (m *BatchNormalization) GetOutput() *GraphTensor {
+	return m.output
 }

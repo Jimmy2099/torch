@@ -6,7 +6,8 @@ import (
 )
 
 type And struct {
-	OPS
+	*OPSNode
+	OPSTensor
 }
 
 func (m *And) Forward() *tensor.Tensor {
@@ -79,9 +80,17 @@ func (t *GraphTensor) And(other *GraphTensor, names ...string) *GraphTensor {
 
 func NewAnd(name string, a, b *GraphTensor) *And {
 	return &And{
-		OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "And",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a, b},
 		},
 	}
+}
+
+func (m *And) GetOutput() *GraphTensor {
+	return m.output
 }

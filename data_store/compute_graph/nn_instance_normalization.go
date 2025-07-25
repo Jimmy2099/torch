@@ -8,7 +8,8 @@ import (
 )
 
 type InstanceNormalization struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	epsilon  float32
 	mean     *tensor.Tensor
 	variance *tensor.Tensor
@@ -147,10 +148,18 @@ func (t *GraphTensor) InstanceNormalization(epsilon float32, names ...string) *G
 
 func NewInstanceNormalization(name string, input *GraphTensor, epsilon float32) *InstanceNormalization {
 	return &InstanceNormalization{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "InstanceNormalization",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{input},
 		},
 		epsilon: epsilon,
 	}
+}
+
+func (m *InstanceNormalization) GetOutput() *GraphTensor {
+	return m.output
 }

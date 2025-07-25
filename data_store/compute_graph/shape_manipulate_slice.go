@@ -22,7 +22,8 @@ func sliceShape(shape, starts, ends []int) []int {
 }
 
 type Slice struct {
-	OPS
+	*OPSNode
+	OPSTensor
 	Starts []int
 	Ends   []int
 }
@@ -130,11 +131,19 @@ func (t *GraphTensor) Slice(starts, ends []int, names ...string) *GraphTensor {
 
 func NewSlice(name string, a *GraphTensor, starts, ends []int) *Slice {
 	return &Slice{
-		OPS: OPS{
+		OPSNode: NewOPSNode(OPSNode{
+			ONNXName:           "Slice",
+			ONNXProducedTensor: true,
+		}),
+		OPSTensor: OPSTensor{
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 		Starts: starts,
 		Ends:   ends,
 	}
+}
+
+func (m *Slice) GetOutput() *GraphTensor {
+	return m.output
 }
