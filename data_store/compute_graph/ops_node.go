@@ -20,7 +20,7 @@ var onnxOPSNameMap map[string]interface{}
 func init() {
 	onnxOPSNameMap = map[string]interface{}{}
 	for i := 0; i < len(ONNXOperators); i++ {
-		onnxOPSNameMap[ONNXOperators[i]] = nil
+		onnxOPSNameMap[ONNXOperators[i].Name] = nil
 	}
 }
 
