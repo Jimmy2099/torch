@@ -19,3 +19,4 @@ restricted
 *.bin
 *.onnx
 *.bak
+*.log

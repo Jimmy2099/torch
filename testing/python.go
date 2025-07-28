@@ -9,7 +9,6 @@ import (
 )
 
 func RunPyScript(pythonScript string) {
-
 	file, err := os.CreateTemp("", "script.*.py")
 	log.Println("pyScript Path: ", file.Name())
 	if err != nil {
