@@ -11,6 +11,8 @@ type MSELoss struct {
 	Pred   *compute_graph.GraphTensor
 	Target *compute_graph.GraphTensor
 	output *compute_graph.GraphTensor
+
+	*compute_graph.OPSNode
 }
 
 func NewMSELoss(name string, pred, target *compute_graph.GraphTensor) *MSELoss {
@@ -21,12 +23,34 @@ func NewMSELoss(name string, pred, target *compute_graph.GraphTensor) *MSELoss {
 	}
 }
 
+func MSE(g *compute_graph.ComputationalGraph, pred, target *compute_graph.GraphTensor, name string) *compute_graph.GraphTensor {
+	if g != pred.Graph || g != target.Graph {
+		panic("tensors belong to different graphs")
+	}
+
+	lossNode := NewMSELoss(name, pred, target)
+
+	outputTensor := &compute_graph.GraphTensor{
+		Name:  name,
+		Shape: []int{1},
+		Graph: g,
+		Node:  lossNode,
+	}
+	outputTensor.SetValue(tensor.NewTensor([]float32{0}, []int{1}))
+	outputTensor.SetGrad(tensor.NewTensor([]float32{0}, []int{1}))
+	outputTensor.SetComputed(false)
+
+	g.Tensors[name] = outputTensor
+	lossNode.output = outputTensor
+	g.Nodes = append(g.Nodes, lossNode)
+	return outputTensor
+}
+
 func (m *MSELoss) Forward() *tensor.Tensor {
 	if m.output.IsComputed() {
 		return m.output.Value()
 	}
 
-	// Compute input tensors first
 	predVal := m.Pred.Node.Forward()
 	targetVal := m.Target.Node.Forward()
 
@@ -81,25 +105,6 @@ func (m *MSELoss) GetChildren() []compute_graph.Node {
 	return []compute_graph.Node{m.Pred.Node, m.Target.Node}
 }
 
-func MSE(g *compute_graph.ComputationalGraph, pred, target *compute_graph.GraphTensor, name string) *compute_graph.GraphTensor {
-	if g != pred.Graph || g != target.Graph {
-		panic("tensors belong to different graphs")
-	}
-
-	lossNode := NewMSELoss(name, pred, target)
-
-	outputTensor := &compute_graph.GraphTensor{
-		Name:  name,
-		Shape: []int{1},
-		Graph: g,
-		Node:  lossNode, // Fixed field name
-	}
-	outputTensor.SetValue(tensor.NewTensor([]float32{0}, []int{1}))
-	outputTensor.SetGrad(tensor.NewTensor([]float32{0}, []int{1}))
-	outputTensor.SetComputed(false)
-
-	g.Tensors[name] = outputTensor
-	lossNode.output = outputTensor
-	g.Nodes = append(g.Nodes, lossNode)
-	return outputTensor
+func (m *MSELoss) GetOutput() *compute_graph.GraphTensor {
+	return m.output
 }

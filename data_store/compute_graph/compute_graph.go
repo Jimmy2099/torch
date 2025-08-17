@@ -34,14 +34,6 @@ func (g *ComputationalGraph) SetOutput(t *GraphTensor) {
 	g.output = t
 }
 
-func (t *GraphTensor) IsComputed() bool {
-	return t.computed
-}
-
-func (t *GraphTensor) SetComputed(computed bool) {
-	t.computed = computed
-}
-
 func (g *ComputationalGraph) GetOutput() *GraphTensor {
 	return g.output
 }
@@ -62,6 +54,22 @@ func (t *GraphTensor) Value() *tensor.Tensor {
 
 func (t *GraphTensor) Grad() *tensor.Tensor {
 	return t.grad
+}
+
+func (t *GraphTensor) IsComputed() bool {
+	return t.computed
+}
+
+func (t *GraphTensor) SetComputed(computed bool) {
+	t.computed = computed
+}
+
+func (t *GraphTensor) SetValue(value *tensor.Tensor) {
+	t.value = value
+}
+
+func (t *GraphTensor) SetGrad(grad *tensor.Tensor) {
+	t.grad = grad
 }
 
 func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name string) *GraphTensor {
@@ -92,14 +100,6 @@ func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name st
 	g.Nodes = append(g.Nodes, node)
 
 	return tensor
-}
-
-func (t *GraphTensor) SetValue(value *tensor.Tensor) {
-	t.value = value
-}
-
-func (t *GraphTensor) SetGrad(grad *tensor.Tensor) {
-	t.grad = grad
 }
 
 type GraphExport struct {
@@ -312,9 +312,9 @@ func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 }
 
 type InputNode struct {
-	Name   string
-	Output *tensor.Tensor
-	Grad   *tensor.Tensor
+	Name string
+	//Output *tensor.Tensor
+	//Grad   *tensor.Tensor
 	output *GraphTensor
 }
 
@@ -354,12 +354,10 @@ func (n *InputNode) ResetComputed() {
 	n.output.computed = false
 }
 
-func (n *InputNode) GetGrad() *tensor.Tensor { return n.Grad }
+func (n *InputNode) GetGrad() *tensor.Tensor { return n.output.grad }
 func (n *InputNode) GetName() string         { return n.Name }
 func (n *InputNode) GetChildren() []Node     { return nil }
-func (n *InputNode) GetOutput() *GraphTensor {
-	return n.output
-}
+func (n *InputNode) GetOutput() *GraphTensor { return n.output }
 
 type Multiply struct {
 	*OPSNode
@@ -409,6 +407,7 @@ func (m *Multiply) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in Multiply backward pass")
 	}
 
+	// gradA = grad * b, gradB = grad * a
 	gradA := bVal.Mul(grad)
 	gradB := aVal.Mul(grad)
 
@@ -424,7 +423,6 @@ func (m *Multiply) GetChildren() []Node {
 	}
 	return nodes
 }
-
 func (m *Multiply) GetOutput() *GraphTensor { return m.output }
 
 type Add struct {
@@ -432,10 +430,6 @@ type Add struct {
 	Name     string
 	Children []*GraphTensor
 	output   *GraphTensor
-}
-
-func (m *Add) GetOutput() *GraphTensor {
-	return m.output
 }
 
 func NewAdd(name string, a, b *GraphTensor) *Add {
@@ -485,6 +479,8 @@ func (a *Add) GetChildren() []Node {
 	}
 	return nodes
 }
+
+func (a *Add) GetOutput() *GraphTensor { return a.output }
 
 func (g *ComputationalGraph) PrintStructure() {
 	fmt.Println("\nComputation Graph Structure:")

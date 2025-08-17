@@ -123,21 +123,17 @@ print("PASS")
 func TestComputeGraphLossBackward(t *testing.T) {
 	graph := NewComputationalGraph()
 
-	// 输入张量
 	x := graph.NewGraphTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
 	w := graph.NewGraphTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
 	b := graph.NewGraphTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
 
-	// 目标值（模拟真实标签）
 	target := graph.NewGraphTensor([]float32{25.0, 25.0, 25.0, 25.0}, []int{2, 2}, "target")
 
-	// 计算图构建
 	wx := x.Multiply(w)
 	xb := x.Multiply(b)
 	add := wx.Multiply(xb)
 
-	// 计算MSE损失 (mean squared error)
-	diff := add.Add(target.Neg("neg_target"), "diff") // target.Negate需要实现
+	diff := add.Add(target.Neg("neg_target"), "diff")
 	squared := diff.Multiply(diff, "squared")
 	loss := squared.Sum("loss")
 
@@ -146,19 +142,16 @@ func TestComputeGraphLossBackward(t *testing.T) {
 	fmt.Println("Computation Graph Structure:")
 	graph.PrintStructure()
 
-	// 第一次前向传播
 	graph.Forward()
 	fmt.Println("\nAfter First Forward Pass:")
 	fmt.Printf("Output: %v\n", add.value.Data)
 	fmt.Printf("Loss: %v\n", loss.value.Data[0])
 
-	// 反向传播
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
 	fmt.Printf("weights grad: %v\n", w.Grad().Data)
 	fmt.Printf("bias grad: %v\n", b.Grad().Data)
 
-	// 优化器步骤 (手动实现SGD)
 	learningRate := float32(0.1)
 	wData := w.value.Data
 	wGrad := w.Grad().Data
@@ -176,7 +169,6 @@ func TestComputeGraphLossBackward(t *testing.T) {
 	fmt.Printf("weight updated: %v\n", w.value.Data)
 	fmt.Printf("bias updated: %v\n", b.value.Data)
 
-	// 更新后前向传播
 	graph.Forward()
 	fmt.Println("\nAfter Update Forward Pass:")
 	fmt.Printf("Output: %v\n", add.value.Data)
