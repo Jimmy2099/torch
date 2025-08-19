@@ -249,14 +249,13 @@ type ONNXNodeInfo struct {
 
 func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	model := &onnx_ir.ModelProto{}
-	model.IrVersion = 7 // ONNX IR version
+	model.IrVersion = 7
 	model.ProducerName = "Torch Go"
 	model.ProducerVersion = "0.1"
 
-	// Create operator set import info
 	opset := &onnx_ir.OperatorSetIdProto{
 		Domain:  "",
-		Version: 11, // ONNX opset version
+		Version: 11,
 	}
 	model.OpsetImport = []*onnx_ir.OperatorSetIdProto{opset}
 
@@ -348,13 +347,20 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		if node.GetONNXNodeInfo().ProducedTensor != true {
 			continue
 		}
+
 		nodeType = node.GetONNXNodeInfo().Name
-		onnxNode = &onnx_ir.NodeProto{
-			OpType: nodeType,
-			Input:  []string{node.GetChildren()[0].GetName(), node.GetChildren()[1].GetName()},
-			Output: []string{node.GetOutput().Name},
+		nodeChildren := node.GetChildren()
+		// Dynamically collect input names
+		inputNames := make([]string, len(nodeChildren))
+		for i, child := range nodeChildren {
+			inputNames[i] = child.GetName()
 		}
 
+		onnxNode = &onnx_ir.NodeProto{
+			OpType: nodeType,
+			Input:  inputNames, // Use dynamically created slice
+			Output: []string{node.GetOutput().Name},
+		}
 		//log.Println(onnxNode)
 
 		// Generate unique node name

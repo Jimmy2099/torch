@@ -184,6 +184,8 @@ func TestExportONNX(t *testing.T) {
 
 	wx := x.Multiply(w)
 	xb := x.Multiply(b)
+	xb = xb.Add(xb)
+	xb = xb.Sigmoid()
 	add := wx.Multiply(xb)
 
 	graph.SetOutput(add)

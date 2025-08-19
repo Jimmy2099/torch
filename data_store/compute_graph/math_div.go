@@ -45,7 +45,6 @@ func (m *Div) Backward(grad *tensor.Tensor) {
 	// Gradient for numerator: da = grad / b = grad * (1/b)
 	gradA := ones.Copy().Div(bVal).Mul(grad)
 
-	// Gradient for denominator: db = -grad * a / (b^2) = -grad * a * (1/b^2)
 	bSquared := bVal.Copy().Mul(bVal)
 	oneOverBSquared := ones.Copy().Div(bSquared)
 	gradB := oneOverBSquared.Mul(aVal).Mul(grad).Negate()

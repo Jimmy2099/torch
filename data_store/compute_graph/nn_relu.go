@@ -5,45 +5,48 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
-type Exp struct {
+type ReLU struct {
 	*OPSNode
 	OPSTensor
 }
 
-func (m *Exp) Forward() *tensor.Tensor {
+func (m *ReLU) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
 
 	a := m.Children[0].Node.Forward()
-	result := a.Exp()
+	result := a.ReLU()
 	m.output.value = result
 	m.output.computed = true
 	return result
 }
 
-func (m *Exp) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	if aVal == nil || grad == nil {
-		panic("nil tensor in exponential backward pass")
+func (m *ReLU) Backward(grad *tensor.Tensor) {
+	x := m.Children[0].value
+	gradData := make([]float32, len(x.Data))
+	for i, val := range x.Data {
+		if val > 0 {
+			gradData[i] = grad.Data[i]
+		} else {
+			gradData[i] = 0
+		}
 	}
-
-	gradA := m.output.value.Copy().Mul(grad)
-	m.Children[0].Node.Backward(gradA)
+	gradInput := tensor.NewTensor(gradData, x.GetShape())
+	m.Children[0].Node.Backward(gradInput)
 }
 
-func (t *GraphTensor) Exp(names ...string) *GraphTensor {
+func (t *GraphTensor) ReLU(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("div_%d", t.Graph.NodeCount)
+		name = fmt.Sprintf("relu_%d", t.Graph.NodeCount)
 		t.Graph.NodeCount++
 	}
 
 	g := t.Graph
-
-	node := NewExp(name, t)
+	node := NewReLU(name, t)
 
 	outputTensor := &GraphTensor{
 		Name:  name,
@@ -63,18 +66,19 @@ func (t *GraphTensor) Exp(names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func NewExp(name string, a *GraphTensor) *Exp {
-	return &Exp{
+func NewReLU(name string, a *GraphTensor) *ReLU {
+	return &ReLU{
 		OPSNode: NewOPSNode(OPSNode{
-			ONNXName:           "Exp",
+			ONNXName:           "Relu",
 			ONNXProducedTensor: true,
 		}),
-		OPSTensor: OPSTensor{Name: name,
+		OPSTensor: OPSTensor{
+			Name:     name,
 			Children: []*GraphTensor{a},
 		},
 	}
 }
 
-func (m *Exp) GetOutput() *GraphTensor {
+func (m *ReLU) GetOutput() *GraphTensor {
 	return m.output
 }

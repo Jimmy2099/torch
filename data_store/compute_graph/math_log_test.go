@@ -20,7 +20,6 @@ func TestLog(t *testing.T) {
 
 	// Backward pass
 	graph.Backward()
-	// 正确梯度: [1/1, 1/e, 1/(e^2)]
 	expectedGrad := []float32{1, 1 / float32(math.E), 1 / 7.389056}
 	if !compareSlices(input.Grad().Data, expectedGrad, 1e-5) {
 		t.Errorf("Backward pass failed. Expected %v, got %v", expectedGrad, input.Grad().Data)

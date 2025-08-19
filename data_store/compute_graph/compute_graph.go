@@ -72,6 +72,10 @@ func (t *GraphTensor) SetGrad(grad *tensor.Tensor) {
 	t.grad = grad
 }
 
+func (g *ComputationalGraph) SetInput(t *GraphTensor, data []float32) {
+	t.value.Data = data
+}
+
 func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name string) *GraphTensor {
 	t := tensor.NewTensor(data, shape)
 	if _, exists := g.Tensors[name]; exists {
@@ -407,7 +411,6 @@ func (m *Multiply) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in Multiply backward pass")
 	}
 
-	// gradA = grad * b, gradB = grad * a
 	gradA := bVal.Mul(grad)
 	gradB := aVal.Mul(grad)
 
@@ -416,6 +419,7 @@ func (m *Multiply) Backward(grad *tensor.Tensor) {
 }
 
 func (m *Multiply) GetName() string { return m.Name }
+
 func (m *Multiply) GetChildren() []Node {
 	nodes := make([]Node, len(m.Children))
 	for i, t := range m.Children {

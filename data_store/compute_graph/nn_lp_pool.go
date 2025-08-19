@@ -150,7 +150,7 @@ func (t *GraphTensor) LpPool(kernel, strides []int, p float32, names ...string) 
 		panic("tensor name already exists: " + name)
 	}
 	g.Tensors[name] = outputTensor
-	node.output = outputTensor // 设置嵌入的OPS中的output字段
+	node.output = outputTensor
 	g.Nodes = append(g.Nodes, node)
 	return outputTensor
 }
