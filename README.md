@@ -1,4 +1,4 @@
-# Torch - A Golang DeepLearning Library From Scratch
+# BioTorch - A Golang Neuromorphic Compute(Bio-Neuron) DeepLearning Library From Scratch
 
 [![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
 
