@@ -250,7 +250,7 @@ type ONNXNodeInfo struct {
 func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	model := &onnx_ir.ModelProto{}
 	model.IrVersion = 7
-	model.ProducerName = "Torch Go"
+	model.ProducerName = "BioTorch"
 	model.ProducerVersion = "0.1"
 
 	opset := &onnx_ir.OperatorSetIdProto{

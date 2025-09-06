@@ -3,6 +3,7 @@ package compute_graph
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"log"
 )
 
 type Node interface {
@@ -49,6 +50,11 @@ type GraphTensor struct {
 }
 
 func (t *GraphTensor) UpdateAll(graphTensor *GraphTensor) {
+	if t == nil || graphTensor == nil {
+		log.Println("UpdateAll Info: graphTensor is nil or graphTensor is nil")
+		return
+	}
+
 	t.Name = graphTensor.Name
 	t.value = graphTensor.value
 	t.grad = graphTensor.grad
