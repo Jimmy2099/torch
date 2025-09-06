@@ -48,6 +48,16 @@ type GraphTensor struct {
 	computed bool
 }
 
+func (t *GraphTensor) UpdateAll(graphTensor *GraphTensor) {
+	t.Name = graphTensor.Name
+	t.value = graphTensor.value
+	t.grad = graphTensor.grad
+	t.Shape = graphTensor.Shape
+	t.Node = graphTensor.Node
+	t.Graph = graphTensor.Graph
+	t.computed = graphTensor.computed
+}
+
 func (t *GraphTensor) Value() *tensor.Tensor {
 	return t.value
 }
