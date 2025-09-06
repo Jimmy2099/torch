@@ -3,8 +3,8 @@
 [![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
 
 # Inference Compute Runtime Support 
-- **Built-in Inference Computing Engine (CPU AGPL Available / GPU Close Source)**
-- **[ONNX Runtime](https://github.com/onnx/onnx/blob/main/docs/Operators.md) (Version 7 WIP)**
+- **Built-in Inference Computing Engine (CPU Compute Version Available Under AGPL License / GPU Close Source)**
+- **[ONNX Runtime](https://github.com/onnx/onnx/blob/main/docs/Operators.md) (Version 7 - Export ONNX Models for Computation, Available Under the AGPL Open Source License)**
 
 #### llama3 example with gpu acceleration built on top of this framework
 <table>
