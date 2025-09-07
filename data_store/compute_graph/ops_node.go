@@ -12,15 +12,15 @@ func (m *OPSNode) GetONNXNodeInfo() *ONNXNodeInfo {
 	}
 }
 
-//	func (m *OPSNode) GetOutput() *GraphTensor {
-//		return nil
-//	}
-var onnxOPSNameMap map[string]interface{}
+var onnxOPSNameMap map[string]*ONNXOperator
 
 func init() {
-	onnxOPSNameMap = map[string]interface{}{}
+	onnxOPSNameMap = map[string]*ONNXOperator{}
 	for i := 0; i < len(ONNXOperators); i++ {
-		onnxOPSNameMap[ONNXOperators[i].Name] = nil
+		onnxOPSNameMap[ONNXOperators[i].Name] = &ONNXOperators[i]
+		for j := 0; j < len(onnxOPSNameMap[ONNXOperators[i].Name].AliasList); j++ {
+			onnxOPSNameMap[onnxOPSNameMap[ONNXOperators[i].Name].AliasList[j]] = &ONNXOperators[i]
+		}
 	}
 }
 
@@ -29,4 +29,8 @@ func NewOPSNode(in OPSNode) *OPSNode {
 		panic("invalid ONNX OPS Name")
 	}
 	return &in
+}
+
+func GetONNXNodeInfoByName(name string) *ONNXOperator {
+	return onnxOPSNameMap[name]
 }

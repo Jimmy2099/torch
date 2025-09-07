@@ -8,17 +8,26 @@ import (
 )
 
 type ONNXOperator struct {
-	Name         string
-	InputPCount  int
-	OutputPCount int
-	Ignore       bool
+	Name             string
+	InputPCount      int
+	OutputPCount     int
+	Ignore           bool
+	AliasList        []string
+	NodeRegistryFunc func(name string, children []*GraphTensor, output *GraphTensor) Node
 }
 
 var ONNXOperators = []ONNXOperator{
+	{Name: "Input", InputPCount: 0, OutputPCount: 1, Ignore: false, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		return &InputNode{Name: name, output: output}
+	}},
 	{Name: "Abs", InputPCount: 1, OutputPCount: 1},
 	{Name: "Acos", InputPCount: 1, OutputPCount: 1},
 	{Name: "Acosh", InputPCount: 1, OutputPCount: 1},
-	{Name: "Add", InputPCount: 2, OutputPCount: 1},
+	{Name: "Add", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewAdd(name, children[0], children[1])
+		m.output = output
+		return m
+	}},
 	{Name: "AffineGrid", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "And", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "ArgMax", InputPCount: 1, OutputPCount: 1, Ignore: true},
@@ -119,7 +128,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Min", InputPCount: -1, OutputPCount: 1},
 	{Name: "Mish", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Mod", InputPCount: 2, OutputPCount: 1, Ignore: true},
-	{Name: "Mul", InputPCount: 2, OutputPCount: 1},
+	{Name: "Mul", InputPCount: 2, OutputPCount: 1, AliasList: []string{"Multiply"}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewMultiply(name, children[0], children[1])
+		m.output = output
+		return m
+	}},
 	{Name: "Multinomial", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Neg", InputPCount: 1, OutputPCount: 1},
 	{Name: "NegativeLogLikelihoodLoss", InputPCount: 3, OutputPCount: 1},
@@ -178,7 +191,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "SequenceMap", InputPCount: -1, OutputPCount: -1},
 	{Name: "Shape", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Shrink", InputPCount: 1, OutputPCount: 1},
-	{Name: "Sigmoid", InputPCount: 1, OutputPCount: 1},
+	{Name: "Sigmoid", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewSigmoid(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "Sign", InputPCount: 1, OutputPCount: 1},
 	{Name: "Sin", InputPCount: 1, OutputPCount: 1},
 	{Name: "Sinh", InputPCount: 1, OutputPCount: 1},
