@@ -4,6 +4,7 @@ import (
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -53,4 +54,12 @@ func RunPyScript(pythonScript string) {
 	if err := cmd.Wait(); err != nil {
 		panic(fmt.Sprintln(file.Name(), "Error waiting for Python script to finish:", err))
 	}
+}
+
+func RunPyScriptFromFile(pythonScriptFilePath string) {
+	data, err := ioutil.ReadFile(pythonScriptFilePath)
+	if err != nil {
+		panic(err)
+	}
+	RunPyScript(string(data))
 }

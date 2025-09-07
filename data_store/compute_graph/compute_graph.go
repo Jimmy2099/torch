@@ -145,6 +145,15 @@ func (g *ComputationalGraph) GetTensors() map[string]*GraphTensor {
 	return g.Tensors
 }
 
+func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
+	for k, v := range g.Tensors {
+		if k == name {
+			return v
+		}
+	}
+	return nil
+}
+
 func (g *ComputationalGraph) Forward() {
 	for _, node := range g.Nodes {
 		node.ResetComputed()
