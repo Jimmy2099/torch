@@ -28,6 +28,9 @@
 ####  Notice
 Some parts of this project’s code may generate, optimize, or annotate by AI.
 
+
+### Terms of Use
+
 #### Permission to Use
 Citizens, companies, and other organizations from **Full democracies** and **Flawed democracies** countries (classified by [The Economist Democracy Index](https://en.wikipedia.org/wiki/The_Economist_Democracy_Index)) are permitted to use this repository under the **GNU Affero General Public License (AGPL)**.
 
