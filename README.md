@@ -31,7 +31,9 @@ Some parts of this project’s code may generate, optimize, or annotate by AI.
 #### Permission to Use
 Citizens and companies from **Full democracies** and **Flawed democracies** (as classified by [The Economist Democracy Index](https://en.wikipedia.org/wiki/The_Economist_Democracy_Index)) are permitted to use this repository under the **GNU Affero General Public License (AGPL)**.
 
-#### Prohibited Uses - The use of this repository for the following purposes is strictly prohibited:
+#### Prohibited to Use
+
+The following use purposes are strictly prohibited:
 
 - Any activity to serve the ideology or social system of communism, socialism, or any other ideology in a manner that leads to harm, oppression, or violation of human rights.
 - Human rights violations, including surveillance, oppression, or discrimination.
