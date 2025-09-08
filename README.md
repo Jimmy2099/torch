@@ -34,7 +34,7 @@ Some parts of this project’s code may generate, optimize, or annotate by AI.
 #### Permission to Use
 Citizens, companies, and other organizations from **Full democracies** and **Flawed democracies** countries (classified by [The Economist Democracy Index](https://en.wikipedia.org/wiki/The_Economist_Democracy_Index)) are permitted to use this repository under the **GNU Affero General Public License (AGPL)**.
 
-#### Prohibited to Use
+#### Prohibited Uses
 
 The following use purposes are strictly prohibited:
 
@@ -45,4 +45,4 @@ The following use purposes are strictly prohibited:
 - Military applications, including but not limited to warfare, weapons development, or any defense-related activities.
 - Illegal activities, such as hacking, fraud, or any action that violates applicable laws.
 
-Users must comply with all local, national, and international laws when using this repository.
+Users must comply with all local, national, and international laws when using this repository. To request permission for a use case not covered above, please contact me.
