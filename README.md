@@ -39,6 +39,7 @@ The following use purposes are strictly prohibited:
 - Human rights violations, including surveillance, oppression, or discrimination.
 - Terrorism or supporting terrorist organizations.
 - Any other malicious or harmful purposes that could cause harm to individuals or society.
-- Military applications, including but not limited to warfare, weapons development, or any defense-related activities.- Illegal activities, such as hacking, fraud, or any action that violates applicable laws.
+- Military applications, including but not limited to warfare, weapons development, or any defense-related activities.
+- Illegal activities, such as hacking, fraud, or any action that violates applicable laws.
 
 Users must comply with all local, national, and international laws when using this repository.
