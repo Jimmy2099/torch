@@ -29,7 +29,7 @@
 Some parts of this project’s code may generate, optimize, or annotate by AI.
 
 #### Permission to Use
-Citizens and companies from **Full democracies** and **Flawed democracies** (as classified by [The Economist Democracy Index](https://en.wikipedia.org/wiki/The_Economist_Democracy_Index)) are permitted to use this repository under the **GNU Affero General Public License (AGPL)**.
+Citizens and companies from **Full democracies** and **Flawed democracies** (as classified by [The Economist Democracy Index](https://en.wikipedia.org/wiki/The_Economist_Democracy_Index)) countries are permitted to use this repository under the **GNU Affero General Public License (AGPL)**.
 
 #### Prohibited to Use
 
