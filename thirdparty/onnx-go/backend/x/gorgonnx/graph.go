@@ -14,9 +14,7 @@ import (
 )
 
 // Graph is the top structure that should be compatible with
-//
-//	backend.ComputationGraph
-//
+//    backend.ComputationGraph
 // It holds a gorgonia.ExprGraph that is populated on the first call to the
 // Run() method
 type Graph struct {
@@ -85,7 +83,7 @@ func (g *Graph) Run() error {
 			return errors.New("root node is nil")
 		}
 		root.t, ok = g.m.GetResult(root.gorgoniaNode.ID()).(tensor.Tensor)
-		//root.t, ok = root.gorgoniaNode.value().(tensor.Tensor)
+		//root.t, ok = root.gorgoniaNode.Value().(tensor.Tensor)
 		if !ok {
 			return errors.New("root node is not a tensor")
 		}
