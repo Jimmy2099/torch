@@ -1,4 +1,4 @@
-# BioTorch - Neuromorphic Compute(Bio-Neuron) DeepLearning Engine
+# BioTorch - Neuromorphic Compute(Bio-Neuron Inspired) DeepLearning Engine
 
 [![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
 
