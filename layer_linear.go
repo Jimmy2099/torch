@@ -77,6 +77,7 @@ func NewLinearLayer(inputDim, outputDim int) *LinearLayer {
 		WeightsTransposed: false,
 	}
 }
+
 func (l *LinearLayer) Backward(x *tensor.Tensor, lr float32) *tensor.Tensor {
 	return nil
 }

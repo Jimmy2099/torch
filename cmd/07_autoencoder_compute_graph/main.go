@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"github.com/Jimmy2099/torch/data_store/compute_graph"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/layer_cg"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
 	"github.com/Jimmy2099/torch/testing"
@@ -32,6 +33,8 @@ func transpose2D(data []float32, rows, cols int) ([]float32, []int) {
 	}
 	return transposed, []int{cols, rows}
 }
+
+var encoder_fc1 *layer_cg.LinearLayer
 
 func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*compute_graph.GraphTensor, map[string]*compute_graph.GraphTensor) {
 	weightNodes := make(map[string]*compute_graph.GraphTensor)
@@ -99,6 +102,11 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 			spec.name+".bias",
 		)
 	}
+	{
+		encoder_fc1 = layer_cg.NewLinearLayer(graph, layerSpecs[0].weightShape[0], layerSpecs[0].weightShape[1])
+		encoder_fc1.SetWeight(weightNodes["encoder.0"])
+		encoder_fc1.SetBias(biasNodes["encoder.0"])
+	}
 	return weightNodes, biasNodes
 }
 
@@ -135,8 +143,9 @@ func NewAutoEncoder() *AutoEncoder {
 	}
 
 	fmt.Println("\n\nBuilding encoder...")
-	x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
-	x = x.ReLU("encoder_relu1")
+	//x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
+	//x = x.ReLU("encoder_relu1")
+	x = encoder_fc1.Forward(x)
 	fmt.Printf("\nAfter ReLU1: %v", x.Value().GetShape())
 
 	x = buildLinear(x, weightNodes["encoder.2"], biasNodes["encoder.2"], "encoder_fc2")
