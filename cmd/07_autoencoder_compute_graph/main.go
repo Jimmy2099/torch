@@ -38,6 +38,10 @@ var encoder_fc1 *layer_cg.LinearLayer
 var encoder_fc2 *layer_cg.LinearLayer
 var encoder_fc3 *layer_cg.LinearLayer
 
+var decoder_fc4 *layer_cg.LinearLayer
+var decoder_fc5 *layer_cg.LinearLayer
+var decoder_fc6 *layer_cg.LinearLayer
+
 func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*compute_graph.GraphTensor, map[string]*compute_graph.GraphTensor) {
 	weightNodes := make(map[string]*compute_graph.GraphTensor)
 	biasNodes := make(map[string]*compute_graph.GraphTensor)
@@ -117,6 +121,19 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 		encoder_fc3.SetWeight(weightNodes["encoder.4"])
 		encoder_fc3.SetBias(biasNodes["encoder.4"])
 	}
+	{
+		decoder_fc4 = layer_cg.NewLinearLayer(graph, layerSpecs[0+3].weightShape[0], layerSpecs[0+3].weightShape[1])
+		decoder_fc4.SetWeight(weightNodes["decoder.0"])
+		decoder_fc4.SetBias(biasNodes["decoder.0"])
+
+		decoder_fc5 = layer_cg.NewLinearLayer(graph, layerSpecs[1+3].weightShape[0], layerSpecs[1+3].weightShape[1])
+		decoder_fc5.SetWeight(weightNodes["decoder.2"])
+		decoder_fc5.SetBias(biasNodes["decoder.2"])
+
+		decoder_fc6 = layer_cg.NewLinearLayer(graph, layerSpecs[2+3].weightShape[0], layerSpecs[2+3].weightShape[1])
+		decoder_fc6.SetWeight(weightNodes["decoder.4"])
+		decoder_fc6.SetBias(biasNodes["decoder.4"])
+	}
 	return weightNodes, biasNodes
 }
 
@@ -131,26 +148,26 @@ func NewAutoEncoder() *AutoEncoder {
 	fmt.Printf("Input node shape: %v\n", ae.inputNode.Value().GetShape())
 
 	weightNodes, biasNodes := loadParameters(ae.graph)
-
+	_, _ = weightNodes, biasNodes
 	x := ae.inputNode
 	fmt.Println("\nBuilding computation graph...")
 
 	fmt.Printf("First layer weight shape: %v\n", weightNodes["encoder.0"].Value().GetShape())
 
-	buildLinear := func(x *compute_graph.GraphTensor, weight, bias *compute_graph.GraphTensor, name string) *compute_graph.GraphTensor {
-		fmt.Printf("\nBuilding layer: %s", name)
-		fmt.Printf("\n  Input shape: %v", x.Shape)
-		fmt.Printf("\n  Weight shape: %v", weight.Shape)
-
-		//return x
-		matmul := x.MatMul(weight, name+"_matmul")
-		fmt.Printf("\n  After matmul: %v", matmul.Shape)
-
-		add := matmul.Add(bias, name+"_add")
-		fmt.Printf("\n  After add: %v", add.Shape)
-
-		return add
-	}
+	//buildLinear := func(x *compute_graph.GraphTensor, weight, bias *compute_graph.GraphTensor, name string) *compute_graph.GraphTensor {
+	//	fmt.Printf("\nBuilding layer: %s", name)
+	//	fmt.Printf("\n  Input shape: %v", x.Shape)
+	//	fmt.Printf("\n  Weight shape: %v", weight.Shape)
+	//
+	//	//return x
+	//	matmul := x.MatMul(weight, name+"_matmul")
+	//	fmt.Printf("\n  After matmul: %v", matmul.Shape)
+	//
+	//	add := matmul.Add(bias, name+"_add")
+	//	fmt.Printf("\n  After add: %v", add.Shape)
+	//
+	//	return add
+	//}
 
 	fmt.Println("\n\nBuilding encoder...")
 	//x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
@@ -168,15 +185,18 @@ func NewAutoEncoder() *AutoEncoder {
 	fmt.Printf("\nLatent space: %v", x.Value().GetShape())
 
 	fmt.Println("\n\nBuilding decoder...")
-	x = buildLinear(x, weightNodes["decoder.0"], biasNodes["decoder.0"], "decoder_fc4")
+	//x = buildLinear(x, weightNodes["decoder.0"], biasNodes["decoder.0"], "decoder_fc4")
+	x = decoder_fc4.Forward(x)
 	x = x.ReLU("decoder_relu3")
 	fmt.Printf("\nAfter ReLU3: %v", x.Value().GetShape())
 
-	x = buildLinear(x, weightNodes["decoder.2"], biasNodes["decoder.2"], "decoder_fc5")
+	//x = buildLinear(x, weightNodes["decoder.2"], biasNodes["decoder.2"], "decoder_fc5")
+	x = decoder_fc5.Forward(x)
 	x = x.ReLU("decoder_relu4")
 	fmt.Printf("\nAfter ReLU4: %v", x.Value().GetShape())
 
-	x = buildLinear(x, weightNodes["decoder.4"], biasNodes["decoder.4"], "decoder_fc6")
+	//x = buildLinear(x, weightNodes["decoder.4"], biasNodes["decoder.4"], "decoder_fc6")
+	x = decoder_fc6.Forward(x)
 	x = x.Sigmoid("output_sigmoid")
 	fmt.Printf("\nOutput shape: %v", x.Value().GetShape())
 
