@@ -35,6 +35,8 @@ func transpose2D(data []float32, rows, cols int) ([]float32, []int) {
 }
 
 var encoder_fc1 *layer_cg.LinearLayer
+var encoder_fc2 *layer_cg.LinearLayer
+var encoder_fc3 *layer_cg.LinearLayer
 
 func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*compute_graph.GraphTensor, map[string]*compute_graph.GraphTensor) {
 	weightNodes := make(map[string]*compute_graph.GraphTensor)
@@ -106,6 +108,14 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 		encoder_fc1 = layer_cg.NewLinearLayer(graph, layerSpecs[0].weightShape[0], layerSpecs[0].weightShape[1])
 		encoder_fc1.SetWeight(weightNodes["encoder.0"])
 		encoder_fc1.SetBias(biasNodes["encoder.0"])
+
+		encoder_fc2 = layer_cg.NewLinearLayer(graph, layerSpecs[1].weightShape[0], layerSpecs[1].weightShape[1])
+		encoder_fc2.SetWeight(weightNodes["encoder.2"])
+		encoder_fc2.SetBias(biasNodes["encoder.2"])
+
+		encoder_fc3 = layer_cg.NewLinearLayer(graph, layerSpecs[2].weightShape[0], layerSpecs[2].weightShape[1])
+		encoder_fc3.SetWeight(weightNodes["encoder.4"])
+		encoder_fc3.SetBias(biasNodes["encoder.4"])
 	}
 	return weightNodes, biasNodes
 }
@@ -144,15 +154,17 @@ func NewAutoEncoder() *AutoEncoder {
 
 	fmt.Println("\n\nBuilding encoder...")
 	//x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
-	//x = x.ReLU("encoder_relu1")
 	x = encoder_fc1.Forward(x)
+	x = x.ReLU("encoder_relu1")
 	fmt.Printf("\nAfter ReLU1: %v", x.Value().GetShape())
 
-	x = buildLinear(x, weightNodes["encoder.2"], biasNodes["encoder.2"], "encoder_fc2")
+	//x = buildLinear(x, weightNodes["encoder.2"], biasNodes["encoder.2"], "encoder_fc2")
+	x = encoder_fc2.Forward(x)
 	x = x.ReLU("encoder_relu2")
 	fmt.Printf("\nAfter ReLU2: %v", x.Value().GetShape())
 
-	x = buildLinear(x, weightNodes["encoder.4"], biasNodes["encoder.4"], "encoder_fc3")
+	//x = buildLinear(x, weightNodes["encoder.4"], biasNodes["encoder.4"], "encoder_fc3")
+	x = encoder_fc3.Forward(x)
 	fmt.Printf("\nLatent space: %v", x.Value().GetShape())
 
 	fmt.Println("\n\nBuilding decoder...")

@@ -1,12 +1,13 @@
 package layer_cg
 
 import (
+	"fmt"
 	"github.com/Jimmy2099/torch/data_store/compute_graph"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"math/rand"
 )
 
 type LinearLayer struct {
+	num         int
 	inFeatures  int
 	outFeatures int
 	weight      *compute_graph.GraphTensor
@@ -19,26 +20,22 @@ func NewLinearLayer(graph *compute_graph.ComputationalGraph, inFeatures, outFeat
 	weightData := make([]float32, inFeatures*outFeatures)
 	biasData := make([]float32, outFeatures)
 
-	for i := range weightData {
-		weightData[i] = float32(rand.NormFloat64()) * 0.01
-	}
-	for i := range biasData {
-		biasData[i] = 0.0
-	}
+	num := graph.GetNameAutoInc("NewLinearLayer")
 
 	weight := graph.NewGraphTensor(
 		weightData,
 		[]int{inFeatures, outFeatures},
-		"linear_weight",
+		"linear_weight_"+fmt.Sprint(num),
 	)
 
 	bias := graph.NewGraphTensor(
 		biasData,
 		[]int{outFeatures},
-		"linear_bias",
+		"linear_bias_"+fmt.Sprint(num),
 	)
 
 	return &LinearLayer{
+		num:         num,
 		inFeatures:  inFeatures,
 		outFeatures: outFeatures,
 		weight:      weight,
@@ -49,8 +46,9 @@ func NewLinearLayer(graph *compute_graph.ComputationalGraph, inFeatures, outFeat
 }
 
 func (l *LinearLayer) Forward(x *compute_graph.GraphTensor) *compute_graph.GraphTensor {
-	matmul := x.MatMul(l.weight, "linear_matmul")
-	output := matmul.Add(l.bias, "linear_add_bias")
+
+	matmul := x.MatMul(l.weight, "linear_matmul_"+fmt.Sprint(l.num))
+	output := matmul.Add(l.bias, "linear_add_bias_"+fmt.Sprint(l.num))
 	return output
 }
 

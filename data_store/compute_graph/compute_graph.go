@@ -22,12 +22,14 @@ type ComputationalGraph struct {
 	Tensors   map[string]*GraphTensor
 	output    *GraphTensor
 	NodeCount int
+	*ComputationalGraphCount
 }
 
 func NewComputationalGraph() *ComputationalGraph {
 	return &ComputationalGraph{
-		Tensors:   make(map[string]*GraphTensor),
-		NodeCount: 0,
+		Tensors:                 make(map[string]*GraphTensor),
+		NodeCount:               0,
+		ComputationalGraphCount: NewComputationalGraphCount(),
 	}
 }
 
