@@ -1,8 +1,11 @@
 package mnist
 
 import (
+	_ "embed"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/fmt"
+	"github.com/Jimmy2099/torch/testing"
+	"os"
 )
 
 type MNISTData struct {
@@ -10,8 +13,18 @@ type MNISTData struct {
 	Labels *tensor.Tensor
 }
 
+//go:embed load_dataset.py
+var pythonScript string
+
 func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {
-	loadDataset()
+	{
+		_, err := os.Stat(imageFile)
+		_, err1 := os.Stat(labelFile)
+		if err != nil || err1 != nil {
+			testing.RunPyScript(pythonScript)
+		}
+	}
+
 	images, err := loadImages(imageFile)
 	if err != nil {
 		return nil, err
@@ -32,37 +45,4 @@ func LoadMNIST(imageFile, labelFile string) (*MNISTData, error) {
 	labelMatrix := tensor.NewTensorFromSlice(labels)
 
 	return &MNISTData{Images: imageMatrix, Labels: labelMatrix}, nil
-}
-
-func (data *MNISTData) MiniBatch(batchSize int) []MNISTData {
-	//var batches []MNISTData
-	//for i := 0; i < data.Images.Rows; i += batchSize {
-	//	end := i + batchSize
-	//	if end > data.Images.Rows {
-	//		end = data.Images.Rows
-	//	}
-	//
-	//	imageBatch := data.Images.GetRows(i, end)
-	//	labelBatch := data.Labels.GetRows(i, end)
-	//
-	//	batches = append(batches, MNISTData{
-	//		Images: imageBatch,
-	//		Labels: labelBatch,
-	//	})
-	//}
-	//return batches
-	return nil
-}
-
-func (data *MNISTData) Shuffle() {
-	//TODO
-	//if data.Images == nil || data.Labels == nil {
-	//	panic("Images or Labels are nil")
-	//}
-	//
-	//rand.Seed(time.Now().UnixNano())
-	//indices := rand.Perm(data.Images.Rows)
-	//
-	//data.Images = data.Images.ReorderRows(indices)
-	//data.Labels = data.Labels.ReorderRows(indices)
 }
