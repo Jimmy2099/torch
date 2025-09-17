@@ -253,8 +253,8 @@ torch.nn.Embedding(num_embeddings=%d, embedding_dim=%d)
 			if algorithm.Product(tc.inputShape) == 0 {
 				output := emb.Forward(inputTensor)
 				expectedShape := append(tc.inputShape, tc.embDim)
-				if !reflect.DeepEqual(output.shape, expectedShape) {
-					t.Errorf("Expected shape %v, got %v", expectedShape, output.shape)
+				if !reflect.DeepEqual(output.GetShape(), expectedShape) {
+					t.Errorf("Expected shape %v, got %v", expectedShape, output.GetShape())
 				}
 				if len(output.Data) != 0 {
 					t.Errorf("Empty input should produce empty output")

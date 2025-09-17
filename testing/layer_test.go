@@ -24,8 +24,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		bias := tensor.Random([]int{64}, -100, 100)
 
 		l := torch.NewLinearLayer(64, 64)
-		l.SetWeightsAndShape(weights.Data, weights.shape)
-		l.SetBiasAndShape(bias.Data, bias.shape)
+		l.SetWeightsAndShape(weights.Data, weights.GetShape())
+		l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 		result := GetLayerTestResult(script, l, t1)
 		expected := l.Forward(t1)
@@ -83,8 +83,8 @@ func TestGetLayerTestResult(t *testing.T) {
 				bias := tensor.Random(tc.biasShape, -100, 100)
 
 				l := torch.NewLinearLayer(tc.inFeatures, tc.outFeatures)
-				l.SetWeightsAndShape(weights.Data, weights.shape)
-				l.SetBiasAndShape(bias.Data, bias.shape)
+				l.SetWeightsAndShape(weights.Data, weights.GetShape())
+				l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 				result := GetLayerTestResult(script, l, t1)
 				t2 := l.Forward(t1)
@@ -113,8 +113,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		bias := tensor.Random([]int{outFeatures}, -1, 1)
 
 		l := torch.NewLinearLayer(inFeatures, outFeatures)
-		l.SetWeightsAndShape(weights.Data, weights.shape)
-		l.SetBiasAndShape(bias.Data, bias.shape)
+		l.SetWeightsAndShape(weights.Data, weights.GetShape())
+		l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
@@ -140,8 +140,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		bias := tensor.Random([]int{64}, -1, 1)
 
 		l := torch.NewConvLayer(inChannels, outChannels, kernelSize[0], stride[0], padding[0])
-		l.SetWeightsAndShape(weights.Data, weights.shape)
-		l.SetBiasAndShape(bias.Data, bias.shape)
+		l.SetWeightsAndShape(weights.Data, weights.GetShape())
+		l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
@@ -216,8 +216,8 @@ func TestGetLayerTestResult(t *testing.T) {
 					tc.padding[0],
 				)
 
-				l.SetWeightsAndShape(weights.Data, weights.shape)
-				l.SetBiasAndShape(bias.Data, bias.shape)
+				l.SetWeightsAndShape(weights.Data, weights.GetShape())
+				l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
@@ -310,8 +310,8 @@ func TestGetLayerTestResult(t *testing.T) {
 		log.Println("golang batchnorm2d bias weight", bias.Data[0])
 
 		l := torch.NewBatchNormLayer(numFeatures, eps, momentum)
-		l.SetWeightsAndShape(weight.Data, weight.shape)
-		l.SetBiasAndShape(bias.Data, bias.shape)
+		l.SetWeightsAndShape(weight.Data, weight.GetShape())
+		l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 		result := GetLayerTestResult32(script, l, input)
 		expected := l.Forward(input)
@@ -371,8 +371,8 @@ func TestGetLayerTestResult(t *testing.T) {
 				bias := tensor.Random(tc.biasShape, -1, 1)
 
 				l := torch.NewBatchNormLayer(tc.numFeatures, tc.eps, tc.momentum)
-				l.SetWeightsAndShape(weight.Data, weight.shape)
-				l.SetBiasAndShape(bias.Data, bias.shape)
+				l.SetWeightsAndShape(weight.Data, weight.GetShape())
+				l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 				result := GetLayerTestResult32(script, l, input)
 				expected := l.Forward(input)
@@ -410,8 +410,8 @@ func TestGetLayerTestResult(t *testing.T) {
 			padding[0], padding[1],
 			outputPadding[0], outputPadding[1],
 		)
-		l.SetWeightsAndShape(weights.Data, weights.shape)
-		l.SetBiasAndShape(bias.Data, bias.shape)
+		l.SetWeightsAndShape(weights.Data, weights.GetShape())
+		l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
@@ -493,15 +493,15 @@ func TestGetLayerTestResult(t *testing.T) {
 					tc.padding[0], tc.padding[1],
 					tc.outputPadding[0], tc.outputPadding[1],
 				)
-				l.SetWeightsAndShape(weights.Data, weights.shape)
-				l.SetBiasAndShape(bias.Data, bias.shape)
+				l.SetWeightsAndShape(weights.Data, weights.GetShape())
+				l.SetBiasAndShape(bias.Data, bias.GetShape())
 
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
 
 				if !result.EqualFloat32(expected) {
 					t.Errorf("%s failed:\nExpected:\n%v\nGot:\n%v",
-						tc.name, expected.shape, result.shape)
+						tc.name, expected.GetShape(), result.GetShape())
 				}
 			})
 		}
@@ -516,7 +516,7 @@ func TestGetLayerTestResult(t *testing.T) {
 		result := GetLayerTestResult(script, l, input)
 		expected := l.Forward(input)
 		if !result.EqualFloat32(input.Reshape(expectedShape)) {
-			t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.shape, result.Data[:5], result.shape)
+			t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.GetShape(), result.Data[:5], result.GetShape())
 		}
 	})
 
@@ -548,7 +548,7 @@ func TestGetLayerTestResult(t *testing.T) {
 				result := GetLayerTestResult(script, l, input)
 				expected := l.Forward(input)
 				if !result.EqualFloat32(expected) {
-					t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.shape, result.Data[:5], result.shape)
+					t.Errorf("Data mismatch:\nExpected:\n%v,%v\nResult:\n%v,%v", expected.Data[:5], expected.GetShape(), result.Data[:5], result.GetShape())
 				}
 			})
 		}
@@ -698,7 +698,7 @@ func TestConvLayerSafety(t *testing.T) {
 
 		if !conv.GetWeights().ShapesMatch(original) {
 			t.Errorf("Weight shape changed unexpectedly: got %v want %v",
-				conv.GetWeights().shape, original.shape)
+				conv.GetWeights().GetShape(), original.GetShape())
 		}
 	})
 }
@@ -750,11 +750,11 @@ func TestMaxPool2DSafety(t *testing.T) {
 		for i := range gradData {
 			gradData[i] = 0.5
 		}
-		gradOutput := tensor.NewTensor(gradData, output.shape)
+		gradOutput := tensor.NewTensor(gradData, output.GetShape())
 
 		gradInput := pool.Backward(gradOutput)
 
-		if !reflect.DeepEqual(gradInput.shape, input.shape) {
+		if !reflect.DeepEqual(gradInput.GetShape(), input.GetShape()) {
 			t.Error("MaxPool grad shape mismatch")
 		}
 	})
