@@ -42,6 +42,12 @@ var decoder_fc4 *layer_cg.LinearLayer
 var decoder_fc5 *layer_cg.LinearLayer
 var decoder_fc6 *layer_cg.LinearLayer
 
+var encoder_relu1 *layer_cg.ReLULayer
+var encoder_relu2 *layer_cg.ReLULayer
+
+var decoder_relu3 *layer_cg.ReLULayer
+var decoder_relu4 *layer_cg.ReLULayer
+
 func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*compute_graph.GraphTensor, map[string]*compute_graph.GraphTensor) {
 	weightNodes := make(map[string]*compute_graph.GraphTensor)
 	biasNodes := make(map[string]*compute_graph.GraphTensor)
@@ -134,6 +140,12 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 		decoder_fc6.SetWeight(weightNodes["decoder.4"])
 		decoder_fc6.SetBias(biasNodes["decoder.4"])
 	}
+	{
+		encoder_relu1 = layer_cg.NewReLULayer(graph)
+		encoder_relu2 = layer_cg.NewReLULayer(graph)
+		decoder_relu3 = layer_cg.NewReLULayer(graph)
+		decoder_relu4 = layer_cg.NewReLULayer(graph)
+	}
 	return weightNodes, biasNodes
 }
 
@@ -172,12 +184,14 @@ func NewAutoEncoder() *AutoEncoder {
 	fmt.Println("\n\nBuilding encoder...")
 	//x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
 	x = encoder_fc1.Forward(x)
-	x = x.ReLU("encoder_relu1")
+	x = encoder_relu1.Forward(x)
+	//x = x.ReLU("encoder_relu1")
 	fmt.Printf("\nAfter ReLU1: %v", x.Value().GetShape())
 
 	//x = buildLinear(x, weightNodes["encoder.2"], biasNodes["encoder.2"], "encoder_fc2")
 	x = encoder_fc2.Forward(x)
-	x = x.ReLU("encoder_relu2")
+	//x = x.ReLU("encoder_relu2")
+	x = encoder_relu2.Forward(x)
 	fmt.Printf("\nAfter ReLU2: %v", x.Value().GetShape())
 
 	//x = buildLinear(x, weightNodes["encoder.4"], biasNodes["encoder.4"], "encoder_fc3")
@@ -187,12 +201,14 @@ func NewAutoEncoder() *AutoEncoder {
 	fmt.Println("\n\nBuilding decoder...")
 	//x = buildLinear(x, weightNodes["decoder.0"], biasNodes["decoder.0"], "decoder_fc4")
 	x = decoder_fc4.Forward(x)
-	x = x.ReLU("decoder_relu3")
+	//x = x.ReLU("decoder_relu3")
+	x = decoder_relu3.Forward(x)
 	fmt.Printf("\nAfter ReLU3: %v", x.Value().GetShape())
 
 	//x = buildLinear(x, weightNodes["decoder.2"], biasNodes["decoder.2"], "decoder_fc5")
 	x = decoder_fc5.Forward(x)
-	x = x.ReLU("decoder_relu4")
+	//x = x.ReLU("decoder_relu4")
+	x = decoder_relu4.Forward(x)
 	fmt.Printf("\nAfter ReLU4: %v", x.Value().GetShape())
 
 	//x = buildLinear(x, weightNodes["decoder.4"], biasNodes["decoder.4"], "decoder_fc6")
