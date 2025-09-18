@@ -73,7 +73,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Conv", InputPCount: 3, OutputPCount: 1},
 	{Name: "ConvInteger", InputPCount: 4, OutputPCount: 1},
 	{Name: "ConvTranspose", InputPCount: 3, OutputPCount: 1},
-	{Name: "Cos", InputPCount: 1, OutputPCount: 1},
+	{Name: "Cos", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewCos(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "Cosh", InputPCount: 1, OutputPCount: 1},
 	{Name: "CumSum", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "DFT", InputPCount: 2, OutputPCount: 1, Ignore: true},
@@ -81,7 +85,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "DepthToSpace", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "DequantizeLinear", InputPCount: 3, OutputPCount: 1},
 	{Name: "Det", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Div", InputPCount: 2, OutputPCount: 1},
+	{Name: "Div", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewDiv(name, children[0], children[1])
+		m.output = output
+		return m
+	}},
 	{Name: "Dropout", InputPCount: 1, OutputPCount: 2},
 	{Name: "DynamicQuantizeLinear", InputPCount: 1, OutputPCount: 3},
 	{Name: "Einsum", InputPCount: -1, OutputPCount: 1, Ignore: true},
@@ -144,7 +152,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Loop", InputPCount: -1, OutputPCount: -1},
 	{Name: "LpNormalization", InputPCount: 1, OutputPCount: 1},
 	{Name: "LpPool", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "MatMul", InputPCount: 2, OutputPCount: 1},
+	{Name: "MatMul", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewMatMul(name, children[0], children[1])
+		m.output = output
+		return m
+	}},
 	{Name: "MatMulInteger", InputPCount: 4, OutputPCount: 1},
 	{Name: "Max", InputPCount: -1, OutputPCount: 1, Ignore: true},
 	{Name: "MaxPool", InputPCount: 1, OutputPCount: 2},
@@ -162,7 +174,11 @@ var ONNXOperators = []ONNXOperator{
 		return m
 	}},
 	{Name: "Multinomial", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Neg", InputPCount: 1, OutputPCount: 1},
+	{Name: "Neg", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewNeg(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "NegativeLogLikelihoodLoss", InputPCount: 3, OutputPCount: 1},
 	{Name: "NonMaxSuppression", InputPCount: 5, OutputPCount: 1},
 	{Name: "NonZero", InputPCount: 1, OutputPCount: 1, Ignore: true},
@@ -174,7 +190,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Or", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "PRelu", InputPCount: 2, OutputPCount: 1},
 	{Name: "Pad", InputPCount: 3, OutputPCount: 1},
-	{Name: "Pow", InputPCount: 2, OutputPCount: 1},
+	{Name: "Pow", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewPow(name, children[0], children[1])
+		m.output = output
+		return m
+	}},
 	{Name: "QLinearConv", InputPCount: 9, OutputPCount: 1},
 	{Name: "QLinearMatMul", InputPCount: 8, OutputPCount: 1},
 	{Name: "QuantizeLinear", InputPCount: 3, OutputPCount: 1},
@@ -190,9 +210,21 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ReduceL2", InputPCount: 1, OutputPCount: 1},
 	{Name: "ReduceLogSum", InputPCount: 1, OutputPCount: 1},
 	{Name: "ReduceLogSumExp", InputPCount: 1, OutputPCount: 1},
-	{Name: "ReduceMax", InputPCount: 1, OutputPCount: 1},
-	{Name: "ReduceMean", InputPCount: 1, OutputPCount: 1},
-	{Name: "ReduceMin", InputPCount: 1, OutputPCount: 1},
+	{Name: "ReduceMax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewReduceMax(name, children[0])
+		m.output = output
+		return m
+	}},
+	{Name: "ReduceMean", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewReduceMean(name, children[0])
+		m.output = output
+		return m
+	}},
+	{Name: "ReduceMin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewReduceMin(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "ReduceProd", InputPCount: 1, OutputPCount: 1},
 	{Name: "ReduceSum", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "ReduceSumSquare", InputPCount: 1, OutputPCount: 1},
@@ -243,7 +275,11 @@ var ONNXOperators = []ONNXOperator{
 		return m
 	}},
 	{Name: "Sign", InputPCount: 1, OutputPCount: 1},
-	{Name: "Sin", InputPCount: 1, OutputPCount: 1},
+	{Name: "Sin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewSin(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "Sinh", InputPCount: 1, OutputPCount: 1},
 	{Name: "Size", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Slice", InputPCount: 5, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
@@ -253,14 +289,22 @@ var ONNXOperators = []ONNXOperator{
 		m.output = output
 		return m
 	}},
-	{Name: "Softmax", InputPCount: 1, OutputPCount: 1, Ignore: true},
+	{Name: "Softmax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewSoftmax(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "SoftmaxCrossEntropyLoss", InputPCount: 3, OutputPCount: 1},
 	{Name: "Softplus", InputPCount: 1, OutputPCount: 1},
 	{Name: "Softsign", InputPCount: 1, OutputPCount: 1},
 	{Name: "SpaceToDepth", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Split", InputPCount: 2, OutputPCount: -1},
 	{Name: "SplitToSequence", InputPCount: 2, OutputPCount: 1, Ignore: true},
-	{Name: "Sqrt", InputPCount: 1, OutputPCount: 1},
+	{Name: "Sqrt", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewSqrt(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "Squeeze", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "StringConcat", InputPCount: -1, OutputPCount: 1},
 	{Name: "StringNormalizer", InputPCount: 1, OutputPCount: 1, Ignore: true},
@@ -275,7 +319,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ThresholdedRelu", InputPCount: 1, OutputPCount: 1},
 	{Name: "Tile", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "TopK", InputPCount: 2, OutputPCount: 2},
-	{Name: "Transpose", InputPCount: 1, OutputPCount: 1},
+	{Name: "Transpose", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewTranspose(name, children[0], []int{}, []int{}) //TODO
+		m.output = output
+		return m
+	}},
 	{Name: "Trilu", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
 		m := NewTrilu(name, children[0], children[1])
 		m.output = output
