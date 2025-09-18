@@ -35,7 +35,6 @@ func (m *Slice) Forward() *tensor.Tensor {
 
 	a := m.Children[0].Node.Forward()
 	result := a
-	// Apply slicing sequentially per dimension
 	for dim := 0; dim < len(m.Starts); dim++ {
 		result = result.Slice(m.Starts[dim], m.Ends[dim], dim)
 	}
@@ -57,7 +56,6 @@ func (m *Slice) Backward(grad *tensor.Tensor) {
 	ndim := len(inputShape)
 	sliceShape := sliceShape(inputShape, m.Starts, m.Ends)
 
-	// Precompute strides for input tensor
 	strides := make([]int, ndim)
 	stride := 1
 	for i := ndim - 1; i >= 0; i-- {
@@ -65,9 +63,7 @@ func (m *Slice) Backward(grad *tensor.Tensor) {
 		stride *= inputShape[i]
 	}
 
-	// Iterate through all elements in gradient tensor
 	for idx := 0; idx < len(gradData); idx++ {
-		// Calculate coordinate in sliced tensor
 		coord := make([]int, ndim)
 		remainder := idx
 		for i := ndim - 1; i >= 0; i-- {
@@ -75,13 +71,11 @@ func (m *Slice) Backward(grad *tensor.Tensor) {
 			remainder /= sliceShape[i]
 		}
 
-		// Calculate corresponding coordinate in original tensor
 		inputCoord := make([]int, ndim)
 		for i := range coord {
 			inputCoord[i] = coord[i] + m.Starts[i]
 		}
 
-		// Calculate index in original tensor
 		inputIndex := 0
 		for i := range inputCoord {
 			inputIndex += inputCoord[i] * strides[i]
@@ -106,17 +100,15 @@ func (t *GraphTensor) Slice(starts, ends []int, names ...string) *GraphTensor {
 	outputShape := sliceShape(t.Shape, starts, ends)
 	size := prod(outputShape)
 
-	// Create node first
 	node := NewSlice(name, t, starts, ends)
 
-	// Create output tensor with properly initialized data
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor(make([]float32, size), outputShape),
 		grad:  tensor.NewTensor(make([]float32, size), outputShape),
 		Shape: outputShape,
 		Graph: g,
-		Node:  node, // Assign node directly
+		Node:  node,
 	}
 
 	node.output = outputTensor

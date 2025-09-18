@@ -5,52 +5,58 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
-type Not struct {
+type ShapeOp struct {
 	*OPSNode
 	OPSTensor
 }
 
-func (m *Not) Forward() *tensor.Tensor {
+func (m *ShapeOp) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
 
 	a := m.Children[0].Node.Forward()
-
-	result := a.Not()
+	shape := a.GetShape()
+	shapeData := make([]float32, len(shape))
+	for i, dim := range shape {
+		shapeData[i] = float32(dim)
+	}
+	result := tensor.NewTensor(shapeData, []int{len(shape)})
 	m.output.value = result
 	m.output.computed = true
 	return result
 }
 
-func (m *Not) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient tensor in NOT backward pass")
+func (m *ShapeOp) Backward(grad *tensor.Tensor) {
+	inputShape := m.Children[0].Node.GetOutput().Shape
+
+	numElements := 1
+	for _, dim := range inputShape {
+		numElements *= dim
 	}
 
-	gradA := grad.Copy().Negate()
-
-	m.Children[0].Node.Backward(gradA)
+	zeroGrad := tensor.NewTensor(make([]float32, numElements), inputShape)
+	m.Children[0].Node.Backward(zeroGrad)
 }
 
-func (t *GraphTensor) Not(names ...string) *GraphTensor {
+func (t *GraphTensor) ShapeOp(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("not_%d", t.Graph.NodeCount)
+		name = fmt.Sprintf("shape_%d", t.Graph.NodeCount)
 		t.Graph.NodeCount++
 	}
 
 	g := t.Graph
+	node := NewShapeOp(name, t)
 
-	node := NewNot(name, t)
-
+	outputShape := []int{len(t.Shape)}
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
+		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
@@ -64,10 +70,10 @@ func (t *GraphTensor) Not(names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func NewNot(name string, a *GraphTensor) *Not {
-	return &Not{
+func NewShapeOp(name string, a *GraphTensor) *ShapeOp {
+	return &ShapeOp{
 		OPSNode: NewOPSNode(OPSNode{
-			ONNXName:           "And",
+			ONNXName:           "Shape",
 			ONNXProducedTensor: true,
 		}),
 		OPSTensor: OPSTensor{
@@ -77,6 +83,6 @@ func NewNot(name string, a *GraphTensor) *Not {
 	}
 }
 
-func (m *Not) GetOutput() *GraphTensor {
+func (m *ShapeOp) GetOutput() *GraphTensor {
 	return m.output
 }

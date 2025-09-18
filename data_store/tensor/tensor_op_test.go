@@ -3,6 +3,7 @@ package tensor
 import (
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -525,4 +526,191 @@ func TestTensor_Indices(t *testing.T) {
 			t.Errorf("Indices(6) for shape [2,3] got %v, want %v (calculation check)", got, want)
 		}
 	})
+}
+
+func TestTensor_Transpose(t *testing.T) {
+	tests := []struct {
+		name        string
+		shape       []int
+		data        []float32
+		wantShape   []int
+		wantData    []float32
+		shouldPanic bool
+	}{
+		{
+			name:      "2D transpose",
+			shape:     []int{2, 3},
+			data:      []float32{1, 2, 3, 4, 5, 6},
+			wantShape: []int{3, 2},
+			wantData:  []float32{1, 4, 2, 5, 3, 6},
+		},
+		{
+			name:        "1D should panic",
+			shape:       []int{3},
+			data:        []float32{1, 2, 3},
+			shouldPanic: true,
+		},
+		{
+			name:        "3D should panic",
+			shape:       []int{2, 2, 2},
+			data:        []float32{1, 2, 3, 4, 5, 6, 7, 8},
+			shouldPanic: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.shouldPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Error("Expected panic did not occur")
+					}
+				}()
+			}
+
+			tensor := NewTensor(tt.data, tt.shape)
+			got := tensor.Transpose()
+
+			if !reflect.DeepEqual(got.shape, tt.wantShape) {
+				t.Errorf("Transpose() shape = %v, want %v", got.shape, tt.wantShape)
+			}
+			if !reflect.DeepEqual(got.Data, tt.wantData) {
+				t.Errorf("Transpose() data = %v, want %v", got.Data, tt.wantData)
+			}
+		})
+	}
+}
+
+func TestTensor_Gather(t *testing.T) {
+	tests := []struct {
+		name        string
+		tensorShape []int
+		tensorData  []float32
+		indices     []float32
+		wantShape   []int
+		wantData    []float32
+		shouldPanic bool
+		panicMsg    string
+	}{
+		{
+			name:        "Basic gather",
+			tensorShape: []int{3, 2},
+			tensorData:  []float32{1, 2, 3, 4, 5, 6},
+			indices:     []float32{0, 2},
+			wantShape:   []int{2, 2},
+			wantData:    []float32{1, 2, 5, 6},
+		},
+		{
+			name:        "Indices not 1D",
+			tensorShape: []int{2, 2},
+			tensorData:  []float32{1, 2, 3, 4},
+			indices:     []float32{0, 0},
+			wantShape:   []int{2, 2},
+			shouldPanic: true,
+			panicMsg:    "Gather indices must be 1D",
+		},
+		{
+			name:        "Index out of range",
+			tensorShape: []int{2, 2},
+			tensorData:  []float32{1, 2, 3, 4},
+			indices:     []float32{3},
+			shouldPanic: true,
+			panicMsg:    "Gather index out of range: 3 not in [0, 2)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.shouldPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Error("Expected panic did not occur")
+					} else if !strings.Contains(r.(string), tt.panicMsg) {
+						t.Errorf("Unexpected panic message: %v", r)
+					}
+				}()
+			}
+
+			tensor := NewTensor(tt.tensorData, tt.tensorShape)
+			indicesTensor := NewTensor(tt.indices, []int{len(tt.indices)})
+			got := tensor.Gather(indicesTensor)
+
+			if !tt.shouldPanic {
+				if !reflect.DeepEqual(got.shape, tt.wantShape) {
+					t.Errorf("Gather() shape = %v, want %v", got.shape, tt.wantShape)
+				}
+				if !reflect.DeepEqual(got.Data, tt.wantData) {
+					t.Errorf("Gather() data = %v, want %v", got.Data, tt.wantData)
+				}
+			}
+		})
+	}
+}
+
+func TestTensor_ScatterAdd(t *testing.T) {
+	tests := []struct {
+		name        string
+		targetShape []int
+		targetData  []float32
+		indices     []float32
+		sourceShape []int
+		sourceData  []float32
+		wantData    []float32
+		shouldPanic bool
+		panicMsg    string
+	}{
+		{
+			name:        "Basic scatterAdd",
+			targetShape: []int{3, 2},
+			targetData:  make([]float32, 6),
+			indices:     []float32{0, 2},
+			sourceShape: []int{2, 2},
+			sourceData:  []float32{1, 2, 3, 4},
+			wantData:    []float32{1, 2, 0, 0, 3, 4},
+		},
+		{
+			name:        "Indices not 1D",
+			targetShape: []int{2, 2},
+			targetData:  make([]float32, 4),
+			indices:     []float32{0, 0},
+			sourceShape: []int{2, 2},
+			sourceData:  []float32{1, 1, 1, 1},
+			shouldPanic: true,
+			panicMsg:    "ScatterAdd indices must be 1D",
+		},
+		{
+			name:        "Dimension mismatch",
+			targetShape: []int{2, 2},
+			targetData:  make([]float32, 4),
+			indices:     []float32{0},
+			sourceShape: []int{1, 3},
+			sourceData:  []float32{1, 2, 3},
+			shouldPanic: true,
+			panicMsg:    "ScatterAdd target and source must have same dimensions after the first",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.shouldPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Error("Expected panic did not occur")
+					} else if !strings.Contains(r.(string), tt.panicMsg) {
+						t.Errorf("Unexpected panic message: %v", r)
+					}
+				}()
+			}
+
+			target := NewTensor(tt.targetData, tt.targetShape)
+			indicesTensor := NewTensor(tt.indices, []int{len(tt.indices)})
+			source := NewTensor(tt.sourceData, tt.sourceShape)
+
+			target.ScatterAdd(indicesTensor, source)
+
+			if !tt.shouldPanic && !reflect.DeepEqual(target.Data, tt.wantData) {
+				t.Errorf("ScatterAdd() = %v, want %v", target.Data, tt.wantData)
+			}
+		})
+	}
 }

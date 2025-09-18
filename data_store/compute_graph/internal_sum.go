@@ -86,7 +86,7 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 
 	outputTensor := &GraphTensor{
 		Name:  name,
-		value: tensor.NewTensor([]float32{0}, []int{1}), // Initialize with scalar
+		value: tensor.NewTensor([]float32{0}, []int{1}),
 		grad:  tensor.NewTensor([]float32{0}, []int{1}),
 		Shape: []int{1},
 		Graph: g,

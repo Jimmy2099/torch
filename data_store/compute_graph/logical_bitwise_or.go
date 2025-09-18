@@ -36,7 +36,6 @@ func (m *Or) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in OR backward pass")
 	}
 
-	// Gradient for inputs
 	gradA := tensor.NewTensor(make([]float32, len(aVal.Data)), aVal.GetShape())
 	for i := range gradA.Data {
 		gradA.Data[i] = 1.0 - bVal.Data[i]

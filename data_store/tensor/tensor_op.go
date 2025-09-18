@@ -117,12 +117,10 @@ func (t *Tensor) Negate() *Tensor {
 }
 
 func (t *Tensor) Permute(perm []int) *Tensor {
-	// Validate permutation
 	if len(perm) != len(t.shape) {
 		panic(fmt.Sprintf("Permutation length %d doesn't match tensor dimensions %d", len(perm), len(t.shape)))
 	}
 
-	// Check for valid permutation indices
 	seen := make(map[int]bool)
 	for _, p := range perm {
 		if p < 0 || p >= len(t.shape) {
@@ -134,13 +132,11 @@ func (t *Tensor) Permute(perm []int) *Tensor {
 		seen[p] = true
 	}
 
-	// Calculate new shape
 	newShape := make([]int, len(perm))
 	for i, idx := range perm {
 		newShape[i] = t.shape[idx]
 	}
 
-	// Handle zero-size tensor
 	if len(t.Data) == 0 {
 		return &Tensor{
 			Data:  []float32{},
@@ -148,7 +144,6 @@ func (t *Tensor) Permute(perm []int) *Tensor {
 		}
 	}
 
-	// Calculate strides for original tensor
 	oldStrides := make([]int, len(t.shape))
 	stride := 1
 	for i := len(t.shape) - 1; i >= 0; i-- {
@@ -156,7 +151,6 @@ func (t *Tensor) Permute(perm []int) *Tensor {
 		stride *= t.shape[i]
 	}
 
-	// Calculate strides for new tensor
 	newStrides := make([]int, len(perm))
 	stride = 1
 	for i := len(perm) - 1; i >= 0; i-- {
@@ -164,14 +158,12 @@ func (t *Tensor) Permute(perm []int) *Tensor {
 		stride *= newShape[i]
 	}
 
-	// Create new data array
 	totalSize := 1
 	for _, s := range newShape {
 		totalSize *= s
 	}
 	newData := make([]float32, totalSize)
 
-	// Rearrange data according to permutation
 	for i := 0; i < totalSize; i++ {
 		origIndex := 0
 		remainder := i
@@ -194,4 +186,63 @@ func (t *Tensor) Transpose() *Tensor {
 		panic("Transpose without permutation requires 2D tensor")
 	}
 	return t.Permute([]int{1, 0})
+}
+
+func (t *Tensor) Gather(indices *Tensor) *Tensor {
+	if len(indices.shape) != 1 {
+		panic("Gather indices must be 1D")
+	}
+
+	outputShape := make([]int, len(t.shape))
+	copy(outputShape, t.shape)
+	outputShape[0] = indices.shape[0]
+
+	outputData := make([]float32, ShapeSum(outputShape))
+
+	rowSize := ShapeSum(t.shape[1:])
+
+	for i := 0; i < indices.shape[0]; i++ {
+		idx := int(indices.Data[i])
+		if idx < 0 || idx >= t.shape[0] {
+			panic(fmt.Sprintf("Gather index out of range: %d not in [0, %d)", idx, t.shape[0]))
+		}
+
+		copy(outputData[i*rowSize:(i+1)*rowSize],
+			t.Data[idx*rowSize:(idx+1)*rowSize])
+	}
+
+	return NewTensor(outputData, outputShape)
+}
+
+func (t *Tensor) ScatterAdd(indices *Tensor, source *Tensor) {
+	if len(indices.shape) != 1 {
+		panic("ScatterAdd indices must be 1D")
+	}
+
+	if indices.shape[0] != source.shape[0] {
+		panic("ScatterAdd indices and source must have same first dimension")
+	}
+
+	if len(t.shape) != len(source.shape) {
+		panic("ScatterAdd target and source must have same number of dimensions")
+	}
+
+	for i := 1; i < len(t.shape); i++ {
+		if t.shape[i] != source.shape[i] {
+			panic("ScatterAdd target and source must have same dimensions after the first")
+		}
+	}
+
+	rowSize := ShapeSum(t.shape[1:])
+
+	for i := 0; i < indices.shape[0]; i++ {
+		idx := int(indices.Data[i])
+		if idx < 0 || idx >= t.shape[0] {
+			panic(fmt.Sprintf("ScatterAdd index out of range: %d not in [0, %d)", idx, t.shape[0]))
+		}
+
+		for j := 0; j < rowSize; j++ {
+			t.Data[idx*rowSize+j] += source.Data[i*rowSize+j]
+		}
+	}
 }

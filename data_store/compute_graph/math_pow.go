@@ -84,14 +84,12 @@ func (m *Pow) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in power backward pass")
 	}
 
-	// Gradient for base: dbase = grad * exponent * base^(exponent-1)
 	gradBase := make([]float32, len(baseVal.Data))
 	for i := range baseVal.Data {
 		gradBase[i] = grad.Data[i] * exponentVal.Data[i] *
 			math.Pow(baseVal.Data[i], exponentVal.Data[i]-1)
 	}
 
-	// Gradient for exponent: dexp = grad * base^exponent * ln(base)
 	gradExp := make([]float32, len(exponentVal.Data))
 	for i := range exponentVal.Data {
 		if baseVal.Data[i] <= 0 {

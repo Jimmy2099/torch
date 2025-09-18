@@ -476,3 +476,80 @@ func (t *Tensor) RoundTo(decimals int) *Tensor {
 	}
 	return NewTensor(newData, t.shape)
 }
+
+func (t *Tensor) Trilu(k int, upper bool) *Tensor {
+	if len(t.shape) < 2 {
+		panic("Trilu requires at least 2D tensor")
+	}
+
+	rows := t.shape[len(t.shape)-2]
+	cols := t.shape[len(t.shape)-1]
+
+	resultData := make([]float32, len(t.Data))
+	copy(resultData, t.Data)
+
+	batchSize := 1
+	for i := 0; i < len(t.shape)-2; i++ {
+		batchSize *= t.shape[i]
+	}
+
+	for b := 0; b < batchSize; b++ {
+		offset := b * rows * cols
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				idx := offset + i*cols + j
+				if upper {
+					if i > j-k {
+						resultData[idx] = 0
+					}
+				} else {
+					if i < j-k {
+						resultData[idx] = 0
+					}
+				}
+			}
+		}
+	}
+
+	return NewTensor(resultData, t.shape)
+}
+
+func (t *Tensor) TriluMask(k int, upper bool) *Tensor {
+	if len(t.shape) < 2 {
+		panic("TriluMask requires at least 2D tensor")
+	}
+
+	rows := t.shape[len(t.shape)-2]
+	cols := t.shape[len(t.shape)-1]
+
+	maskData := make([]float32, len(t.Data))
+
+	batchSize := 1
+	for i := 0; i < len(t.shape)-2; i++ {
+		batchSize *= t.shape[i]
+	}
+
+	for b := 0; b < batchSize; b++ {
+		offset := b * rows * cols
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				idx := offset + i*cols + j
+				if upper {
+					if i <= j-k {
+						maskData[idx] = 1
+					} else {
+						maskData[idx] = 0
+					}
+				} else {
+					if i >= j-k {
+						maskData[idx] = 1
+					} else {
+						maskData[idx] = 0
+					}
+				}
+			}
+		}
+	}
+
+	return NewTensor(maskData, t.shape)
+}

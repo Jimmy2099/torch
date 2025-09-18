@@ -45,8 +45,6 @@ func (l *LRN) Forward() *tensor.Tensor {
 }
 
 func (l *LRN) Backward(grad *tensor.Tensor) {
-	// Simplified backward pass for demonstration
-	// Actual implementation would use stored square values
 	dInput := grad.Copy().Div(l.output.value.Mul(l.output.value))
 	l.Children[0].Node.Backward(dInput)
 }

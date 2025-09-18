@@ -735,3 +735,110 @@ func TestTensorRoundTo(t *testing.T) {
 		})
 	}
 }
+
+func TestTrilu(t *testing.T) {
+	t.Run("Upper triangular with k=0", func(t *testing.T) {
+		// Create a 3x3 tensor
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.Trilu(0, true)
+		expected := NewTensor([]float32{1, 2, 3, 0, 5, 6, 0, 0, 9}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Upper triangular with k=0 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Lower triangular with k=0", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.Trilu(0, false)
+		expected := NewTensor([]float32{1, 0, 0, 4, 5, 0, 7, 8, 9}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Lower triangular with k=0 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Upper triangular with k=1", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.Trilu(1, true)
+		expected := NewTensor([]float32{1, 2, 3, 4, 5, 6, 0, 8, 9}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Upper triangular with k=1 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Lower triangular with k=-1", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.Trilu(-1, false)
+		expected := NewTensor([]float32{0, 0, 0, 4, 0, 0, 7, 8, 0}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Lower triangular with k=-1 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Batched input", func(t *testing.T) {
+		// Create a batch of 2 2x2 matrices
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2})
+		result := tensor.Trilu(0, true)
+		expected := NewTensor([]float32{1, 2, 0, 4, 5, 6, 0, 8}, []int{2, 2, 2})
+
+		if !result.Equal(expected) {
+			t.Errorf("Batched upper triangular failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+}
+
+func TestTriluMask(t *testing.T) {
+	t.Run("Upper triangular mask with k=0", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.TriluMask(0, true)
+		expected := NewTensor([]float32{1, 1, 1, 0, 1, 1, 0, 0, 1}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Upper triangular mask with k=0 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Lower triangular mask with k=0", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.TriluMask(0, false)
+		expected := NewTensor([]float32{1, 0, 0, 1, 1, 0, 1, 1, 1}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Lower triangular mask with k=0 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Upper triangular mask with k=1", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.TriluMask(1, true)
+		expected := NewTensor([]float32{1, 1, 1, 1, 1, 1, 0, 1, 1}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Upper triangular mask with k=1 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Lower triangular mask with k=-1", func(t *testing.T) {
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{3, 3})
+		result := tensor.TriluMask(-1, false)
+		expected := NewTensor([]float32{0, 0, 0, 1, 0, 0, 1, 1, 0}, []int{3, 3})
+
+		if !result.Equal(expected) {
+			t.Errorf("Lower triangular mask with k=-1 failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+
+	t.Run("Batched input mask", func(t *testing.T) {
+		// Create a batch of 2 2x2 matrices
+		tensor := NewTensor([]float32{1, 2, 3, 4, 5, 6, 7, 8}, []int{2, 2, 2})
+		result := tensor.TriluMask(0, true)
+		expected := NewTensor([]float32{1, 1, 0, 1, 1, 1, 0, 1}, []int{2, 2, 2})
+
+		if !result.Equal(expected) {
+			t.Errorf("Batched upper triangular mask failed\nExpected: %v\nActual: %v", expected.Data, result.Data)
+		}
+	})
+}

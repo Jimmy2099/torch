@@ -5,46 +5,37 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
-type Not struct {
+type Cast struct {
 	*OPSNode
 	OPSTensor
 }
 
-func (m *Not) Forward() *tensor.Tensor {
+func (m *Cast) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
 
 	a := m.Children[0].Node.Forward()
-
-	result := a.Not()
-	m.output.value = result
+	m.output.value = a
 	m.output.computed = true
-	return result
+	return a
 }
 
-func (m *Not) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient tensor in NOT backward pass")
-	}
-
-	gradA := grad.Copy().Negate()
-
-	m.Children[0].Node.Backward(gradA)
+func (m *Cast) Backward(grad *tensor.Tensor) {
+	m.Children[0].Node.Backward(grad)
 }
 
-func (t *GraphTensor) Not(names ...string) *GraphTensor {
+func (t *GraphTensor) Cast(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
 		name = names[0]
 	} else {
-		name = fmt.Sprintf("not_%d", t.Graph.NodeCount)
+		name = fmt.Sprintf("cast_%d", t.Graph.NodeCount)
 		t.Graph.NodeCount++
 	}
 
 	g := t.Graph
-
-	node := NewNot(name, t)
+	node := NewCast(name, t)
 
 	outputTensor := &GraphTensor{
 		Name:  name,
@@ -64,10 +55,10 @@ func (t *GraphTensor) Not(names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func NewNot(name string, a *GraphTensor) *Not {
-	return &Not{
+func NewCast(name string, a *GraphTensor) *Cast {
+	return &Cast{
 		OPSNode: NewOPSNode(OPSNode{
-			ONNXName:           "And",
+			ONNXName:           "Cast",
 			ONNXProducedTensor: true,
 		}),
 		OPSTensor: OPSTensor{
@@ -77,6 +68,6 @@ func NewNot(name string, a *GraphTensor) *Not {
 	}
 }
 
-func (m *Not) GetOutput() *GraphTensor {
+func (m *Cast) GetOutput() *GraphTensor {
 	return m.output
 }

@@ -212,7 +212,6 @@ func computeKernelGradient(input, grad *tensor.Tensor, kernelH, kernelW, strideH
 								}
 							}
 						}
-						// Corrected Set call: value first, then indices
 						current := gradWeight.Get([]int{oc, ic, kh, kw})
 						gradWeight.Set(current+sum, oc, ic, kh, kw)
 					}

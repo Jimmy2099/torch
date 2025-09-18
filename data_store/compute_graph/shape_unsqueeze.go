@@ -49,13 +49,15 @@ func (t *GraphTensor) Unsqueeze(axis int, names ...string) *GraphTensor {
 	}
 
 	g := t.Graph
-	node := NewUnsqueeze(name, t, axis)
+	node := NewUnsqueeze(name, t, &GraphTensor{
+		value: tensor.NewTensor([]float32{float32(axis)}, []int{1}),
+	})
 
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: node.Children[0].Shape, // Will be updated during forward
+		Shape: node.Children[0].Shape,
 		Graph: g,
 		Node:  node,
 	}
@@ -69,7 +71,12 @@ func (t *GraphTensor) Unsqueeze(axis int, names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func NewUnsqueeze(name string, a *GraphTensor, axis int) *Unsqueeze {
+func NewUnsqueeze(name string, a *GraphTensor, axis *GraphTensor) *Unsqueeze {
+	v := 0
+	if axis != nil && axis.value != nil && axis.value.Data != nil {
+		v = int(axis.value.Data[0])
+	}
+
 	return &Unsqueeze{
 		OPSNode: NewOPSNode(OPSNode{
 			ONNXName:           "Unsqueeze",
@@ -79,7 +86,7 @@ func NewUnsqueeze(name string, a *GraphTensor, axis int) *Unsqueeze {
 			Name:     name,
 			Children: []*GraphTensor{a},
 		},
-		axis: axis,
+		axis: v, //TODO
 	}
 }
 

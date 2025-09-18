@@ -106,6 +106,10 @@ func Zeros(shape []int) *Tensor {
 	return &Tensor{Data: data, shape: shape}
 }
 
+func (t *Tensor) ZerosLike() *Tensor {
+	return ZerosLike(t)
+}
+
 func ZerosLike(t *Tensor) *Tensor {
 	if t == nil {
 		panic("tensor.ZerosLike: input tensor cannot be nil")

@@ -36,13 +36,11 @@ func (m *Div) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in division backward pass")
 	}
 
-	// Create a tensor of ones with the same shape as bVal
 	ones := tensor.NewTensor(make([]float32, len(bVal.Data)), bVal.GetShape())
 	for i := range ones.Data {
 		ones.Data[i] = 1.0
 	}
 
-	// Gradient for numerator: da = grad / b = grad * (1/b)
 	gradA := ones.Copy().Div(bVal).Mul(grad)
 
 	bSquared := bVal.Copy().Mul(bVal)

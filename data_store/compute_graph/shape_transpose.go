@@ -50,7 +50,7 @@ func (t *GraphTensor) Transpose(perm []int, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: nil, // Will be set during forward
+		Shape: nil,
 		Graph: g,
 		Node:  node,
 	}

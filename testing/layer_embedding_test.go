@@ -2,8 +2,8 @@ package testing
 
 import (
 	"github.com/Jimmy2099/torch"
-	"github.com/Jimmy2099/torch/algorithm"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/pkg/algorithm"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
 	"math/rand"

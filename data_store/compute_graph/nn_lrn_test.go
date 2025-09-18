@@ -21,12 +21,10 @@ func TestLRN(t *testing.T) {
 	fmt.Println("LRN Graph Structure:")
 	graph.PrintStructure()
 
-	// Forward pass
 	graph.Forward()
 	fmt.Println("\nAfter Forward Pass:")
 	fmt.Printf("LRN Output: %v\n", lrn.value.Data)
 
-	// Backward pass
 	graph.Backward()
 	fmt.Println("\nAfter Backward Pass:")
 	fmt.Printf("Input Gradients: %v\n", input.Grad().Data)

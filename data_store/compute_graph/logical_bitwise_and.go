@@ -36,7 +36,6 @@ func (m *And) Backward(grad *tensor.Tensor) {
 		panic("nil tensor in AND backward pass")
 	}
 
-	// Gradient for inputs
 	gradA := bVal.Copy().Mul(grad)
 	gradB := aVal.Copy().Mul(grad)
 
