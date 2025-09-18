@@ -228,6 +228,7 @@ func NewAutoEncoder() *AutoEncoder {
 
 	fmt.Println("\n\nComputation graph structure:")
 	ae.graph.PrintStructure()
+	ae.graph.PrintStructureIntoGraphVisualizeFile()
 
 	return ae
 }
