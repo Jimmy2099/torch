@@ -20,3 +20,4 @@ restricted
 *.onnx
 *.bak
 *.log
+*.dot
