@@ -47,7 +47,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "BitwiseXor", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "BlackmanWindow", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Cast", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
-		m := NewCast(name, output)
+		m := NewCast(name, children[0])
 		m.output = output
 		return m
 	}},
@@ -229,7 +229,11 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ReduceSum", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "ReduceSumSquare", InputPCount: 1, OutputPCount: 1},
 	{Name: "RegexFullMatch", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Relu", InputPCount: 1, OutputPCount: 1},
+	{Name: "Relu", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+		m := NewReLU(name, children[0])
+		m.output = output
+		return m
+	}},
 	{Name: "Reshape", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
 		var shape []int
 		if len(children) > 1 && children[1].value != nil && children[1].value.Data != nil {

@@ -47,8 +47,7 @@ func (m *GraphVisualize) ToDOT() string {
 
 func (m *GraphVisualize) Save() {
 	dotContent := m.ToDOT()
-	fmt.Println("DOT Format:")
-	fmt.Println(dotContent)
+	fmt.Println("SaveFile: graph.dot")
 
 	dotFile, _ := os.Create("graph.dot")
 	dotFile.WriteString(dotContent)

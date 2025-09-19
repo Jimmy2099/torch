@@ -38,6 +38,14 @@ func (g *ComputationalGraph) SetOutput(t *GraphTensor) {
 	g.output = t
 }
 
+func (g *ComputationalGraph) SetOutputByName(graphTensorName string) {
+	for k, v := range g.Tensors {
+		if graphTensorName == k {
+			g.output = v
+		}
+	}
+}
+
 func (g *ComputationalGraph) GetOutput() *GraphTensor {
 	return g.output
 }
