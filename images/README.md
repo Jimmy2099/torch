@@ -24,3 +24,5 @@
 ## CNN
 ![CNN](02_cnn.png)
 
+## Compute Graph and Visualization 
+![AutoEncoder Compute Graph and Visualization](07_ae_compute_graph_visualization.png)
