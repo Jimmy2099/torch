@@ -83,3 +83,10 @@ func NewCos(name string, a *GraphTensor) *Cos {
 func (m *Cos) GetOutput() *GraphTensor {
 	return m.output
 }
+
+func (m *Cos) InferOutputShape() ([]int, error) {
+	if len(m.Children) == 0 {
+		return nil, fmt.Errorf("Cos operation requires at least one input")
+	}
+	return m.Children[0].Shape, nil
+}
