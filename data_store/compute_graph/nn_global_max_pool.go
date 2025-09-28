@@ -88,15 +88,15 @@ func (t *GraphTensor) GlobalMaxPool(name string) *GraphTensor {
 	}
 
 	node := NewGlobalMaxPool(name, t)
-	outputShape := []int{t.Shape[0], t.Shape[1]}
+	outputShape := []int{t.Shape()[0], t.Shape()[1]}
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: outputShape,
 		Graph: t.Graph,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	t.Graph.Tensors[name] = outputTensor
 	node.output = outputTensor

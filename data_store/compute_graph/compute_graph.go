@@ -54,7 +54,7 @@ type GraphTensor struct {
 	Name     string
 	value    *tensor.Tensor
 	grad     *tensor.Tensor
-	Shape    []int
+	shape    []int
 	Node     Node
 	Graph    *ComputationalGraph
 	computed bool
@@ -69,10 +69,21 @@ func (t *GraphTensor) UpdateAll(graphTensor *GraphTensor) {
 	t.Name = graphTensor.Name
 	t.value = graphTensor.value
 	t.grad = graphTensor.grad
-	t.Shape = graphTensor.Shape
+	t.shape = graphTensor.shape
 	t.Node = graphTensor.Node
 	t.Graph = graphTensor.Graph
 	t.computed = graphTensor.computed
+}
+
+func (t *GraphTensor) Shape() []int {
+	if t.value.GetShape() == nil {
+		return t.value.GetShape()
+	}
+	return t.shape
+}
+
+func (t *GraphTensor) SetShape(shape []int) {
+	t.shape = shape
 }
 
 func (t *GraphTensor) Value() *tensor.Tensor {
@@ -112,25 +123,25 @@ func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name st
 	gradData := make([]float32, len(t.Data))
 	grad := tensor.NewTensor(gradData, shape)
 
-	tensor := &GraphTensor{
+	te := &GraphTensor{
 		Name:     name,
 		value:    t,
 		grad:     grad,
-		Shape:    shape,
+		shape:    shape,
 		Graph:    g,
 		computed: false,
 	}
 
-	g.Tensors[name] = tensor
+	g.Tensors[name] = te
 
 	node := &InputNode{
 		Name:   name,
-		output: tensor,
+		output: te,
 	}
-	tensor.Node = node
+	te.Node = node
 	g.Nodes = append(g.Nodes, node)
 
-	return tensor
+	return te
 }
 
 type GraphExport struct {
@@ -220,10 +231,10 @@ func (t *GraphTensor) Multiply(other *GraphTensor, names ...string) *GraphTensor
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: g,
 		Node:  multNode,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -254,10 +265,10 @@ func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: g,
 		Node:  addNode,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

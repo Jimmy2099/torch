@@ -40,7 +40,7 @@ func (m *ScatterND) Forward() *tensor.Tensor {
 
 func (m *ScatterND) Backward(grad *tensor.Tensor) {
 	indicesTensor := m.Children[1].Node.GetOutput()
-	indicesShape := indicesTensor.Shape
+	indicesShape := indicesTensor.Shape()
 
 	numElements := 1
 	for _, dim := range indicesShape {
@@ -57,10 +57,10 @@ func (m *ScatterND) Backward(grad *tensor.Tensor) {
 
 	updatesGrad := tensor.NewTensor(make([]float32, indicesShape[0]), []int{indicesShape[0]})
 
-	if len(indicesShape) == 2 && indicesShape[1] == 1 && len(data.Shape) == 1 {
+	if len(indicesShape) == 2 && indicesShape[1] == 1 && len(data.Shape()) == 1 {
 		for i := 0; i < indicesShape[0]; i++ {
 			idx := int(indices.Value().Data[i])
-			if idx < len(data.Shape) {
+			if idx < len(data.Shape()) {
 				updatesGrad.Data[i] = grad.Data[idx]
 				dataGrad.Data[idx] = 0
 			}
@@ -87,10 +87,10 @@ func (t *GraphTensor) ScatterND(indices, updates *GraphTensor, names ...string) 
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

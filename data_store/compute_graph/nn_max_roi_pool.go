@@ -150,10 +150,10 @@ func (t *GraphTensor) MaxRoiPool(rois *GraphTensor, pooledHeight, pooledWidth in
 
 	node := NewMaxRoiPool(name, t, rois, pooledHeight, pooledWidth)
 	outputShape := []int{
-		rois.Shape[0],
+		rois.Shape()[0],
 		pooledHeight,
 		pooledWidth,
-		t.Shape[3],
+		t.Shape()[3],
 	}
 
 	totalElements := outputShape[0] * outputShape[1] * outputShape[2] * outputShape[3]
@@ -162,10 +162,10 @@ func (t *GraphTensor) MaxRoiPool(rois *GraphTensor, pooledHeight, pooledWidth in
 		Name:  name,
 		value: tensor.NewTensor(make([]float32, totalElements), outputShape),
 		grad:  tensor.NewTensor(make([]float32, totalElements), outputShape),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

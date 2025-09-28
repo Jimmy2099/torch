@@ -65,10 +65,10 @@ func (t *GraphTensor) LRN(size int, alpha, beta, k float32, names ...string) *Gr
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

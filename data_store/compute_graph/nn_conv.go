@@ -50,7 +50,6 @@ func (m *Conv) Forward() *tensor.Tensor {
 	)
 
 	m.output.value = result
-	m.output.Shape = result.GetShape()
 	m.output.computed = true
 	return result
 }
@@ -108,10 +107,10 @@ func (t *GraphTensor) Conv(weight *GraphTensor, stride, padding []int, names ...
 		Name:  name,
 		value: nil,
 		grad:  nil,
-		Shape: []int{0, 0, 0, 0},
 		Graph: t.Graph,
 		Node:  node,
 	}
+	outputTensor.SetShape([]int{0, 0, 0, 0})
 
 	if _, exists := t.Graph.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

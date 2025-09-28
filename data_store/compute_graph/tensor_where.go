@@ -74,15 +74,14 @@ func (t *GraphTensor) Where(trueValues, falseValues *GraphTensor, names ...strin
 	g := t.Graph
 	node := NewWhere(name, t, trueValues, falseValues)
 
-	outputShape := t.Shape
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

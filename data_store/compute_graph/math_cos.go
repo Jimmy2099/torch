@@ -53,10 +53,10 @@ func (t *GraphTensor) Cos(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(t.Shape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -82,11 +82,4 @@ func NewCos(name string, a *GraphTensor) *Cos {
 
 func (m *Cos) GetOutput() *GraphTensor {
 	return m.output
-}
-
-func (m *Cos) InferOutputShape() ([]int, error) {
-	if len(m.Children) == 0 {
-		return nil, fmt.Errorf("Cos operation requires at least one input")
-	}
-	return m.Children[0].Shape, nil
 }

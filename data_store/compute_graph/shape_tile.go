@@ -128,7 +128,7 @@ func (t *GraphTensor) Tile(repeats []int, names ...string) *GraphTensor {
 	}
 
 	g := t.Graph
-	outputShape := tileShape(t.Shape, repeats)
+	outputShape := tileShape(t.Shape(), repeats)
 	size := prod(outputShape)
 
 	node := NewTile(name, t, repeats)
@@ -137,10 +137,10 @@ func (t *GraphTensor) Tile(repeats []int, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor(make([]float32, size), outputShape),
 		grad:  tensor.NewTensor(make([]float32, size), outputShape),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	node.output = outputTensor
 

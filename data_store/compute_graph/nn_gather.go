@@ -45,7 +45,7 @@ func (t *GraphTensor) Gather(indices *GraphTensor, names ...string) *GraphTensor
 	g := t.Graph
 	node := NewGather(name, t, indices)
 
-	outputShape := calculateGatherOutputShape(t.Shape, indices.Shape)
+	outputShape := calculateGatherOutputShape(t.Shape(), indices.Shape())
 
 	outputSize := 1
 	for _, dim := range outputShape {
@@ -56,10 +56,10 @@ func (t *GraphTensor) Gather(indices *GraphTensor, names ...string) *GraphTensor
 		Name:  name,
 		value: tensor.NewTensor(make([]float32, outputSize), outputShape),
 		grad:  tensor.NewTensor(make([]float32, outputSize), outputShape),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

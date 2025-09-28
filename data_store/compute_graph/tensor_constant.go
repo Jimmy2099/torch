@@ -37,9 +37,9 @@ func (g *ComputationalGraph) Constant(value []float32, shape []int, names ...str
 		Name:  name,
 		value: tensor.NewTensor(value, shape),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: shape,
 		Graph: g,
 	}
+	outputTensor.SetShape(shape)
 
 	node := NewConstant(name, outputTensor)
 	outputTensor.Node = node

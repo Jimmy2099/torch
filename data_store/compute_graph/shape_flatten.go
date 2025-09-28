@@ -50,10 +50,10 @@ func (t *GraphTensor) Flatten(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: []int{0},
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape([]int{0})
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

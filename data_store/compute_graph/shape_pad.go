@@ -115,8 +115,8 @@ func (t *GraphTensor) Pad(pads [][2]int, val float32, names ...string) *GraphTen
 
 	g := t.Graph
 
-	outputShape := make([]int, len(t.Shape))
-	for i, s := range t.Shape {
+	outputShape := make([]int, len(t.Shape()))
+	for i, s := range t.Shape() {
 		outputShape[i] = s + pads[i][0] + pads[i][1]
 	}
 
@@ -130,10 +130,10 @@ func (t *GraphTensor) Pad(pads [][2]int, val float32, names ...string) *GraphTen
 		Name:  name,
 		value: tensor.NewTensor(valueData, outputShape),
 		grad:  tensor.NewTensor(gradData, outputShape),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

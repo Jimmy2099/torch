@@ -25,11 +25,11 @@ func (t *GraphTensor) Pow(exponent *GraphTensor, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: t.Shape,
 		Graph: t.Graph,
 		Node:  node,
 	}
-
+	outputTensor.SetShape(t.Shape())
+	
 	t.Graph.Tensors[name] = outputTensor
 	node.output = outputTensor
 	t.Graph.Nodes = append(t.Graph.Nodes, node)

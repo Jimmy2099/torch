@@ -62,10 +62,10 @@ func (g *ComputationalGraph) Range(name string, start, limit, delta *GraphTensor
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

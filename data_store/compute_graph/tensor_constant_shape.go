@@ -40,7 +40,7 @@ func (m *ConstantOfShape) Forward() *tensor.Tensor {
 }
 
 func (m *ConstantOfShape) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().Shape
+	inputShape := m.Children[0].Node.GetOutput().Shape()
 
 	numElements := 1
 	for _, dim := range inputShape {
@@ -71,10 +71,10 @@ func (t *GraphTensor) ConstantOfShapeWithValue(value float32, names ...string) *
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: []int{0},
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape([]int{0})
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

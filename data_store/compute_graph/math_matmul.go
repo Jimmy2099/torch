@@ -64,19 +64,19 @@ func (t *GraphTensor) MatMul(other *GraphTensor, names ...string) *GraphTensor {
 	}
 	g := t.Graph
 
-	if len(t.Shape) < 2 || len(other.Shape) < 2 {
+	if len(t.Shape()) < 2 || len(other.Shape()) < 2 {
 		panic("MatMul requires tensors with at least 2 dimensions")
 	}
-	if t.Shape[len(t.Shape)-1] != other.Shape[len(other.Shape)-2] {
+	if t.Shape()[len(t.Shape())-1] != other.Shape()[len(other.Shape())-2] {
 		panic(fmt.Sprintf("Incompatible dimensions for MatMul: %v and %v",
-			t.Shape, other.Shape))
+			t.Shape(), other.Shape()))
 	}
 
 	node := NewMatMul(name, t, other)
 
-	outShape := make([]int, len(t.Shape))
-	copy(outShape, t.Shape)
-	outShape[len(outShape)-1] = other.Shape[len(other.Shape)-1]
+	outShape := make([]int, len(t.Shape()))
+	copy(outShape, t.Shape())
+	outShape[len(outShape)-1] = other.Shape()[len(other.Shape())-1]
 
 	totalElements := 1
 	for _, dim := range outShape {
@@ -90,10 +90,10 @@ func (t *GraphTensor) MatMul(other *GraphTensor, names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor(valueData, outShape),
 		grad:  tensor.NewTensor(gradData, outShape),
-		Shape: outShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

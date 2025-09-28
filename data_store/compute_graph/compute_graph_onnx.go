@@ -404,11 +404,11 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		tensorType := &onnx_ir.TypeProto_Tensor{
 			ElemType: int32(onnx_ir.TensorProto_FLOAT),
 			Shape: &onnx_ir.TensorShapeProto{
-				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.Shape)),
+				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.Shape())),
 			},
 		}
 
-		for i, dim := range t.Shape {
+		for i, dim := range t.Shape() {
 			tensorType.Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),
@@ -465,14 +465,14 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 					TensorType: &onnx_ir.TypeProto_Tensor{
 						ElemType: int32(onnx_ir.TensorProto_FLOAT),
 						Shape: &onnx_ir.TensorShapeProto{
-							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.Shape)),
+							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.Shape())),
 						},
 					},
 				},
 			},
 		}
 
-		for i, dim := range g.output.Shape {
+		for i, dim := range g.output.Shape() {
 			outputInfo.Type.GetTensorType().Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),

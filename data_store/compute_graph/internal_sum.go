@@ -88,10 +88,10 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 		Name:  name,
 		value: tensor.NewTensor([]float32{0}, []int{1}),
 		grad:  tensor.NewTensor([]float32{0}, []int{1}),
-		Shape: []int{1},
 		Graph: g,
 		Node:  sumNode,
 	}
+	outputTensor.SetShape(outputTensor.value.GetShape())
 
 	g.Tensors[name] = outputTensor
 	sumNode.output = outputTensor

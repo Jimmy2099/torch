@@ -66,7 +66,7 @@ func (m *Concat) splitGradient(grad *tensor.Tensor, axis int) []*tensor.Tensor {
 
 	splitPoints := make([]int, len(m.Children))
 	for i, child := range m.Children {
-		splitPoints[i] = child.Node.GetOutput().Shape[axis]
+		splitPoints[i] = child.Node.GetOutput().Shape()[axis]
 		if i > 0 {
 			splitPoints[i] += splitPoints[i-1]
 		}
@@ -81,7 +81,7 @@ func (m *Concat) splitGradient(grad *tensor.Tensor, axis int) []*tensor.Tensor {
 
 		gradData := make([]float32, childSize)
 		copy(gradData, grad.Data[offset:offset+childSize])
-		grads[i] = tensor.NewTensor(gradData, childOutput.Shape)
+		grads[i] = tensor.NewTensor(gradData, childOutput.Shape())
 		offset += childSize
 	}
 
@@ -106,25 +106,25 @@ func (t *GraphTensor) Concat(inputs []*GraphTensor, axis int, names ...string) *
 	g := t.Graph
 	node := NewConcat(name, allInputs, axis)
 
-	inputShape := t.Shape
+	inputShape := t.Shape()
 	outputShape := make([]int, len(inputShape))
 	copy(outputShape, inputShape)
 
 	for i := 1; i < len(allInputs); i++ {
-		if len(allInputs[i].Shape) != len(inputShape) {
+		if len(allInputs[i].Shape()) != len(inputShape) {
 			panic("All inputs to Concat must have the same number of dimensions")
 		}
-		outputShape[axis] += allInputs[i].Shape[axis]
+		outputShape[axis] += allInputs[i].Shape()[axis]
 	}
 
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)

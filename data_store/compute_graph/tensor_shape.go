@@ -28,7 +28,7 @@ func (m *ShapeOp) Forward() *tensor.Tensor {
 }
 
 func (m *ShapeOp) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().Shape
+	inputShape := m.Children[0].Node.GetOutput().Shape()
 
 	numElements := 1
 	for _, dim := range inputShape {
@@ -51,15 +51,15 @@ func (t *GraphTensor) ShapeOp(names ...string) *GraphTensor {
 	g := t.Graph
 	node := NewShapeOp(name, t)
 
-	outputShape := []int{len(t.Shape)}
+	outputShape := []int{len(t.Shape())}
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
 		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Shape: outputShape,
 		Graph: g,
 		Node:  node,
 	}
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
