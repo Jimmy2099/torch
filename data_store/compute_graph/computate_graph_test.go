@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/pkg/algorithm"
 	test "github.com/Jimmy2099/torch/testing"
 	"testing"
 )
@@ -268,4 +269,61 @@ print("\nresult:")
 print(outputs[0])
 `)
 	test.RunPyScript(pythonScript)
+}
+
+func TestHiddenLayerShapes(t *testing.T) {
+	graph := NewComputationalGraph()
+
+	x := graph.NewGraphTensor([]float32{2.0, 2.0, 2.0, 2.0}, []int{2, 2}, "x")
+	w := graph.NewGraphTensor([]float32{3.0, 3.0, 3.0, 3.0}, []int{2, 2}, "w")
+	b := graph.NewGraphTensor([]float32{1.0, 1.0, 1.0, 1.0}, []int{2, 2}, "b")
+
+	wx := x.Multiply(w)
+	xb := x.Multiply(b)
+	add := wx.Multiply(xb)
+
+	graph.SetOutput(add)
+
+	fmt.Println("Testing Forward Pass Hidden Layer Shapes:")
+	graph.Forward()
+
+	checkShape := func(tensor *GraphTensor, expectedShape []int, name string) {
+		actualShape := tensor.Shape()
+		if !algorithm.EqualSlices(actualShape, expectedShape) {
+			t.Errorf("%s shape mismatch: expected %v, got %v", name, expectedShape, actualShape)
+		} else {
+			fmt.Printf("%s shape: %v ✓\n", name, actualShape)
+		}
+	}
+
+	checkShape(x, []int{2, 2}, "x")
+	checkShape(w, []int{2, 2}, "w")
+	checkShape(b, []int{2, 2}, "b")
+	checkShape(wx, []int{2, 2}, "wx")
+	checkShape(xb, []int{2, 2}, "xb")
+	checkShape(add, []int{2, 2}, "add")
+
+	fmt.Println("\nTesting Backward Pass Hidden Layer Grad Shapes:")
+	graph.Backward()
+
+	checkGradShape := func(tensor *GraphTensor, expectedShape []int, name string) {
+		grad := tensor.Grad()
+		if grad == nil {
+			t.Errorf("%s grad is nil", name)
+			return
+		}
+		actualShape := grad.GetShape()
+		if !algorithm.EqualSlices(actualShape, expectedShape) {
+			t.Errorf("%s grad shape mismatch: expected %v, got %v", name, expectedShape, actualShape)
+		} else {
+			fmt.Printf("%s grad shape: %v ✓\n", name, actualShape)
+		}
+	}
+
+	checkGradShape(x, []int{2, 2}, "x")
+	checkGradShape(w, []int{2, 2}, "w")
+	checkGradShape(b, []int{2, 2}, "b")
+	checkGradShape(wx, []int{2, 2}, "wx")
+	checkGradShape(xb, []int{2, 2}, "xb")
+	checkGradShape(add, []int{2, 2}, "add")
 }

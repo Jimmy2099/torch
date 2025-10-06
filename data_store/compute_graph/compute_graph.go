@@ -368,6 +368,8 @@ func (m *Multiply) ResetComputed() {
 }
 
 func (m *Multiply) Backward(grad *tensor.Tensor) {
+	m.output.grad = grad
+
 	aVal := m.Children[0].value
 	bVal := m.Children[1].value
 
