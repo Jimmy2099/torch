@@ -44,5 +44,6 @@ The following use purposes are strictly prohibited:
 - Any other malicious or harmful purposes that could cause harm to individuals or society.
 - Military applications, including but not limited to warfare, weapons development, or any defense-related activities.
 - Illegal activities, such as hacking, fraud, or any action that violates applicable laws.
+- This project contains U.S. technology. Any use, distribution, or re-export that violates the Export Administration Regulations (EAR), sanctions administered by the Office of Foreign Assets Control (OFAC), or any other applicable U.S. export control laws and regulations is strictly prohibited. This includes providing the project to sanctioned countries, entities, or individuals, or for prohibited end-uses.
 
 Users must comply with all local, national, and international laws when using this repository. To request permission for a use case not covered above, please contact me.
