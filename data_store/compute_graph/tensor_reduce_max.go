@@ -98,6 +98,6 @@ func NewReduceMax(name string, a *GraphTensor) *ReduceMax {
 	}
 }
 
-func (m *ReduceMax) GetOutput() *GraphTensor {
-	return m.output
+func (m *ReduceMax) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

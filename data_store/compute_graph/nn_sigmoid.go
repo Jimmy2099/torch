@@ -51,7 +51,7 @@ func (t *GraphTensor) Sigmoid(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -75,6 +75,6 @@ func NewSigmoid(name string, a *GraphTensor) *Sigmoid {
 	}
 }
 
-func (m *Sigmoid) GetOutput() *GraphTensor {
-	return m.output
+func (m *Sigmoid) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

@@ -34,8 +34,8 @@ func (m *Equal) Forward() *tensor.Tensor {
 }
 
 func (m *Equal) Backward(grad *tensor.Tensor) {
-	inputShape1 := m.Children[0].Node.GetOutput().Shape()
-	inputShape2 := m.Children[1].Node.GetOutput().Shape()
+	inputShape1 := m.Children[0].Node.GetOutput().GetShape()
+	inputShape2 := m.Children[1].Node.GetOutput().GetShape()
 
 	numElements1 := 1
 	for _, dim := range inputShape1 {
@@ -66,7 +66,7 @@ func (t *GraphTensor) Equal(other *GraphTensor, names ...string) *GraphTensor {
 	g := t.Graph
 	node := NewEqual(name, t, other)
 
-	outputShape := t.Shape
+	outputShape := t.GetShape()
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
@@ -74,7 +74,7 @@ func (t *GraphTensor) Equal(other *GraphTensor, names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(outputShape())
+	outputTensor.SetShape(outputShape)
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -98,6 +98,6 @@ func NewEqual(name string, a, b *GraphTensor) *Equal {
 	}
 }
 
-func (m *Equal) GetOutput() *GraphTensor {
-	return m.output
+func (m *Equal) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

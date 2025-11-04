@@ -64,19 +64,19 @@ func (t *GraphTensor) MatMul(other *GraphTensor, names ...string) *GraphTensor {
 	}
 	g := t.Graph
 
-	if len(t.Shape()) < 2 || len(other.Shape()) < 2 {
+	if len(t.GetShape()) < 2 || len(other.GetShape()) < 2 {
 		panic("MatMul requires tensors with at least 2 dimensions")
 	}
-	if t.Shape()[len(t.Shape())-1] != other.Shape()[len(other.Shape())-2] {
+	if t.GetShape()[len(t.GetShape())-1] != other.GetShape()[len(other.GetShape())-2] {
 		panic(fmt.Sprintf("Incompatible dimensions for MatMul: %v and %v",
-			t.Shape(), other.Shape()))
+			t.GetShape(), other.GetShape()))
 	}
 
 	node := NewMatMul(name, t, other)
 
-	outShape := make([]int, len(t.Shape()))
-	copy(outShape, t.Shape())
-	outShape[len(outShape)-1] = other.Shape()[len(other.Shape())-1]
+	outShape := make([]int, len(t.GetShape()))
+	copy(outShape, t.GetShape())
+	outShape[len(outShape)-1] = other.GetShape()[len(other.GetShape())-1]
 
 	totalElements := 1
 	for _, dim := range outShape {
@@ -117,6 +117,6 @@ func NewMatMul(name string, a, b *GraphTensor) *MatMul {
 	}
 }
 
-func (m *MatMul) GetOutput() *GraphTensor {
-	return m.output
+func (m *MatMul) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

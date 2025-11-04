@@ -98,6 +98,6 @@ func NewReduceMin(name string, a *GraphTensor) *ReduceMin {
 	}
 }
 
-func (m *ReduceMin) GetOutput() *GraphTensor {
-	return m.output
+func (m *ReduceMin) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

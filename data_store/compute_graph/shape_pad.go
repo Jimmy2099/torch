@@ -115,8 +115,8 @@ func (t *GraphTensor) Pad(pads [][2]int, val float32, names ...string) *GraphTen
 
 	g := t.Graph
 
-	outputShape := make([]int, len(t.Shape()))
-	for i, s := range t.Shape() {
+	outputShape := make([]int, len(t.GetShape()))
+	for i, s := range t.GetShape() {
 		outputShape[i] = s + pads[i][0] + pads[i][1]
 	}
 
@@ -159,6 +159,6 @@ func NewPad(name string, a *GraphTensor, pads [][2]int, val float32) *Pad {
 	}
 }
 
-func (m *Pad) GetOutput() *GraphTensor {
-	return m.output
+func (m *Pad) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

@@ -116,7 +116,7 @@ func (t *GraphTensor) AveragePool(kernel, stride, padding []int, name string) *G
 	}
 
 	node := NewAveragePool(name, t, kernel, stride, padding)
-	outputShape := calculatePoolOutputShape(t.Shape(), kernel, stride, padding)
+	outputShape := calculatePoolOutputShape(t.GetShape(), kernel, stride, padding)
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
@@ -154,6 +154,6 @@ func calculatePoolOutputShape(shape []int, kernel, stride, padding []int) []int 
 	return []int{shape[0], shape[1], Hout, Wout}
 }
 
-func (m *AveragePool) GetOutput() *GraphTensor {
-	return m.output
+func (m *AveragePool) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

@@ -88,7 +88,7 @@ func (t *GraphTensor) Hardmax(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -108,6 +108,6 @@ func NewHardmax(name string, a *GraphTensor) *Hardmax {
 	}
 }
 
-func (m *Hardmax) GetOutput() *GraphTensor {
-	return m.output
+func (m *Hardmax) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

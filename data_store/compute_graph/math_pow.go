@@ -28,8 +28,8 @@ func (t *GraphTensor) Pow(exponent *GraphTensor, names ...string) *GraphTensor {
 		Graph: t.Graph,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
-	
+	outputTensor.SetShape(t.GetShape())
+
 	t.Graph.Tensors[name] = outputTensor
 	node.output = outputTensor
 	t.Graph.Nodes = append(t.Graph.Nodes, node)
@@ -104,6 +104,6 @@ func (m *Pow) Backward(grad *tensor.Tensor) {
 	m.Children[1].Node.Backward(tensor.NewTensor(gradExp, exponentVal.GetShape()))
 }
 
-func (m *Pow) GetOutput() *GraphTensor {
-	return m.output
+func (m *Pow) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

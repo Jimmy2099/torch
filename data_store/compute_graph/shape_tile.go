@@ -128,7 +128,7 @@ func (t *GraphTensor) Tile(repeats []int, names ...string) *GraphTensor {
 	}
 
 	g := t.Graph
-	outputShape := tileShape(t.Shape(), repeats)
+	outputShape := tileShape(t.GetShape(), repeats)
 	size := prod(outputShape)
 
 	node := NewTile(name, t, repeats)
@@ -166,6 +166,6 @@ func NewTile(name string, a *GraphTensor, repeats []int) *Tile {
 	}
 }
 
-func (m *Tile) GetOutput() *GraphTensor {
-	return m.output
+func (m *Tile) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

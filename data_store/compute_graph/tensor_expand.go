@@ -51,7 +51,7 @@ func (m *Expand) Forward() *tensor.Tensor {
 }
 
 func (m *Expand) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().Shape()
+	inputShape := m.Children[0].Node.GetOutput().GetShape()
 	outputShape := grad.GetShape()
 
 	var reduceDims []int
@@ -112,6 +112,6 @@ func NewExpand(name string, input *GraphTensor, shape *GraphTensor) *Expand {
 	}
 }
 
-func (m *Expand) GetOutput() *GraphTensor {
-	return m.output
+func (m *Expand) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

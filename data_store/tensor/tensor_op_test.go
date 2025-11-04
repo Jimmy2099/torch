@@ -581,72 +581,6 @@ func TestTensor_Transpose(t *testing.T) {
 	}
 }
 
-func TestTensor_Gather(t *testing.T) {
-	tests := []struct {
-		name        string
-		tensorShape []int
-		tensorData  []float32
-		indices     []float32
-		wantShape   []int
-		wantData    []float32
-		shouldPanic bool
-		panicMsg    string
-	}{
-		{
-			name:        "Basic gather",
-			tensorShape: []int{3, 2},
-			tensorData:  []float32{1, 2, 3, 4, 5, 6},
-			indices:     []float32{0, 2},
-			wantShape:   []int{2, 2},
-			wantData:    []float32{1, 2, 5, 6},
-		},
-		{
-			name:        "Indices not 1D",
-			tensorShape: []int{2, 2},
-			tensorData:  []float32{1, 2, 3, 4},
-			indices:     []float32{0, 0},
-			wantShape:   []int{2, 2},
-			shouldPanic: true,
-			panicMsg:    "Gather indices must be 1D",
-		},
-		{
-			name:        "Index out of range",
-			tensorShape: []int{2, 2},
-			tensorData:  []float32{1, 2, 3, 4},
-			indices:     []float32{3},
-			shouldPanic: true,
-			panicMsg:    "Gather index out of range: 3 not in [0, 2)",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.shouldPanic {
-				defer func() {
-					if r := recover(); r == nil {
-						t.Error("Expected panic did not occur")
-					} else if !strings.Contains(r.(string), tt.panicMsg) {
-						t.Errorf("Unexpected panic message: %v", r)
-					}
-				}()
-			}
-
-			tensor := NewTensor(tt.tensorData, tt.tensorShape)
-			indicesTensor := NewTensor(tt.indices, []int{len(tt.indices)})
-			got := tensor.Gather(indicesTensor)
-
-			if !tt.shouldPanic {
-				if !reflect.DeepEqual(got.shape, tt.wantShape) {
-					t.Errorf("Gather() shape = %v, want %v", got.shape, tt.wantShape)
-				}
-				if !reflect.DeepEqual(got.Data, tt.wantData) {
-					t.Errorf("Gather() data = %v, want %v", got.Data, tt.wantData)
-				}
-			}
-		})
-	}
-}
-
 func TestTensor_ScatterAdd(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -712,5 +646,89 @@ func TestTensor_ScatterAdd(t *testing.T) {
 				t.Errorf("ScatterAdd() = %v, want %v", target.Data, tt.wantData)
 			}
 		})
+	}
+}
+
+func TestGather_Axis0(t *testing.T) {
+	data := NewTensor([]float32{
+		1.0, 1.2,
+		2.3, 3.4,
+		4.5, 5.7,
+	}, []int{3, 2})
+
+	indices := NewTensor([]float32{0, 2}, []int{2})
+
+	expected := []float32{
+		1.0, 1.2,
+		4.5, 5.7,
+	}
+	out := data.Gather(indices)
+
+	if !reflect.DeepEqual(out.Data, expected) {
+		t.Fatalf("Axis0 Gather failed.\nGot: %v\nWant: %v", out.Data, expected)
+	}
+}
+
+func TestGather_IndexOutOfRange(t *testing.T) {
+	data := NewTensor([]float32{1, 2, 3, 4}, []int{4, 1})
+	indices := NewTensor([]float32{0, 4}, []int{2}) // index=4 out of range
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("Expected panic for out-of-range index")
+		}
+	}()
+	data.Gather(indices)
+}
+
+func TestGather_Axis1_LikeONNX(t *testing.T) {
+	data := [][]float32{
+		{1.0, 1.2, 1.9},
+		{2.3, 3.4, 3.9},
+		{4.5, 5.7, 5.9},
+	}
+	indices := []int{0, 2}
+
+	expected := [][][]float32{
+		{{1.0, 1.9}},
+		{{2.3, 3.9}},
+		{{4.5, 5.9}},
+	}
+
+	var output [][][]float32
+	for _, row := range data {
+		var selected []float32
+		for _, idx := range indices {
+			selected = append(selected, row[idx])
+		}
+		output = append(output, [][]float32{selected})
+	}
+
+	if !reflect.DeepEqual(output, expected) {
+		t.Fatalf("Axis1 Gather failed.\nGot: %v\nWant: %v", output, expected)
+	}
+}
+
+func TestGather_MultiDimIndices(t *testing.T) {
+	data := NewTensor([]float32{
+		1.0, 1.2,
+		2.3, 3.4,
+		4.5, 5.7,
+	}, []int{3, 2})
+
+	indices := NewTensor([]float32{
+		0, 1,
+		1, 2,
+	}, []int{4})
+
+	expected := []float32{
+		1.0, 1.2,
+		2.3, 3.4,
+		2.3, 3.4,
+		4.5, 5.7,
+	}
+	out := data.Gather(indices)
+	if !reflect.DeepEqual(out.Data, expected) {
+		t.Fatalf("MultiDim gather failed.\nGot: %v\nWant: %v", out.Data, expected)
 	}
 }

@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
@@ -89,11 +90,11 @@ func NewRange(name string, start, limit, delta *GraphTensor) *Range {
 	}
 }
 
-func (m *Range) GetOutput() *GraphTensor {
-	return m.output
+func (m *Range) GetOutput() *tensor.Tensor {
+	return m.output.value
 }
 
-func RangeNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) Node {
+func RangeNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 	if len(children) != 3 {
 		panic("Range operation requires exactly 3 inputs")
 	}

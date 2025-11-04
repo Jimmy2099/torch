@@ -113,7 +113,7 @@ func (t *GraphTensor) BatchNormalization(gamma, beta *GraphTensor, epsilon, mome
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -141,6 +141,6 @@ func NewBatchNormalization(name string, input, gamma, beta *GraphTensor, epsilon
 	}
 }
 
-func (m *BatchNormalization) GetOutput() *GraphTensor {
-	return m.output
+func (m *BatchNormalization) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

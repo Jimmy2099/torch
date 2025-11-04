@@ -97,7 +97,7 @@ func (t *GraphTensor) Slice(starts, ends []int, names ...string) *GraphTensor {
 	}
 
 	g := t.Graph
-	outputShape := sliceShape(t.Shape(), starts, ends)
+	outputShape := sliceShape(t.GetShape(), starts, ends)
 	size := prod(outputShape)
 
 	node := NewSlice(name, t, starts, ends)
@@ -136,6 +136,6 @@ func NewSlice(name string, a *GraphTensor, starts, ends []int) *Slice {
 	}
 }
 
-func (m *Slice) GetOutput() *GraphTensor {
-	return m.output
+func (m *Slice) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

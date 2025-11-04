@@ -40,7 +40,7 @@ func (m *ConstantOfShape) Forward() *tensor.Tensor {
 }
 
 func (m *ConstantOfShape) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().Shape()
+	inputShape := m.Children[0].Node.GetOutput().GetShape()
 
 	numElements := 1
 	for _, dim := range inputShape {
@@ -99,6 +99,6 @@ func NewConstantOfShape(name string, shapeTensor *GraphTensor, value float32) *C
 	}
 }
 
-func (m *ConstantOfShape) GetOutput() *GraphTensor {
-	return m.output
+func (m *ConstantOfShape) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

@@ -34,8 +34,8 @@ func (m *Greater) Forward() *tensor.Tensor {
 }
 
 func (m *Greater) Backward(grad *tensor.Tensor) {
-	inputShape1 := m.Children[0].Node.GetOutput().Shape()
-	inputShape2 := m.Children[1].Node.GetOutput().Shape()
+	inputShape1 := m.Children[0].Node.GetOutput().GetShape()
+	inputShape2 := m.Children[1].Node.GetOutput().GetShape()
 
 	numElements1 := 1
 	for _, dim := range inputShape1 {
@@ -66,7 +66,7 @@ func (t *GraphTensor) Greater(other *GraphTensor, names ...string) *GraphTensor 
 	g := t.Graph
 	node := NewGreater(name, t, other)
 
-	outputShape := t.Shape()
+	outputShape := t.GetShape()
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
@@ -98,6 +98,6 @@ func NewGreater(name string, a, b *GraphTensor) *Greater {
 	}
 }
 
-func (m *Greater) GetOutput() *GraphTensor {
-	return m.output
+func (m *Greater) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

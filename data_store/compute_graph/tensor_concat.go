@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
@@ -66,7 +67,7 @@ func (m *Concat) splitGradient(grad *tensor.Tensor, axis int) []*tensor.Tensor {
 
 	splitPoints := make([]int, len(m.Children))
 	for i, child := range m.Children {
-		splitPoints[i] = child.Node.GetOutput().Shape()[axis]
+		splitPoints[i] = child.Node.GetOutput().GetShape()[axis]
 		if i > 0 {
 			splitPoints[i] += splitPoints[i-1]
 		}
@@ -76,12 +77,12 @@ func (m *Concat) splitGradient(grad *tensor.Tensor, axis int) []*tensor.Tensor {
 	for i, child := range m.Children {
 		// Remove unused size variable
 		childOutput := child.Node.GetOutput()
-		childTensor := childOutput.value
+		childTensor := childOutput
 		childSize := len(childTensor.Data)
 
 		gradData := make([]float32, childSize)
 		copy(gradData, grad.Data[offset:offset+childSize])
-		grads[i] = tensor.NewTensor(gradData, childOutput.Shape())
+		grads[i] = tensor.NewTensor(gradData, childOutput.GetShape())
 		offset += childSize
 	}
 
@@ -106,15 +107,15 @@ func (t *GraphTensor) Concat(inputs []*GraphTensor, axis int, names ...string) *
 	g := t.Graph
 	node := NewConcat(name, allInputs, axis)
 
-	inputShape := t.Shape()
+	inputShape := t.GetShape()
 	outputShape := make([]int, len(inputShape))
 	copy(outputShape, inputShape)
 
 	for i := 1; i < len(allInputs); i++ {
-		if len(allInputs[i].Shape()) != len(inputShape) {
+		if len(allInputs[i].GetShape()) != len(inputShape) {
 			panic("All inputs to Concat must have the same number of dimensions")
 		}
-		outputShape[axis] += allInputs[i].Shape()[axis]
+		outputShape[axis] += allInputs[i].GetShape()[axis]
 	}
 
 	outputTensor := &GraphTensor{
@@ -149,11 +150,11 @@ func NewConcat(name string, inputs []*GraphTensor, axis int) *Concat {
 	}
 }
 
-func (m *Concat) GetOutput() *GraphTensor {
-	return m.output
+func (m *Concat) GetOutput() *tensor.Tensor {
+	return m.output.value
 }
 
-func ConcatNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) Node {
+func ConcatNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 	axis := 0
 	m := NewConcat(name, children, axis)
 	m.output = output

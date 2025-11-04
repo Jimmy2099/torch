@@ -59,7 +59,7 @@ func (t *GraphTensor) Squeeze(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(node.Children[0].Shape())
+	outputTensor.SetShape(node.Children[0].GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -83,6 +83,6 @@ func NewSqueeze(name string, a *GraphTensor) *Squeeze {
 	}
 }
 
-func (m *Squeeze) GetOutput() *GraphTensor {
-	return m.output
+func (m *Squeeze) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

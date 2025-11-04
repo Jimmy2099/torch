@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/csv"
 	"github.com/Jimmy2099/torch/data_store/compute_graph"
+	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"github.com/Jimmy2099/torch/layer_cg"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"github.com/Jimmy2099/torch/pkg/log"
 	"github.com/Jimmy2099/torch/testing"
@@ -20,8 +20,8 @@ import (
 
 type AutoEncoder struct {
 	graph      *compute_graph.ComputationalGraph
-	inputNode  *compute_graph.GraphTensor
-	outputNode *compute_graph.GraphTensor
+	inputName  string
+	outputName string
 }
 
 func transpose2D(data []float32, rows, cols int) ([]float32, []int) {
@@ -34,23 +34,9 @@ func transpose2D(data []float32, rows, cols int) ([]float32, []int) {
 	return transposed, []int{cols, rows}
 }
 
-var encoder_fc1 *layer_cg.LinearLayer
-var encoder_fc2 *layer_cg.LinearLayer
-var encoder_fc3 *layer_cg.LinearLayer
-
-var decoder_fc4 *layer_cg.LinearLayer
-var decoder_fc5 *layer_cg.LinearLayer
-var decoder_fc6 *layer_cg.LinearLayer
-
-var encoder_relu1 *layer_cg.ReLULayer
-var encoder_relu2 *layer_cg.ReLULayer
-
-var decoder_relu3 *layer_cg.ReLULayer
-var decoder_relu4 *layer_cg.ReLULayer
-
-func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*compute_graph.GraphTensor, map[string]*compute_graph.GraphTensor) {
-	weightNodes := make(map[string]*compute_graph.GraphTensor)
-	biasNodes := make(map[string]*compute_graph.GraphTensor)
+func loadParameters() (map[string]*tensor.Tensor, map[string]*tensor.Tensor) {
+	weights := make(map[string]*tensor.Tensor)
+	biases := make(map[string]*tensor.Tensor)
 
 	layerSpecs := []struct {
 		name        string
@@ -65,10 +51,8 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 		{"decoder.4", []int{784, 128}, []int{784}},
 	}
 
-	basePath := ""
-	if d, err := os.Getwd(); err == nil {
-		basePath = filepath.Join(d, "py/data")
-	} else {
+	basePath, err := filepath.Abs("./py/data")
+	if err != nil {
 		panic(err)
 	}
 
@@ -76,157 +60,102 @@ func loadParameters(graph *compute_graph.ComputationalGraph) (map[string]*comput
 
 	for _, spec := range layerSpecs {
 		weightPath := filepath.Join(basePath, spec.name+".weight.csv")
-		fmt.Printf("Loading weight: %s\n", weightPath)
 		weightTensor, err := loadTensorFromCSV(weightPath, spec.weightShape)
 		if err != nil {
 			panic(fmt.Sprintf("Load weight %s failed: %v", weightPath, err))
 		}
-
-		fmt.Printf("Loaded weight %s: shape %v, data[0:5] = %v\n",
-			spec.name, weightTensor.GetShape(), weightTensor.Data[:5])
-
-		transposedData, transposedShape := transpose2D(
-			weightTensor.Data,
-			spec.weightShape[0],
-			spec.weightShape[1],
-		)
-		fmt.Printf("Transposed weight %s: new shape %v\n", spec.name, transposedShape)
-
-		weightNodes[spec.name] = graph.NewGraphTensor(
-			transposedData,
-			transposedShape,
-			spec.name+".weight_transposed",
-		)
+		transposedData, transposedShape := transpose2D(weightTensor.Data, spec.weightShape[0], spec.weightShape[1])
+		weights[spec.name] = tensor.NewTensor(transposedData, transposedShape)
 
 		biasPath := filepath.Join(basePath, spec.name+".bias.csv")
-		fmt.Printf("Loading bias: %s\n", biasPath)
 		biasTensor, err := loadTensorFromCSV(biasPath, spec.biasShape)
 		if err != nil {
 			panic(fmt.Sprintf("Load bias %s failed: %v", biasPath, err))
 		}
-
-		fmt.Printf("Loaded bias %s: shape %v, data[0:5] = %v\n",
-			spec.name, biasTensor.GetShape(), biasTensor.Data[:5])
-
-		biasNodes[spec.name] = graph.NewGraphTensor(
-			biasTensor.Data,
-			spec.biasShape,
-			spec.name+".bias",
-		)
+		biases[spec.name] = biasTensor
 	}
-	{
-		encoder_fc1 = layer_cg.NewLinearLayer(graph, layerSpecs[0].weightShape[0], layerSpecs[0].weightShape[1])
-		encoder_fc1.SetWeight(weightNodes["encoder.0"])
-		encoder_fc1.SetBias(biasNodes["encoder.0"])
-
-		encoder_fc2 = layer_cg.NewLinearLayer(graph, layerSpecs[1].weightShape[0], layerSpecs[1].weightShape[1])
-		encoder_fc2.SetWeight(weightNodes["encoder.2"])
-		encoder_fc2.SetBias(biasNodes["encoder.2"])
-
-		encoder_fc3 = layer_cg.NewLinearLayer(graph, layerSpecs[2].weightShape[0], layerSpecs[2].weightShape[1])
-		encoder_fc3.SetWeight(weightNodes["encoder.4"])
-		encoder_fc3.SetBias(biasNodes["encoder.4"])
-	}
-	{
-		decoder_fc4 = layer_cg.NewLinearLayer(graph, layerSpecs[0+3].weightShape[0], layerSpecs[0+3].weightShape[1])
-		decoder_fc4.SetWeight(weightNodes["decoder.0"])
-		decoder_fc4.SetBias(biasNodes["decoder.0"])
-
-		decoder_fc5 = layer_cg.NewLinearLayer(graph, layerSpecs[1+3].weightShape[0], layerSpecs[1+3].weightShape[1])
-		decoder_fc5.SetWeight(weightNodes["decoder.2"])
-		decoder_fc5.SetBias(biasNodes["decoder.2"])
-
-		decoder_fc6 = layer_cg.NewLinearLayer(graph, layerSpecs[2+3].weightShape[0], layerSpecs[2+3].weightShape[1])
-		decoder_fc6.SetWeight(weightNodes["decoder.4"])
-		decoder_fc6.SetBias(biasNodes["decoder.4"])
-	}
-	{
-		encoder_relu1 = layer_cg.NewReLULayer(graph)
-		encoder_relu2 = layer_cg.NewReLULayer(graph)
-		decoder_relu3 = layer_cg.NewReLULayer(graph)
-		decoder_relu4 = layer_cg.NewReLULayer(graph)
-	}
-	return weightNodes, biasNodes
+	return weights, biases
 }
 
 func NewAutoEncoder() *AutoEncoder {
 	fmt.Println("Initializing AutoEncoder with computational graph...")
+	graph := compute_graph.NewComputationalGraph()
+	net := graph.Network
+	nodes := make(map[string]*network.Node)
+
+	createNode := func(name, nodeType string) *network.Node {
+		node := net.NewNode()
+		node.Name = name
+		node.Type = nodeType
+		nodes[name] = node
+		return node
+	}
+
+	createNode("input", "Tensor_Input")
+	paramNames := []string{"encoder.0", "encoder.2", "encoder.4", "decoder.0", "decoder.2", "decoder.4"}
+	for _, p := range paramNames {
+		createNode(p+".weight", "Tensor_Weight")
+		createNode(p+".bias", "Tensor_Bias")
+	}
+
+	fmt.Println("\nBuilding computation graph blueprint...")
+	current_x := "input"
+
+	buildLayer := func(inputName, layerName, activation string) string {
+		matmulNode := createNode(layerName+"_matmul", "MatMul")
+		matmulOut := createNode(layerName+"_matmul_out", "Tensor_Hidden")
+		matmulNode.AddInput(nodes[inputName])
+		matmulNode.AddInput(nodes[layerName+".weight"])
+		matmulNode.AddOutput(matmulOut)
+
+		addNode := createNode(layerName+"_add", "Add")
+		addOut := createNode(layerName+"_add_out", "Tensor_Hidden")
+		addNode.AddInput(matmulOut)
+		addNode.AddInput(nodes[layerName+".bias"])
+		addNode.AddOutput(addOut)
+
+		if activation != "" {
+			actNode := createNode(layerName+"_"+activation, activation)
+			actOut := createNode(layerName+"_"+activation+"_out", "Tensor_Hidden")
+			actNode.AddInput(addOut)
+			actNode.AddOutput(actOut)
+			return actOut.Name
+		}
+		return addOut.Name
+	}
+
+	current_x = buildLayer(current_x, "encoder.0", "Relu")
+	current_x = buildLayer(current_x, "encoder.2", "Relu")
+	current_x = buildLayer(current_x, "encoder.4", "")
+
+	current_x = buildLayer(current_x, "decoder.0", "Relu")
+	current_x = buildLayer(current_x, "decoder.2", "Relu")
+	current_x = buildLayer(current_x, "decoder.4", "Sigmoid")
+
+	net.AddInput(nodes["input"])
+	for _, p := range paramNames {
+		net.AddInput(nodes[p+".weight"])
+		net.AddInput(nodes[p+".bias"])
+	}
+	net.AddOutput(nodes[current_x])
+
+	fmt.Println("\nLoading and setting parameters...")
+	weights, biases := loadParameters()
+	for name, tensorData := range weights {
+		graph.GetTensorByName(name + ".weight").SetValue(tensorData)
+	}
+	for name, tensorData := range biases {
+		graph.GetTensorByName(name + ".bias").SetValue(tensorData)
+	}
+
 	ae := &AutoEncoder{
-		graph: compute_graph.NewComputationalGraph(),
+		graph:      graph,
+		inputName:  "input",
+		outputName: current_x,
 	}
-
-	inputData := make([]float32, 784)
-	ae.inputNode = ae.graph.NewGraphTensor(inputData, []int{1, 784}, "input")
-	fmt.Printf("Input node shape: %v\n", ae.inputNode.Value().GetShape())
-
-	weightNodes, biasNodes := loadParameters(ae.graph)
-	_, _ = weightNodes, biasNodes
-	x := ae.inputNode
-	fmt.Println("\nBuilding computation graph...")
-
-	fmt.Printf("First layer weight shape: %v\n", weightNodes["encoder.0"].Value().GetShape())
-
-	//buildLinear := func(x *compute_graph.GraphTensor, weight, bias *compute_graph.GraphTensor, name string) *compute_graph.GraphTensor {
-	//	fmt.Printf("\nBuilding layer: %s", name)
-	//	fmt.Printf("\n  Input shape: %v", x.Shape)
-	//	fmt.Printf("\n  Weight shape: %v", weight.Shape)
-	//
-	//	//return x
-	//	matmul := x.MatMul(weight, name+"_matmul")
-	//	fmt.Printf("\n  After matmul: %v", matmul.Shape)
-	//
-	//	add := matmul.Add(bias, name+"_add")
-	//	fmt.Printf("\n  After add: %v", add.Shape)
-	//
-	//	return add
-	//}
-
-	fmt.Println("\n\nBuilding encoder...")
-	//x = buildLinear(x, weightNodes["encoder.0"], biasNodes["encoder.0"], "encoder_fc1")
-	x = encoder_fc1.Forward(x)
-	x = encoder_relu1.Forward(x)
-	//x = x.ReLU("encoder_relu1")
-	fmt.Printf("\nAfter ReLU1: %v", x.Value().GetShape())
-
-	//x = buildLinear(x, weightNodes["encoder.2"], biasNodes["encoder.2"], "encoder_fc2")
-	x = encoder_fc2.Forward(x)
-	//x = x.ReLU("encoder_relu2")
-	x = encoder_relu2.Forward(x)
-	fmt.Printf("\nAfter ReLU2: %v", x.Value().GetShape())
-
-	//x = buildLinear(x, weightNodes["encoder.4"], biasNodes["encoder.4"], "encoder_fc3")
-	x = encoder_fc3.Forward(x)
-	fmt.Printf("\nLatent space: %v", x.Value().GetShape())
-
-	fmt.Println("\n\nBuilding decoder...")
-	//x = buildLinear(x, weightNodes["decoder.0"], biasNodes["decoder.0"], "decoder_fc4")
-	x = decoder_fc4.Forward(x)
-	//x = x.ReLU("decoder_relu3")
-	x = decoder_relu3.Forward(x)
-	fmt.Printf("\nAfter ReLU3: %v", x.Value().GetShape())
-
-	//x = buildLinear(x, weightNodes["decoder.2"], biasNodes["decoder.2"], "decoder_fc5")
-	x = decoder_fc5.Forward(x)
-	//x = x.ReLU("decoder_relu4")
-	x = decoder_relu4.Forward(x)
-	fmt.Printf("\nAfter ReLU4: %v", x.Value().GetShape())
-
-	//x = buildLinear(x, weightNodes["decoder.4"], biasNodes["decoder.4"], "decoder_fc6")
-	x = decoder_fc6.Forward(x)
-	x = x.Sigmoid("output_sigmoid")
-	fmt.Printf("\nOutput shape: %v", x.Value().GetShape())
-
-	ae.outputNode = x
-	ae.graph.SetOutput(x)
-
-	onnxModel, err := ae.graph.ToONNXModel()
-	if err != nil {
-		panic(err)
-	}
-
-	onnxModel.SaveONNX("ae_model.onnx")
 
 	fmt.Println("\n\nComputation graph structure:")
+	graph.SetOutput(graph.GetTensorByName(ae.outputName))
 	ae.graph.PrintStructure()
 	ae.graph.PrintStructureIntoGraphVisualizeFile()
 
@@ -234,18 +163,18 @@ func NewAutoEncoder() *AutoEncoder {
 }
 
 func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
-	if len(x.GetShape()) != 2 || x.GetShape()[1] != 784 {
-		if x.Size() == 784 {
-			x = x.Flatten().Reshape([]int{1, 784})
-		} else {
-			panic("Invalid input shape")
-		}
+	if x.Size() != 784 {
+		panic("Invalid input size, must be 784")
 	}
+	x.Reshape([]int{1, 784})
 
-	ae.graph.SetInput(ae.inputNode, x.Data)
+	inputTensor := ae.graph.GetTensorByName(ae.inputName)
+	inputTensor.SetValue(x)
 
 	ae.graph.Forward()
-	return ae.graph.GetOutput().Value()
+
+	outputTensor := ae.graph.GetTensorByName(ae.outputName)
+	return outputTensor.Value()
 }
 
 func loadTensorFromCSV(path string, shape []int) (*tensor.Tensor, error) {
@@ -299,7 +228,7 @@ func main() {
 			prediction.SaveToCSV(filepath.Join(directory, strings.Replace(labels[num], ".png.csv", ".png.denoise.csv", -1)))
 		}
 		fmt.Println("label:", labels)
-		fileName := []string{}
+		var fileName []string
 		{
 
 			for i := 0; i < len(labels); i++ {
@@ -466,7 +395,6 @@ def predict_plot(data_file):
         print(f"Attempting to load: {denoise_csv_path}")
         image_data = load_numpy_from_csv(denoise_csv_path)
         axes[1,i].imshow(image_data, cmap='gray')
-        #plt.imshow(image_data, cmap='gray', vmin=0, vmax=1)
         os.remove(denoise_csv_path)
         axes[0,i].axis('off')
         axes[1,i].axis('off')
@@ -499,7 +427,7 @@ if __name__ == "__main__":
 		return fmt.Errorf("unable to create temp data file: %v", err)
 	}
 	for i := 0; i < len(imagePaths); i++ {
-		_, err := dataFile.WriteString(fmt.Sprintf("%s,%s\n", imagePaths[i], imagePaths[i]+".denoise.csv"))
+		_, err = dataFile.WriteString(fmt.Sprintf("%s,%s\n", imagePaths[i], imagePaths[i]+".denoise.csv"))
 		if err != nil {
 			dataFile.Close()
 			return fmt.Errorf("unable to write to temp data file: %v", err)
@@ -512,7 +440,7 @@ if __name__ == "__main__":
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("error executing Python script: %v", err)
 	}
 
@@ -533,25 +461,25 @@ func runCommand(workSpace string, fileName string) {
 		panic(fmt.Sprintln("Error creating Stderr pipe:", err))
 	}
 
-	if err := cmd.Start(); err != nil {
+	if err = cmd.Start(); err != nil {
 		panic(fmt.Sprintln("Error starting Python script:", err))
 	}
 
 	go func() {
-		_, err := io.Copy(os.Stdout, stdout)
+		_, err = io.Copy(os.Stdout, stdout)
 		if err != nil {
 			panic(fmt.Sprintln("Error copying stdout:", err))
 		}
 	}()
 
 	go func() {
-		_, err := io.Copy(os.Stderr, stderr)
+		_, err = io.Copy(os.Stderr, stderr)
 		if err != nil {
 			panic(fmt.Sprintln("Error copying stderr:", err))
 		}
 	}()
 
-	if err := cmd.Wait(); err != nil {
+	if err = cmd.Wait(); err != nil {
 		panic(fmt.Sprintln("Error waiting for Python script to finish:", err))
 	}
 }

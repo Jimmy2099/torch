@@ -1,12 +1,14 @@
 package compute_graph
 
+import "github.com/Jimmy2099/torch/data_store/node"
+
 type OPSNode struct {
 	ONNXName           string
 	ONNXProducedTensor bool
 }
 
-func (m *OPSNode) GetONNXNodeInfo() *ONNXNodeInfo {
-	return &ONNXNodeInfo{
+func (m *OPSNode) GetONNXNodeInfo() *node.ONNXNodeInfo {
+	return &node.ONNXNodeInfo{
 		Name:           m.ONNXName,
 		ProducedTensor: m.ONNXProducedTensor,
 	}

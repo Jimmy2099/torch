@@ -81,7 +81,7 @@ func (t *GraphTensor) Where(trueValues, falseValues *GraphTensor, names ...strin
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -105,6 +105,6 @@ func NewWhere(name string, condition, trueValues, falseValues *GraphTensor) *Whe
 	}
 }
 
-func (m *Where) GetOutput() *GraphTensor {
-	return m.output
+func (m *Where) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

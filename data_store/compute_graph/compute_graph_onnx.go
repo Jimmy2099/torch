@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/node"
 	onnx_ir "github.com/Jimmy2099/torch/thirdparty/onnx-go/ir"
 	v1proto "github.com/golang/protobuf/proto"
 	"io/ioutil"
@@ -13,17 +14,32 @@ type ONNXOperator struct {
 	OutputPCount     int
 	Ignore           bool
 	AliasList        []string
-	NodeRegistryFunc func(name string, children []*GraphTensor, output *GraphTensor) Node
+	NodeRegistryFunc func(name string, children []*GraphTensor, output *GraphTensor) node.Node
 }
 
 var ONNXOperators = []ONNXOperator{
-	{Name: "Input", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Input", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		return &InputNode{Name: name, output: output}
 	}},
+	{Name: "Output", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+		return &InputNode{Name: name, output: output}
+	}},
+
+	{Name: "Tensor_Input", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+		return &InputNode{Name: name, output: output}
+	}},
+	{Name: "Tensor_Output", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+		return &InputNode{Name: name, output: output}
+	}},
+
+	{Name: "Tensor_Hidden", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+		return &InputNode{Name: name, output: output}
+	}},
+
 	{Name: "Abs", InputPCount: 1, OutputPCount: 1},
 	{Name: "Acos", InputPCount: 1, OutputPCount: 1},
 	{Name: "Acosh", InputPCount: 1, OutputPCount: 1},
-	{Name: "Add", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Add", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewAdd(name, children[0], children[1])
 		m.output = output
 		return m
@@ -46,7 +62,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "BitwiseOr", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "BitwiseXor", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "BlackmanWindow", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Cast", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Cast", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewCast(name, children[0])
 		m.output = output
 		return m
@@ -60,12 +76,12 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Compress", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "Concat", InputPCount: -1, OutputPCount: 1, NodeRegistryFunc: ConcatNodeRegistryFunc},
 	{Name: "ConcatFromSequence", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Constant", InputPCount: 0, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Constant", InputPCount: 0, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewConstant(name, output)
 		m.output = output
 		return m
 	}},
-	{Name: "ConstantOfShape", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "ConstantOfShape", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewConstantOfShape(name, children[0], 0.0)
 		m.output = output
 		return m
@@ -73,7 +89,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Conv", InputPCount: 3, OutputPCount: 1},
 	{Name: "ConvInteger", InputPCount: 4, OutputPCount: 1},
 	{Name: "ConvTranspose", InputPCount: 3, OutputPCount: 1},
-	{Name: "Cos", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Cos", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewCos(name, children[0])
 		m.output = output
 		return m
@@ -85,7 +101,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "DepthToSpace", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "DequantizeLinear", InputPCount: 3, OutputPCount: 1},
 	{Name: "Det", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Div", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Div", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewDiv(name, children[0], children[1])
 		m.output = output
 		return m
@@ -94,14 +110,14 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "DynamicQuantizeLinear", InputPCount: 1, OutputPCount: 3},
 	{Name: "Einsum", InputPCount: -1, OutputPCount: 1, Ignore: true},
 	{Name: "Elu", InputPCount: 1, OutputPCount: 1},
-	{Name: "Equal", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Equal", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewEqual(name, children[0], children[1])
 		m.output = output
 		return m
 	}},
 	{Name: "Erf", InputPCount: 1, OutputPCount: 1},
 	{Name: "Exp", InputPCount: 1, OutputPCount: 1},
-	{Name: "Expand", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Expand", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewExpand(name, children[0], children[1])
 		m.output = output
 		return m
@@ -110,7 +126,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Flatten", InputPCount: 1, OutputPCount: 1},
 	{Name: "Floor", InputPCount: 1, OutputPCount: 1},
 	{Name: "GRU", InputPCount: 6, OutputPCount: 2},
-	{Name: "Gather", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Gather", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewGather(name, children[0], children[1])
 		m.output = output
 		return m
@@ -122,7 +138,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "GlobalAveragePool", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "GlobalLpPool", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "GlobalMaxPool", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Greater", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Greater", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewGreater(name, children[0], children[1])
 		m.output = output
 		return m
@@ -152,7 +168,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Loop", InputPCount: -1, OutputPCount: -1},
 	{Name: "LpNormalization", InputPCount: 1, OutputPCount: 1},
 	{Name: "LpPool", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "MatMul", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "MatMul", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewMatMul(name, children[0], children[1])
 		m.output = output
 		return m
@@ -168,13 +184,13 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Min", InputPCount: -1, OutputPCount: 1},
 	{Name: "Mish", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Mod", InputPCount: 2, OutputPCount: 1, Ignore: true},
-	{Name: "Mul", InputPCount: 2, OutputPCount: 1, AliasList: []string{"Multiply"}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Mul", InputPCount: 2, OutputPCount: 1, AliasList: []string{"Multiply"}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewMultiply(name, children[0], children[1])
 		m.output = output
 		return m
 	}},
 	{Name: "Multinomial", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Neg", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Neg", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewNeg(name, children[0])
 		m.output = output
 		return m
@@ -190,7 +206,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Or", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "PRelu", InputPCount: 2, OutputPCount: 1},
 	{Name: "Pad", InputPCount: 3, OutputPCount: 1},
-	{Name: "Pow", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Pow", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewPow(name, children[0], children[1])
 		m.output = output
 		return m
@@ -210,17 +226,17 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ReduceL2", InputPCount: 1, OutputPCount: 1},
 	{Name: "ReduceLogSum", InputPCount: 1, OutputPCount: 1},
 	{Name: "ReduceLogSumExp", InputPCount: 1, OutputPCount: 1},
-	{Name: "ReduceMax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "ReduceMax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewReduceMax(name, children[0])
 		m.output = output
 		return m
 	}},
-	{Name: "ReduceMean", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "ReduceMean", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewReduceMean(name, children[0])
 		m.output = output
 		return m
 	}},
-	{Name: "ReduceMin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "ReduceMin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewReduceMin(name, children[0])
 		m.output = output
 		return m
@@ -229,12 +245,12 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ReduceSum", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "ReduceSumSquare", InputPCount: 1, OutputPCount: 1},
 	{Name: "RegexFullMatch", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Relu", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Relu", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewReLU(name, children[0])
 		m.output = output
 		return m
 	}},
-	{Name: "Reshape", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Reshape", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		var shape []int
 		if len(children) > 1 && children[1].value != nil && children[1].value.Data != nil {
 			for i := 0; i < len(children[1].value.Data); i++ {
@@ -254,7 +270,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Scan", InputPCount: -1, OutputPCount: -1},
 	{Name: "Scatter", InputPCount: 3, OutputPCount: 1},
 	{Name: "ScatterElements", InputPCount: 3, OutputPCount: 1},
-	{Name: "ScatterND", InputPCount: 3, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "ScatterND", InputPCount: 3, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewScatterND(name, children[0], children[1], children[2])
 		m.output = output
 		return m
@@ -267,33 +283,33 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "SequenceInsert", InputPCount: 3, OutputPCount: 1},
 	{Name: "SequenceLength", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "SequenceMap", InputPCount: -1, OutputPCount: -1},
-	{Name: "Shape", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Shape", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewShapeOp(name, children[0])
 		m.output = output
 		return m
 	}},
 	{Name: "Shrink", InputPCount: 1, OutputPCount: 1},
-	{Name: "Sigmoid", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Sigmoid", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewSigmoid(name, children[0])
 		m.output = output
 		return m
 	}},
 	{Name: "Sign", InputPCount: 1, OutputPCount: 1},
-	{Name: "Sin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Sin", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewSin(name, children[0])
 		m.output = output
 		return m
 	}},
 	{Name: "Sinh", InputPCount: 1, OutputPCount: 1},
 	{Name: "Size", InputPCount: 1, OutputPCount: 1, Ignore: true},
-	{Name: "Slice", InputPCount: 5, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Slice", InputPCount: 5, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		//var starts, ends, axes, steps *GraphTensor
 		//children[0], children[1], children[2], children[3], children[4])
 		m := NewSlice(name, children[0], []int{}, []int{}) //TODO
 		m.output = output
 		return m
 	}},
-	{Name: "Softmax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Softmax", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewSoftmax(name, children[0])
 		m.output = output
 		return m
@@ -304,7 +320,7 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "SpaceToDepth", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "Split", InputPCount: 2, OutputPCount: -1},
 	{Name: "SplitToSequence", InputPCount: 2, OutputPCount: 1, Ignore: true},
-	{Name: "Sqrt", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Sqrt", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewSqrt(name, children[0])
 		m.output = output
 		return m
@@ -323,24 +339,24 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "ThresholdedRelu", InputPCount: 1, OutputPCount: 1},
 	{Name: "Tile", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "TopK", InputPCount: 2, OutputPCount: 2},
-	{Name: "Transpose", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Transpose", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewTranspose(name, children[0], []int{}, []int{}) //TODO
 		m.output = output
 		return m
 	}},
-	{Name: "Trilu", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Trilu", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewTrilu(name, children[0], children[1])
 		m.output = output
 		return m
 	}},
 	{Name: "Unique", InputPCount: 1, OutputPCount: 4},
-	{Name: "Unsqueeze", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Unsqueeze", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewUnsqueeze(name, children[0], children[1])
 		m.output = output
 		return m
 	}},
 	{Name: "Upsample", InputPCount: 2, OutputPCount: 1, Ignore: true},
-	{Name: "Where", InputPCount: 3, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) Node {
+	{Name: "Where", InputPCount: 3, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewWhere(name, children[0], children[1], children[2])
 		m.output = output
 		return m
@@ -375,11 +391,6 @@ type ONNX struct {
 	model *onnx_ir.ModelProto
 }
 
-type ONNXNodeInfo struct {
-	Name           string
-	ProducedTensor bool
-}
-
 func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	model := &onnx_ir.ModelProto{}
 	model.IrVersion = 7
@@ -404,11 +415,11 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		tensorType := &onnx_ir.TypeProto_Tensor{
 			ElemType: int32(onnx_ir.TensorProto_FLOAT),
 			Shape: &onnx_ir.TensorShapeProto{
-				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.Shape())),
+				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.GetShape())),
 			},
 		}
 
-		for i, dim := range t.Shape() {
+		for i, dim := range t.GetShape() {
 			tensorType.Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),
@@ -447,7 +458,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		onnxNode = &onnx_ir.NodeProto{
 			OpType: nodeType,
 			Input:  inputNames,
-			Output: []string{node.GetOutput().Name},
+			//Output: []string{node.GetOutput().Name},
 		}
 
 		count := nodeCounter[nodeType]
@@ -465,14 +476,14 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 					TensorType: &onnx_ir.TypeProto_Tensor{
 						ElemType: int32(onnx_ir.TensorProto_FLOAT),
 						Shape: &onnx_ir.TensorShapeProto{
-							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.Shape())),
+							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.GetShape())),
 						},
 					},
 				},
 			},
 		}
 
-		for i, dim := range g.output.Shape() {
+		for i, dim := range g.output.GetShape() {
 			outputInfo.Type.GetTensorType().Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),

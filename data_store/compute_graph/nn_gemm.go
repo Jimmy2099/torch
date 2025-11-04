@@ -103,8 +103,8 @@ func NewGemm(name string, transA, transB bool, alpha, beta float32, a, b, c *Gra
 	}
 }
 
-func (m *Gemm) GetOutput() *GraphTensor {
-	return m.output
+func (m *Gemm) GetOutput() *tensor.Tensor {
+	return m.output.value
 }
 
 func gemm(a, b, c *tensor.Tensor, transA, transB bool, alpha, beta float32) *tensor.Tensor {

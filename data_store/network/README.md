@@ -15,3 +15,6 @@
 ### Betweeness
 ### Community
 ### Modularity
+
+## Network Impl (WIP)
+1. Hopfield network and neuro fire memory

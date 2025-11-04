@@ -55,7 +55,7 @@ func (t *GraphTensor) ReLU(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -79,6 +79,6 @@ func NewReLU(name string, a *GraphTensor) *ReLU {
 	}
 }
 
-func (m *ReLU) GetOutput() *GraphTensor {
-	return m.output
+func (m *ReLU) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

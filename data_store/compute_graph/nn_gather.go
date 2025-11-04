@@ -45,7 +45,7 @@ func (t *GraphTensor) Gather(indices *GraphTensor, names ...string) *GraphTensor
 	g := t.Graph
 	node := NewGather(name, t, indices)
 
-	outputShape := calculateGatherOutputShape(t.Shape(), indices.Shape())
+	outputShape := calculateGatherOutputShape(t.GetShape(), indices.GetShape())
 
 	outputSize := 1
 	for _, dim := range outputShape {
@@ -83,8 +83,8 @@ func NewGather(name string, data *GraphTensor, indices *GraphTensor) *Gather {
 	}
 }
 
-func (m *Gather) GetOutput() *GraphTensor {
-	return m.output
+func (m *Gather) GetOutput() *tensor.Tensor {
+	return m.output.value
 }
 
 func calculateGatherOutputShape(dataShape, indicesShape []int) []int {

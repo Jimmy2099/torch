@@ -68,7 +68,7 @@ func (t *GraphTensor) LRN(size int, alpha, beta, k float32, names ...string) *Gr
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -96,6 +96,6 @@ func NewLRN(name string, input *GraphTensor, size int, alpha, beta, k float32) *
 	}
 }
 
-func (m *LRN) GetOutput() *GraphTensor {
-	return m.output
+func (m *LRN) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

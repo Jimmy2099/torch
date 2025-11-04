@@ -67,6 +67,6 @@ func NewConstant(name string, output *GraphTensor) *Constant {
 	}
 }
 
-func (m *Constant) GetOutput() *GraphTensor {
-	return m.output
+func (m *Constant) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

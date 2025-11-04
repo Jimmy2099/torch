@@ -113,3 +113,7 @@ func (t *Tensor) ToDevice(device Device) {
 	}
 	//TODO
 }
+
+func (t *Tensor) GetData() []float32 {
+	return t.Data
+}

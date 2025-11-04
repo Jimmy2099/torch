@@ -64,7 +64,7 @@ func (t *GraphTensor) Dropout(p float32, names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -89,6 +89,6 @@ func NewDropout(name string, input *GraphTensor, p float32) *Dropout {
 	}
 }
 
-func (m *Dropout) GetOutput() *GraphTensor {
-	return m.output
+func (m *Dropout) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

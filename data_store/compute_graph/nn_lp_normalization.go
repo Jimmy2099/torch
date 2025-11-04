@@ -134,7 +134,7 @@ func (t *GraphTensor) LpNormalization(p float32, axis int, epsilon float32, name
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -161,6 +161,6 @@ func NewLpNormalization(name string, input *GraphTensor, p float32, axis int, ep
 	}
 }
 
-func (m *LpNormalization) GetOutput() *GraphTensor {
-	return m.output
+func (m *LpNormalization) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

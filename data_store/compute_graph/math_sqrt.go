@@ -55,7 +55,7 @@ func (t *GraphTensor) Sqrt(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -79,6 +79,6 @@ func NewSqrt(name string, a *GraphTensor) *Sqrt {
 	}
 }
 
-func (m *Sqrt) GetOutput() *GraphTensor {
-	return m.output
+func (m *Sqrt) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

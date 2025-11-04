@@ -171,6 +171,6 @@ func NewLpPool(name string, input *GraphTensor, kernel, strides []int, p float32
 	}
 }
 
-func (m *LpPool) GetOutput() *GraphTensor {
-	return m.output
+func (m *LpPool) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

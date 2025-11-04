@@ -40,7 +40,7 @@ func (m *Trilu) Forward() *tensor.Tensor {
 
 func (m *Trilu) Backward(grad *tensor.Tensor) {
 
-	inputShape := m.Children[0].Node.GetOutput().Shape()
+	inputShape := m.Children[0].Node.GetOutput().GetShape()
 
 	input := m.Children[0].Node.Forward()
 	kTensor := m.Children[1].Node.Forward()
@@ -93,7 +93,7 @@ func (t *GraphTensor) Trilu(k *GraphTensor, names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -118,6 +118,6 @@ func NewTrilu(name string, input, k *GraphTensor) *Trilu {
 	}
 }
 
-func (m *Trilu) GetOutput() *GraphTensor {
-	return m.output
+func (m *Trilu) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

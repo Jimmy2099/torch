@@ -75,7 +75,7 @@ func (t *GraphTensor) Xor(other *GraphTensor, names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -99,6 +99,6 @@ func NewXor(name string, a, b *GraphTensor) *Xor {
 	}
 }
 
-func (m *Xor) GetOutput() *GraphTensor {
-	return m.output
+func (m *Xor) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

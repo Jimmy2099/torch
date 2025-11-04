@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
@@ -11,8 +12,8 @@ type Sum struct {
 	output   *GraphTensor
 }
 
-func (m *Sum) GetONNXNodeInfo() *ONNXNodeInfo {
-	return &ONNXNodeInfo{
+func (m *Sum) GetONNXNodeInfo() *node.ONNXNodeInfo {
+	return &node.ONNXNodeInfo{
 		Name:           "Sum",
 		ProducedTensor: true,
 	}
@@ -64,8 +65,8 @@ func (m *Sum) ResetComputed() {
 
 func (m *Sum) GetName() string { return m.Name }
 
-func (m *Sum) GetChildren() []Node {
-	nodes := make([]Node, len(m.Children))
+func (m *Sum) GetChildren() []node.Node {
+	nodes := make([]node.Node, len(m.Children))
 	for i, t := range m.Children {
 		nodes[i] = t.Node
 	}
@@ -99,6 +100,6 @@ func (t *GraphTensor) Sum(names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func (m *Sum) GetOutput() *GraphTensor {
-	return m.output
+func (m *Sum) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

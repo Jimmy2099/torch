@@ -2,26 +2,19 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/network"
+	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/pkg/graph_visualize"
 	"log"
+	"strings"
 )
 
-type Node interface {
-	Forward() *tensor.Tensor
-	Backward(grad *tensor.Tensor)
-	GetName() string
-	ResetComputed()
-	//OPSNode
-	GetONNXNodeInfo() *ONNXNodeInfo
-	GetChildren() []Node
-	GetOutput() *GraphTensor
-}
-
 type ComputationalGraph struct {
-	Nodes     []Node
+	Nodes     []node.Node
 	Tensors   map[string]*GraphTensor
 	output    *GraphTensor
+	Network   *network.Network
 	NodeCount int
 	*ComputationalGraphCount
 }
@@ -31,6 +24,7 @@ func NewComputationalGraph() *ComputationalGraph {
 		Tensors:                 make(map[string]*GraphTensor),
 		NodeCount:               0,
 		ComputationalGraphCount: NewComputationalGraphCount(),
+		Network:                 network.NewNetwork(),
 	}
 }
 
@@ -46,8 +40,8 @@ func (g *ComputationalGraph) SetOutputByName(graphTensorName string) {
 	}
 }
 
-func (g *ComputationalGraph) GetOutput() *GraphTensor {
-	return g.output
+func (g *ComputationalGraph) GetOutputNode() node.Node {
+	return g.GetNodeByName(g.Network.GetOutput()[0].Name)
 }
 
 type GraphTensor struct {
@@ -55,7 +49,7 @@ type GraphTensor struct {
 	value    *tensor.Tensor
 	grad     *tensor.Tensor
 	shape    []int
-	Node     Node
+	Node     node.Node
 	Graph    *ComputationalGraph
 	computed bool
 }
@@ -75,7 +69,7 @@ func (t *GraphTensor) UpdateAll(graphTensor *GraphTensor) {
 	t.computed = graphTensor.computed
 }
 
-func (t *GraphTensor) Shape() []int {
+func (t *GraphTensor) GetShape() []int {
 	if t.value.GetShape() == nil {
 		return t.value.GetShape()
 	}
@@ -168,22 +162,67 @@ func (g *ComputationalGraph) GetTensors() map[string]*GraphTensor {
 }
 
 func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
+	gNode := g.Network.GetNodeByName(name)
+	if gNode == nil {
+		return nil
+	}
 	for k, v := range g.Tensors {
 		if k == name {
 			return v
 		}
 	}
-	return nil
+	t := &GraphTensor{
+		Name: name,
+	}
+	g.Tensors[name] = t
+	return t
 }
 
+// Forward TODO output-driven  multi-output node
+// Forward TODO impl input-driven for bio neuro-fire and make bio-neuro like chip
 func (g *ComputationalGraph) Forward() {
-	for _, node := range g.Nodes {
-		node.ResetComputed()
+	g.Reset()
+
+	if g.output == nil {
+		panic("Error: Computational graph output is not set.")
+	}
+	visited := make(map[*network.Node]bool)
+
+	for _, output := range g.Network.GetOutput() {
+		g.forwardNode(output, visited)
+	}
+}
+
+func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.Node]bool) {
+	if n == nil {
+		return
+	}
+	if visited[n] {
+		return
+	}
+	visited[n] = true
+
+	if strings.LastIndex(n.Type, "Tensor_") == 0 || len(n.Outputs) == 0 {
+		if n.Parent != nil {
+			g.forwardNode(n.Parent, visited)
+		} else {
+		}
+		return
 	}
 
-	if g.output != nil {
-		g.output.Node.Forward()
+	for _, in := range n.Inputs {
+		if in == nil {
+			continue
+		}
+		g.forwardNode(in, visited)
 	}
+
+	graphNode := g.GetNodeByName(n.Name)
+	if graphNode == nil {
+		panic("graphNode is null: " + n.Name)
+	}
+
+	graphNode.Forward()
 }
 
 func (g *ComputationalGraph) Backward() {
@@ -234,7 +273,7 @@ func (t *GraphTensor) Multiply(other *GraphTensor, names ...string) *GraphTensor
 		Graph: g,
 		Node:  multNode,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -268,7 +307,7 @@ func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 		Graph: g,
 		Node:  addNode,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -279,180 +318,7 @@ func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 	return outputTensor
 }
 
-type InputNode struct {
-	Name string
-	//Output *tensor.Tensor
-	//Grad   *tensor.Tensor
-	output *GraphTensor
-}
-
-func (m *InputNode) GetONNXNodeInfo() *ONNXNodeInfo {
-	return &ONNXNodeInfo{
-		Name:           "Input",
-		ProducedTensor: false,
-	}
-}
-
-func (n *InputNode) Forward() *tensor.Tensor {
-	if n.output.computed {
-		return n.output.value
-	}
-	n.output.computed = true
-	return n.output.value
-}
-
-func (n *InputNode) Backward(grad *tensor.Tensor) {
-	if n.output.grad == nil {
-		n.output.grad = tensor.NewTensor(
-			make([]float32, len(n.output.value.Data)),
-			n.output.value.GetShape(),
-		)
-	}
-
-	for i := range grad.Data {
-		n.output.grad.Data[i] += grad.Data[i]
-	}
-}
-
-func (n *InputNode) resetGrad() {
-	n.output.grad = tensor.NewTensor(make([]float32, len(n.output.value.Data)), n.output.value.GetShape())
-}
-
-func (n *InputNode) ResetComputed() {
-	n.output.computed = false
-}
-
-func (n *InputNode) GetGrad() *tensor.Tensor { return n.output.grad }
-func (n *InputNode) GetName() string         { return n.Name }
-func (n *InputNode) GetChildren() []Node     { return nil }
-func (n *InputNode) GetOutput() *GraphTensor { return n.output }
-
-type Multiply struct {
-	*OPSNode
-	Name     string
-	Children []*GraphTensor
-	output   *GraphTensor
-}
-
-func NewMultiply(name string, a, b *GraphTensor) *Multiply {
-	return &Multiply{
-		OPSNode: NewOPSNode(OPSNode{
-			ONNXName:           "Mul",
-			ONNXProducedTensor: true,
-		}),
-		Name:     name,
-		Children: []*GraphTensor{a, b},
-	}
-}
-
-func (m *Multiply) Forward() *tensor.Tensor {
-	if m.output.computed {
-		return m.output.value
-	}
-
-	a := m.Children[0].Node.Forward()
-	b := m.Children[1].Node.Forward()
-
-	if len(a.Data) != len(b.Data) {
-		panic("tensor sizes must match for multiplication")
-	}
-
-	result := a.Mul(b)
-	m.output.value = result
-	m.output.computed = true
-	return result
-}
-
-func (m *Multiply) ResetComputed() {
-	m.output.computed = false
-}
-
-func (m *Multiply) Backward(grad *tensor.Tensor) {
-	m.output.grad = grad
-
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in Multiply backward pass")
-	}
-
-	gradA := bVal.Mul(grad)
-	gradB := aVal.Mul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-}
-
-func (m *Multiply) GetName() string { return m.Name }
-
-func (m *Multiply) GetChildren() []Node {
-	nodes := make([]Node, len(m.Children))
-	for i, t := range m.Children {
-		nodes[i] = t.Node
-	}
-	return nodes
-}
-func (m *Multiply) GetOutput() *GraphTensor { return m.output }
-
-type Add struct {
-	*OPSNode
-	Name     string
-	Children []*GraphTensor
-	output   *GraphTensor
-}
-
-func NewAdd(name string, a, b *GraphTensor) *Add {
-	return &Add{
-		OPSNode: NewOPSNode(OPSNode{
-			ONNXName:           "Add",
-			ONNXProducedTensor: true,
-		}),
-		Name:     name,
-		Children: []*GraphTensor{a, b},
-	}
-}
-
-func (a *Add) Forward() *tensor.Tensor {
-	if a.output.computed {
-		return a.output.value
-	}
-
-	x := a.Children[0].Node.Forward()
-	y := a.Children[1].Node.Forward()
-
-	if len(x.Data) != len(y.Data) {
-		panic("tensor sizes must match for addition")
-	}
-
-	result := x.Add(y)
-	a.output.value = result
-	a.output.computed = true
-	return result
-}
-
-func (a *Add) ResetComputed() {
-	a.output.computed = false
-}
-
-func (a *Add) Backward(grad *tensor.Tensor) {
-	a.Children[0].Node.Backward(grad)
-	a.Children[1].Node.Backward(grad)
-}
-
-func (a *Add) GetName() string { return a.Name }
-
-func (a *Add) GetChildren() []Node {
-	nodes := make([]Node, len(a.Children))
-	for i, t := range a.Children {
-		nodes[i] = t.Node
-	}
-	return nodes
-}
-
-func (a *Add) GetOutput() *GraphTensor { return a.output }
-
-func getNodeType(node Node) string {
+func getNodeType(node node.Node) string {
 	switch node.(type) {
 	case *InputNode:
 		return "Input"
@@ -466,7 +332,11 @@ func getNodeType(node Node) string {
 }
 
 func (g *ComputationalGraph) Reset() {
-	//TODO
+	for _, tensor := range g.Tensors {
+		if tensor != nil {
+			tensor.SetComputed(false)
+		}
+	}
 }
 
 // PrintSmallModelStructure debug purpose
@@ -481,7 +351,7 @@ func (g *ComputationalGraph) PrintSmallModelStructure() {
 }
 
 // debugPrintNode debug purpose
-func (g *ComputationalGraph) debugPrintNode(node Node, prefix string, isLast bool, isRoot bool) {
+func (g *ComputationalGraph) debugPrintNode(node node.Node, prefix string, isLast bool, isRoot bool) {
 	var connector string
 	if isRoot {
 		connector = "Output: "
@@ -523,7 +393,7 @@ func (g *ComputationalGraph) PrintStructure() {
 	}
 
 	type stackItem struct {
-		node   Node
+		node   node.Node
 		prefix string
 		isLast bool
 		isRoot bool
@@ -586,9 +456,9 @@ func (g *ComputationalGraph) PrintStructureIntoGraphVisualizeFile() {
 		Edges: []graph_visualize.Edge{},
 	}
 
-	nodeIDMap := make(map[Node]string)
+	nodeIDMap := make(map[node.Node]string)
 	counter := 0
-	visited := make(map[Node]bool)
+	visited := make(map[node.Node]bool)
 
 	for _, tensor := range g.Tensors {
 		if tensor != nil && tensor.Node != nil && !visited[tensor.Node] {
@@ -622,7 +492,7 @@ func (g *ComputationalGraph) PrintStructureIntoGraphVisualizeFile() {
 	gv.Save()
 }
 
-func getNodeColor(node Node, output *GraphTensor) string {
+func getNodeColor(node node.Node, output *GraphTensor) string {
 	if output != nil && output.Node == node {
 		return "#FF6B6B"
 	}
@@ -631,4 +501,79 @@ func getNodeColor(node Node, output *GraphTensor) string {
 		return "#96CEB4"
 	}
 	return "#4ECDC4"
+}
+
+func (g *ComputationalGraph) GetNodeByName(name string) node.Node {
+	for i := 0; i < len(g.Nodes); i++ {
+		if g.Nodes[i].GetName() == name {
+			return g.Nodes[i]
+		}
+	}
+
+	ne := g.Network.GetNodeByName(name)
+	if ne == nil {
+		panic(fmt.Sprintf("node '%s' not found in network definition", name))
+	}
+
+	var onnxNodeInfo *ONNXOperator
+	{
+		if onnxNodeInfo = GetONNXNodeInfoByName(ne.Type); onnxNodeInfo == nil {
+			panic(fmt.Sprintf("unknown node type: %s", ne.Type))
+		} else if 1 == 2 {
+			if len(ne.Outputs) != 1 { //TODO
+				panic(fmt.Sprintf("invalid output length: %d", len(ne.Outputs)))
+			}
+			if onnxNodeInfo.InputPCount != -1 {
+				if len(ne.Inputs) != onnxNodeInfo.InputPCount && len(ne.Outputs) != onnxNodeInfo.OutputPCount {
+					panic(fmt.Sprintf("node %s of type %s has %d inputs but %d inputs were expected, got %d , %d",
+						ne.Name, ne.Type, onnxNodeInfo.InputPCount, onnxNodeInfo.OutputPCount, len(ne.Inputs), 1))
+				}
+
+			}
+		}
+	}
+
+	var inputs []*GraphTensor
+	for _, inputName := range ne.Inputs {
+		inputGraphTensor := g.GetTensorByName(inputName.Name)
+		if inputGraphTensor == nil {
+			panic("input tensor not found: " + inputName.Name)
+		}
+
+		if inputGraphTensor.Node == nil {
+			newNode := &InputNode{
+				Name:   inputGraphTensor.Name,
+				output: inputGraphTensor,
+			}
+			inputGraphTensor.Node = newNode
+			g.Nodes = append(g.Nodes, newNode)
+		}
+
+		inputs = append(inputs, inputGraphTensor)
+	}
+
+	var outputs []*GraphTensor
+	for _, outputName := range ne.Outputs {
+		outputGraphTensor := g.GetTensorByName(outputName.Name)
+		if outputGraphTensor == nil {
+			panic("output tensor could not be null: " + outputName.Name)
+		}
+		outputs = append(outputs, outputGraphTensor)
+	}
+
+	var output *GraphTensor
+	if len(outputs) > 0 {
+		output = outputs[0]
+	}
+	gNode := onnxNodeInfo.NodeRegistryFunc(ne.Name, inputs, output) //TODO outputs[0]
+	if gNode == nil {
+		panic(fmt.Sprintf("failed to create node %s of type %s", ne.Name, ne.Type))
+	}
+
+	if output != nil {
+		output.Node = gNode
+	}
+
+	g.Nodes = append(g.Nodes, gNode)
+	return gNode
 }

@@ -62,7 +62,7 @@ func (t *GraphTensor) Log(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -85,6 +85,6 @@ func NewLog(name string, a *GraphTensor) *Log {
 	}
 }
 
-func (m *Log) GetOutput() *GraphTensor {
-	return m.output
+func (m *Log) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

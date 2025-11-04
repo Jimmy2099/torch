@@ -79,7 +79,7 @@ func (t *GraphTensor) GlobalAveragePool(name string) *GraphTensor {
 	}
 
 	node := NewGlobalAveragePool(name, t)
-	outputShape := []int{t.Shape()[0], t.Shape()[1]}
+	outputShape := []int{t.GetShape()[0], t.GetShape()[1]}
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
@@ -108,6 +108,6 @@ func NewGlobalAveragePool(name string, input *GraphTensor) *GlobalAveragePool {
 	}
 }
 
-func (m *GlobalAveragePool) GetOutput() *GraphTensor {
-	return m.output
+func (m *GlobalAveragePool) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

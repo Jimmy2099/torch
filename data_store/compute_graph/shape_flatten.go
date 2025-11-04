@@ -77,6 +77,6 @@ func NewFlatten(name string, a *GraphTensor) *Flatten {
 	}
 }
 
-func (m *Flatten) GetOutput() *GraphTensor {
-	return m.output
+func (m *Flatten) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

@@ -74,6 +74,6 @@ func NewReshape(name string, a *GraphTensor, shape []int) *Reshape {
 	}
 }
 
-func (m *Reshape) GetOutput() *GraphTensor {
-	return m.output
+func (m *Reshape) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

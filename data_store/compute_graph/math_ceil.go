@@ -53,7 +53,7 @@ func (t *GraphTensor) Ceil(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -77,6 +77,6 @@ func NewCeil(name string, a *GraphTensor) *Ceil {
 	}
 }
 
-func (m *Ceil) GetOutput() *GraphTensor {
-	return m.output
+func (m *Ceil) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

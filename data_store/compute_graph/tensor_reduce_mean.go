@@ -86,6 +86,6 @@ func NewReduceMean(name string, a *GraphTensor) *ReduceMean {
 	}
 }
 
-func (m *ReduceMean) GetOutput() *GraphTensor {
-	return m.output
+func (m *ReduceMean) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

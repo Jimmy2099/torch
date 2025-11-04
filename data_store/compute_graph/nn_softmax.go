@@ -124,7 +124,7 @@ func (t *GraphTensor) Softmax(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -148,6 +148,6 @@ func NewSoftmax(name string, a *GraphTensor) *Softmax {
 	}
 }
 
-func (m *Softmax) GetOutput() *GraphTensor {
-	return m.output
+func (m *Softmax) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

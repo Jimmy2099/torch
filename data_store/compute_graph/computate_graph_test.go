@@ -288,7 +288,7 @@ func TestHiddenLayerShapes(t *testing.T) {
 	graph.Forward()
 
 	checkShape := func(tensor *GraphTensor, expectedShape []int, name string) {
-		actualShape := tensor.Shape()
+		actualShape := tensor.GetShape()
 		if !algorithm.EqualSlices(actualShape, expectedShape) {
 			t.Errorf("%s shape mismatch: expected %v, got %v", name, expectedShape, actualShape)
 		} else {

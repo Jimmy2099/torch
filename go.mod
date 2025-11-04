@@ -28,8 +28,9 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb
 	github.com/x448/float16 v0.8.4
-	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81
-	golang.org/x/tools v0.0.0-20190606124116-d0a3d012864b
+	golang.org/x/image v0.32.0
+	golang.org/x/tools v0.38.0
+	golang.org/x/tools/godoc v0.1.0-deprecated
 	gonum.org/v1/gonum v0.0.0-20190902003836-43865b531bee
 	gorgonia.org/gorgonia v0.9.4
 	gorgonia.org/tensor v0.9.3
@@ -42,7 +43,8 @@ require (
 	github.com/leesper/go_rng v0.0.0-20190531154944-a612b043e353 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xtgo/set v1.0.0 // indirect
-	golang.org/x/net v0.0.0-20190611141213-3f473d35a33a // indirect
+	github.com/yuin/goldmark v1.7.13 // indirect
+	golang.org/x/net v0.46.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gorgonia.org/cu v0.9.0-beta // indirect

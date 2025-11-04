@@ -124,7 +124,7 @@ func (t *GraphTensor) MaxPool(kernel, stride, padding []int, name string) *Graph
 	}
 
 	node := NewMaxPool(name, t, kernel, stride, padding)
-	outputShape := calculatePoolOutputShape(t.Shape(), kernel, stride, padding)
+	outputShape := calculatePoolOutputShape(t.GetShape(), kernel, stride, padding)
 	outputTensor := &GraphTensor{
 		Name:  name,
 		value: tensor.NewTensor([]float32{}, []int{0}),
@@ -156,6 +156,6 @@ func NewMaxPool(name string, input *GraphTensor, kernel, stride, padding []int) 
 	}
 }
 
-func (m *MaxPool) GetOutput() *GraphTensor {
-	return m.output
+func (m *MaxPool) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

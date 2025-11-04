@@ -44,7 +44,7 @@ func (t *GraphTensor) Cast(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -68,6 +68,6 @@ func NewCast(name string, a *GraphTensor) *Cast {
 	}
 }
 
-func (m *Cast) GetOutput() *GraphTensor {
-	return m.output
+func (m *Cast) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

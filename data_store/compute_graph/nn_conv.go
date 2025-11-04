@@ -221,6 +221,6 @@ func computeKernelGradient(input, grad *tensor.Tensor, kernelH, kernelW, strideH
 	return gradWeight
 }
 
-func (m *Conv) GetOutput() *GraphTensor {
-	return m.output
+func (m *Conv) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

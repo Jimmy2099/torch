@@ -150,10 +150,10 @@ func (t *GraphTensor) MaxRoiPool(rois *GraphTensor, pooledHeight, pooledWidth in
 
 	node := NewMaxRoiPool(name, t, rois, pooledHeight, pooledWidth)
 	outputShape := []int{
-		rois.Shape()[0],
+		rois.GetShape()[0],
 		pooledHeight,
 		pooledWidth,
-		t.Shape()[3],
+		t.GetShape()[3],
 	}
 
 	totalElements := outputShape[0] * outputShape[1] * outputShape[2] * outputShape[3]
@@ -191,6 +191,6 @@ func NewMaxRoiPool(name string, featureMap, rois *GraphTensor, pooledHeight, poo
 	}
 }
 
-func (m *MaxRoiPool) GetOutput() *GraphTensor {
-	return m.output
+func (m *MaxRoiPool) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

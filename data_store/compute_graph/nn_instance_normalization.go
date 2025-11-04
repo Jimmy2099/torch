@@ -135,7 +135,7 @@ func (t *GraphTensor) InstanceNormalization(epsilon float32, names ...string) *G
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -160,6 +160,6 @@ func NewInstanceNormalization(name string, input *GraphTensor, epsilon float32) 
 	}
 }
 
-func (m *InstanceNormalization) GetOutput() *GraphTensor {
-	return m.output
+func (m *InstanceNormalization) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

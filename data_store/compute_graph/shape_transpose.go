@@ -78,6 +78,6 @@ func NewTranspose(name string, a *GraphTensor, perm, inverse []int) *Transpose {
 	}
 }
 
-func (m *Transpose) GetOutput() *GraphTensor {
-	return m.output
+func (m *Transpose) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

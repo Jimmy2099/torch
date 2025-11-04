@@ -51,7 +51,7 @@ func (t *GraphTensor) Tanh(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -75,6 +75,6 @@ func NewTanh(name string, a *GraphTensor) *Tanh {
 	}
 }
 
-func (m *Tanh) GetOutput() *GraphTensor {
-	return m.output
+func (m *Tanh) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

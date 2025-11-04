@@ -71,7 +71,7 @@ func (t *GraphTensor) Abs(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -95,6 +95,6 @@ func NewAbs(name string, a *GraphTensor) *Abs {
 	}
 }
 
-func (m *Abs) GetOutput() *GraphTensor {
-	return m.output
+func (m *Abs) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

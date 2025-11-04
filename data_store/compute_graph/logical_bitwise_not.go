@@ -53,7 +53,7 @@ func (t *GraphTensor) Not(names ...string) *GraphTensor {
 		Graph: g,
 		Node:  node,
 	}
-	outputTensor.SetShape(t.Shape())
+	outputTensor.SetShape(t.GetShape())
 
 	if _, exists := g.Tensors[name]; exists {
 		panic("tensor name already exists: " + name)
@@ -77,6 +77,6 @@ func NewNot(name string, a *GraphTensor) *Not {
 	}
 }
 
-func (m *Not) GetOutput() *GraphTensor {
-	return m.output
+func (m *Not) GetOutput() *tensor.Tensor {
+	return m.output.value
 }

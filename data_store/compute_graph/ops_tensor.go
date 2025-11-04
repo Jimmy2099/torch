@@ -1,5 +1,7 @@
 package compute_graph
 
+import "github.com/Jimmy2099/torch/data_store/node"
+
 type OPSTensor struct {
 	Name     string
 	Children []*GraphTensor
@@ -8,8 +10,8 @@ type OPSTensor struct {
 
 func (m *OPSTensor) GetName() string { return m.Name }
 
-func (m *OPSTensor) GetChildren() []Node {
-	nodes := make([]Node, len(m.Children))
+func (m *OPSTensor) GetChildren() []node.Node {
+	nodes := make([]node.Node, len(m.Children))
 	for i, t := range m.Children {
 		nodes[i] = t.Node
 	}
