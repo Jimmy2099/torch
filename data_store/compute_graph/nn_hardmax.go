@@ -61,12 +61,7 @@ func (m *Hardmax) Forward() *tensor.Tensor {
 }
 
 func (m *Hardmax) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in hardmax backward")
-	}
-	mask := m.output.value
-	gradInput := grad.Copy().Mul(mask)
-	m.Children[0].Node.Backward(gradInput)
+	return
 }
 
 func (t *GraphTensor) Hardmax(names ...string) *GraphTensor {

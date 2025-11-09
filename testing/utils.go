@@ -37,3 +37,19 @@ func TimeMeasure(start time.Time) string {
 	elapsed := time.Since(start)
 	return fmt.Sprintf("Execution time: %s \n", formatDuration(elapsed))
 }
+
+func CreateTempFileName(pattern string) string {
+	tempDir := os.TempDir()
+
+	//pattern "script.*.py"
+	file, err := os.CreateTemp(tempDir, pattern)
+	if err != nil {
+		panic(err)
+	}
+
+	name := file.Name()
+	file.Close()
+	os.Remove(name)
+
+	return name
+}

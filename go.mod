@@ -43,6 +43,7 @@ require (
 	github.com/leesper/go_rng v0.0.0-20190531154944-a612b043e353 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xtgo/set v1.0.0 // indirect
+	github.com/yalue/onnxruntime_go v1.22.0 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect

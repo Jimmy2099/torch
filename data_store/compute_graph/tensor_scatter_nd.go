@@ -39,36 +39,7 @@ func (m *ScatterND) Forward() *tensor.Tensor {
 }
 
 func (m *ScatterND) Backward(grad *tensor.Tensor) {
-	indicesTensor := m.Children[1].Node.GetOutput()
-	indicesShape := indicesTensor.GetShape()
-
-	numElements := 1
-	for _, dim := range indicesShape {
-		numElements *= dim
-	}
-
-	zeroIndicesGrad := tensor.NewTensor(make([]float32, numElements), indicesShape)
-	m.Children[1].Node.Backward(zeroIndicesGrad)
-
-	data := m.Children[0].Node.GetOutput()
-	indices := m.Children[1].Node.GetOutput()
-
-	dataGrad := grad.Copy()
-
-	updatesGrad := tensor.NewTensor(make([]float32, indicesShape[0]), []int{indicesShape[0]})
-
-	if len(indicesShape) == 2 && indicesShape[1] == 1 && len(data.GetShape()) == 1 {
-		for i := 0; i < indicesShape[0]; i++ {
-			idx := int(indices.GetData()[i])
-			if idx < len(data.GetShape()) {
-				updatesGrad.Data[i] = grad.Data[idx]
-				dataGrad.Data[idx] = 0
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(dataGrad)
-	m.Children[2].Node.Backward(updatesGrad)
+	return
 }
 
 func (t *GraphTensor) ScatterND(indices, updates *GraphTensor, names ...string) *GraphTensor {

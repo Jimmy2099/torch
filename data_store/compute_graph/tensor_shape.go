@@ -28,15 +28,7 @@ func (m *ShapeOp) Forward() *tensor.Tensor {
 }
 
 func (m *ShapeOp) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().GetShape()
-
-	numElements := 1
-	for _, dim := range inputShape {
-		numElements *= dim
-	}
-
-	zeroGrad := tensor.NewTensor(make([]float32, numElements), inputShape)
-	m.Children[0].Node.Backward(zeroGrad)
+	return
 }
 
 func (t *GraphTensor) ShapeOp(names ...string) *GraphTensor {

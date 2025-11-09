@@ -54,6 +54,10 @@ func (g *Network) GetOutput() []*Node {
 	return g.outputs
 }
 
+func (g *Network) GetNodes() []*Node {
+	return g.nodes
+}
+
 func (g *Network) AddOutput(output *Node) {
 	g.outputs = append(g.outputs, output)
 }

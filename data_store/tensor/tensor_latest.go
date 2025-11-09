@@ -553,3 +553,22 @@ func (t *Tensor) TriluMask(k int, upper bool) *Tensor {
 
 	return NewTensor(maskData, t.shape)
 }
+
+func shapeSum(shape []int) int {
+	if len(shape) == 0 {
+		return 1 // 標量的 size 為 1
+	}
+	sum := 1
+	for _, dim := range shape {
+		sum *= dim
+	}
+	return sum
+}
+
+func (t *Tensor) Shape() []int {
+	return t.shape
+}
+
+func (t *Tensor) Rank() int {
+	return len(t.shape)
+}

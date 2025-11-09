@@ -40,26 +40,7 @@ func (m *Where) Forward() *tensor.Tensor {
 }
 
 func (m *Where) Backward(grad *tensor.Tensor) {
-	condition := m.Children[0].Node.Forward()
-
-	conditionGrad := tensor.NewTensor(make([]float32, len(condition.Data)), condition.GetShape())
-	trueGrad := tensor.NewTensor(make([]float32, len(condition.Data)), condition.GetShape())
-	falseGrad := tensor.NewTensor(make([]float32, len(condition.Data)), condition.GetShape())
-
-	for i := range condition.Data {
-		if condition.Data[i] != 0 {
-			trueGrad.Data[i] = grad.Data[i]
-			falseGrad.Data[i] = 0
-		} else {
-			trueGrad.Data[i] = 0
-			falseGrad.Data[i] = grad.Data[i]
-		}
-		conditionGrad.Data[i] = 0
-	}
-
-	m.Children[0].Node.Backward(conditionGrad)
-	m.Children[1].Node.Backward(trueGrad)
-	m.Children[2].Node.Backward(falseGrad)
+	return
 }
 
 func (t *GraphTensor) Where(trueValues, falseValues *GraphTensor, names ...string) *GraphTensor {

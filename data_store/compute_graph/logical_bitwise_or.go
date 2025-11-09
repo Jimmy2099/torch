@@ -29,27 +29,7 @@ func (m *Or) Forward() *tensor.Tensor {
 }
 
 func (m *Or) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in OR backward pass")
-	}
-
-	gradA := tensor.NewTensor(make([]float32, len(aVal.Data)), aVal.GetShape())
-	for i := range gradA.Data {
-		gradA.Data[i] = 1.0 - bVal.Data[i]
-	}
-	gradA = gradA.Mul(grad)
-
-	gradB := tensor.NewTensor(make([]float32, len(bVal.Data)), bVal.GetShape())
-	for i := range gradB.Data {
-		gradB.Data[i] = 1.0 - aVal.Data[i]
-	}
-	gradB = gradB.Mul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
+	return
 }
 
 func (t *GraphTensor) Or(other *GraphTensor, names ...string) *GraphTensor {

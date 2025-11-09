@@ -31,10 +31,6 @@ func (m *Multiply) Forward() *tensor.Tensor {
 	a := m.Children[0].Node.Forward()
 	b := m.Children[1].Node.Forward()
 
-	if len(a.Data) != len(b.Data) {
-		panic("tensor sizes must match for multiplication")
-	}
-
 	result := a.Mul(b)
 	m.output.value = result
 	m.output.computed = true

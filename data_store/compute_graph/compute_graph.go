@@ -17,6 +17,7 @@ type ComputationalGraph struct {
 	Network   *network.Network
 	NodeCount int
 	*ComputationalGraphCount
+	*ONNXAttribute
 }
 
 func NewComputationalGraph() *ComputationalGraph {
@@ -25,6 +26,7 @@ func NewComputationalGraph() *ComputationalGraph {
 		NodeCount:               0,
 		ComputationalGraphCount: NewComputationalGraphCount(),
 		Network:                 network.NewNetwork(),
+		ONNXAttribute:           NewONNXAttribute(),
 	}
 }
 

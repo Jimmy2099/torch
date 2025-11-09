@@ -16,7 +16,15 @@ func (m *Transpose) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
 	}
-
+	m.permutation = []int{1, 0}
+	{
+		//TODO
+		attrs := ONNXAttr.GetONNXAttributeByName(m.GetName())
+		if len(attrs) > 0 && attrs[0].Name == "perm" {
+			m.permutation = int642int(attrs[0].GetInts())
+		}
+	}
+	fmt.Println("Transpose permutation", m.permutation)
 	input := m.Children[0].Node.Forward()
 	result := input.Permute(m.permutation)
 	m.output.value = result

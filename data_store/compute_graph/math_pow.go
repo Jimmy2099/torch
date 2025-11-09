@@ -1,6 +1,7 @@
 package compute_graph
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	math "github.com/chewxy/math32"
@@ -54,6 +55,29 @@ func NewPow(name string, base, exponent *GraphTensor) *Pow {
 	}
 }
 
+func getFloatDataFromByte(inData []byte) (outData []float32) {
+	{
+		count := len(inData) / 4
+		outData = make([]float32, count)
+		for i := 0; i < count; i++ {
+			bits := binary.LittleEndian.Uint32(inData[i*4 : (i+1)*4])
+			outData[i] = math.Float32frombits(bits)
+		}
+	}
+	return
+}
+
+func getFloatDataFromInt64Byte(inData []byte) (outData []float32) {
+	count := len(inData) / 8
+	outData = make([]float32, count)
+	for i := 0; i < count; i++ {
+		bits := binary.LittleEndian.Uint64(inData[i*8 : (i+1)*8])
+		f := math.Float64frombits(bits)
+		outData[i] = float32(f)
+	}
+	return
+}
+
 func (m *Pow) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
@@ -61,17 +85,16 @@ func (m *Pow) Forward() *tensor.Tensor {
 
 	base := m.Children[0].Node.Forward()
 	exponent := m.Children[1].Node.Forward()
+	fmt.Println(m.GetName())
+	fmt.Println("m.Children[0].Node:", m.Children[0].Node.GetName())
+	fmt.Println("m.Children[1].Node:", m.Children[1].Node.GetName())
 
-	if len(base.Data) != len(exponent.Data) {
-		panic("tensor sizes must match for power operation")
+	if len(exponent.Data) != 1 {
+		panic("exponent.Data must be of length 1")
 	}
 
-	result := make([]float32, len(base.Data))
 	//TODO broadcast
-	for i := range base.Data {
-		result[i] = math.Pow(base.Data[i], exponent.Data[i])
-	}
-	m.output.value = tensor.NewTensor(result, base.GetShape())
+	m.output.value = base.Pow(exponent.Data[0])
 	m.output.computed = true
 	return m.output.value
 }

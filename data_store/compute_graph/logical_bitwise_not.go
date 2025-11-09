@@ -24,13 +24,7 @@ func (m *Not) Forward() *tensor.Tensor {
 }
 
 func (m *Not) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient tensor in NOT backward pass")
-	}
-
-	gradA := grad.Copy().Negate()
-
-	m.Children[0].Node.Backward(gradA)
+	return
 }
 
 func (t *GraphTensor) Not(names ...string) *GraphTensor {

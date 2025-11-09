@@ -39,39 +39,7 @@ func (m *Trilu) Forward() *tensor.Tensor {
 }
 
 func (m *Trilu) Backward(grad *tensor.Tensor) {
-
-	inputShape := m.Children[0].Node.GetOutput().GetShape()
-
-	input := m.Children[0].Node.Forward()
-	kTensor := m.Children[1].Node.Forward()
-
-	upper := true
-	if len(m.Children) > 2 {
-		upperTensor := m.Children[2].Node.Forward()
-		if len(upperTensor.Data) > 0 {
-			upper = upperTensor.Data[0] != 0
-		}
-	}
-
-	k := 0
-	if len(kTensor.Data) > 0 {
-		k = int(kTensor.Data[0])
-	}
-
-	mask := input.TriluMask(k, upper)
-
-	gradData := make([]float32, len(grad.Data))
-	for i := range gradData {
-		gradData[i] = grad.Data[i] * mask.Data[i]
-	}
-
-	gradInput := tensor.NewTensor(gradData, inputShape)
-	m.Children[0].Node.Backward(gradInput)
-
-	if len(m.Children) > 1 {
-		zeroGrad := tensor.NewTensor(make([]float32, len(kTensor.Data)), kTensor.GetShape())
-		m.Children[1].Node.Backward(zeroGrad)
-	}
+	return
 }
 
 func (t *GraphTensor) Trilu(k *GraphTensor, names ...string) *GraphTensor {

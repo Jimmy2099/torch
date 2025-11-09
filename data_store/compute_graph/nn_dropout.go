@@ -37,12 +37,7 @@ func (d *Dropout) Forward() *tensor.Tensor {
 }
 
 func (d *Dropout) Backward(grad *tensor.Tensor) {
-	gradData := make([]float32, len(grad.Data))
-	for i, v := range d.mask.Data {
-		gradData[i] = grad.Data[i] * v
-	}
-	gradInput := tensor.NewTensor(gradData, grad.GetShape())
-	d.Children[0].Node.Backward(gradInput)
+	return
 }
 
 func (t *GraphTensor) Dropout(p float32, names ...string) *GraphTensor {

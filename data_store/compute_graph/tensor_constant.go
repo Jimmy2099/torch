@@ -3,6 +3,7 @@ package compute_graph
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	onnx_ir "github.com/Jimmy2099/torch/thirdparty/onnx-go/ir"
 )
 
 type Constant struct {
@@ -11,9 +12,39 @@ type Constant struct {
 	value *tensor.Tensor
 }
 
+func int642int(in []int64) (out []int) {
+	for _, v := range in {
+		out = append(out, int(v))
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return
+}
+
 func (m *Constant) Forward() *tensor.Tensor {
 	if m.output.computed {
 		return m.output.value
+	}
+
+	{
+		attr := ONNXAttr.GetONNXAttributeByName(m.GetName())
+		if len(attr) > 0 && attr[0].Name == "value" {
+			fmt.Println(attr[0].T.GetInt32Data())
+		}
+		var v []float32
+		fmt.Println(onnx_ir.TensorProto_DataType_name[attr[0].GetT().GetDataType()])
+		fmt.Println(getFloatDataFromByte(attr[0].GetT().GetRawData()))
+
+		if onnx_ir.TensorProto_DataType(attr[0].GetT().GetDataType()) == onnx_ir.TensorProto_FLOAT {
+			v = getFloatDataFromByte(attr[0].GetT().GetRawData())
+		}
+		if onnx_ir.TensorProto_DataType(attr[0].GetT().GetDataType()) == onnx_ir.TensorProto_INT64 {
+			v = getFloatDataFromInt64Byte(attr[0].GetT().GetRawData())
+		}
+
+		fmt.Println("Attr:", attr, "v:", v)
+		m.value = tensor.NewTensor(v, int642int(attr[0].GetT().GetDims()))
 	}
 
 	m.output.value = m.value
@@ -22,6 +53,7 @@ func (m *Constant) Forward() *tensor.Tensor {
 }
 
 func (m *Constant) Backward(grad *tensor.Tensor) {
+	return
 }
 
 func (g *ComputationalGraph) Constant(value []float32, shape []int, names ...string) *GraphTensor {

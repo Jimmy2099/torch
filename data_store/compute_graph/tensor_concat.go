@@ -36,27 +36,44 @@ func (m *Concat) Backward(grad *tensor.Tensor) {
 }
 
 func (m *Concat) concatTensors(tensors []*tensor.Tensor, axis int) *tensor.Tensor {
-	totalSize := 0
-	for _, t := range tensors {
-		totalSize += t.GetShape()[axis]
+	if len(tensors) == 0 {
+		return tensor.NewTensor([]float32{}, []int{})
 	}
 
 	outputShape := make([]int, len(tensors[0].GetShape()))
 	copy(outputShape, tensors[0].GetShape())
-	outputShape[axis] = totalSize
+	totalAxisSize := 0
+	for _, t := range tensors {
+		totalAxisSize += t.GetShape()[axis]
+	}
+	outputShape[axis] = totalAxisSize
 
-	// Calculate total elements manually
 	totalElements := 1
 	for _, dim := range outputShape {
 		totalElements *= dim
 	}
-
 	outputData := make([]float32, totalElements)
 
-	offset := 0
-	for _, t := range tensors {
-		copy(outputData[offset:offset+len(t.Data)], t.Data)
-		offset += len(t.Data)
+	outer_dims_size := 1
+	for i := 0; i < axis; i++ {
+		outer_dims_size *= outputShape[i]
+	}
+
+	inner_dims_size := 1
+	for i := axis + 1; i < len(outputShape); i++ {
+		inner_dims_size *= outputShape[i]
+	}
+
+	outputOffset := 0
+	for i := 0; i < outer_dims_size; i++ {
+		for _, t := range tensors {
+			inputShape := t.GetShape()
+			inputAxisDim := inputShape[axis]
+			elementsToCopy := inputAxisDim * inner_dims_size
+			inputOffset := i * elementsToCopy
+			copy(outputData[outputOffset:], t.Data[inputOffset:inputOffset+elementsToCopy])
+			outputOffset += elementsToCopy
+		}
 	}
 
 	return tensor.NewTensor(outputData, outputShape)
@@ -64,26 +81,41 @@ func (m *Concat) concatTensors(tensors []*tensor.Tensor, axis int) *tensor.Tenso
 
 func (m *Concat) splitGradient(grad *tensor.Tensor, axis int) []*tensor.Tensor {
 	grads := make([]*tensor.Tensor, len(m.Children))
-
-	splitPoints := make([]int, len(m.Children))
-	for i, child := range m.Children {
-		splitPoints[i] = child.Node.GetOutput().GetShape()[axis]
-		if i > 0 {
-			splitPoints[i] += splitPoints[i-1]
-		}
+	if len(m.Children) == 0 {
+		return grads
 	}
 
-	offset := 0
-	for i, child := range m.Children {
-		// Remove unused size variable
-		childOutput := child.Node.GetOutput()
-		childTensor := childOutput
-		childSize := len(childTensor.Data)
+	gradShape := grad.GetShape()
+	outer_dims_size := 1
+	for i := 0; i < axis; i++ {
+		outer_dims_size *= gradShape[i]
+	}
 
+	inner_dims_size := 1
+	for i := axis + 1; i < len(gradShape); i++ {
+		inner_dims_size *= gradShape[i]
+	}
+
+	for i, child := range m.Children {
+		childShape := child.Node.GetOutput().GetShape()
+		childSize := 1
+		for _, dim := range childShape {
+			childSize *= dim
+		}
 		gradData := make([]float32, childSize)
-		copy(gradData, grad.Data[offset:offset+childSize])
-		grads[i] = tensor.NewTensor(gradData, childOutput.GetShape())
-		offset += childSize
+		grads[i] = tensor.NewTensor(gradData, childShape)
+	}
+
+	gradOffset := 0
+	for i := 0; i < outer_dims_size; i++ {
+		for _, childGrad := range grads {
+			childShape := childGrad.GetShape()
+			childAxisDim := childShape[axis]
+			elementsToCopy := childAxisDim * inner_dims_size
+			childOffset := i * elementsToCopy
+			copy(childGrad.Data[childOffset:], grad.Data[gradOffset:gradOffset+elementsToCopy])
+			gradOffset += elementsToCopy
+		}
 	}
 
 	return grads
@@ -111,11 +143,19 @@ func (t *GraphTensor) Concat(inputs []*GraphTensor, axis int, names ...string) *
 	outputShape := make([]int, len(inputShape))
 	copy(outputShape, inputShape)
 
-	for i := 1; i < len(allInputs); i++ {
-		if len(allInputs[i].GetShape()) != len(inputShape) {
+	for i := 0; i < len(allInputs); i++ {
+		currentShape := allInputs[i].GetShape()
+		if len(currentShape) != len(inputShape) {
 			panic("All inputs to Concat must have the same number of dimensions")
 		}
-		outputShape[axis] += allInputs[i].GetShape()[axis]
+		for j := 0; j < len(inputShape); j++ {
+			if j != axis && inputShape[j] != currentShape[j] {
+				panic(fmt.Sprintf("Dimension mismatch on non-axis dimension. Dim %d: %d vs %d", j, inputShape[j], currentShape[j]))
+			}
+		}
+		if i > 0 {
+			outputShape[axis] += currentShape[axis]
+		}
 	}
 
 	outputTensor := &GraphTensor{

@@ -45,12 +45,16 @@ func NewTensorFromSlice(data [][]float32) *Tensor {
 }
 
 func (t *Tensor) Reshape(shape []int) *Tensor {
-	size := 1
-	for _, dim := range shape {
-		size *= dim
+	newSize := 1
+	if len(shape) > 0 {
+		for _, dim := range shape {
+			newSize *= dim
+		}
+	} else if len(shape) == 0 {
+		newSize = 1
 	}
-	if size != t.Size() {
-		panic("New shape is not compatible with existing size, " + fmt.Sprint("size:", size, " t.Size():", t.Size()))
+	if newSize != t.Size() {
+		panic("New shape is not compatible with existing size, " + fmt.Sprint("size:", newSize, " t.Size():", t.Size()))
 	}
 
 	t.shape = shape
@@ -188,32 +192,6 @@ func (t *Tensor) Transpose() *Tensor {
 	return t.Permute([]int{1, 0})
 }
 
-func (t *Tensor) Gather(indices *Tensor) *Tensor {
-	if len(indices.shape) != 1 {
-		panic("Gather indices must be 1D")
-	}
-
-	outputShape := make([]int, len(t.shape))
-	copy(outputShape, t.shape)
-	outputShape[0] = indices.shape[0]
-
-	outputData := make([]float32, ShapeSum(outputShape))
-
-	rowSize := ShapeSum(t.shape[1:])
-
-	for i := 0; i < indices.shape[0]; i++ {
-		idx := int(indices.Data[i])
-		if idx < 0 || idx >= t.shape[0] {
-			panic(fmt.Sprintf("Gather index out of range: %d not in [0, %d)", idx, t.shape[0]))
-		}
-
-		copy(outputData[i*rowSize:(i+1)*rowSize],
-			t.Data[idx*rowSize:(idx+1)*rowSize])
-	}
-
-	return NewTensor(outputData, outputShape)
-}
-
 func (t *Tensor) ScatterAdd(indices *Tensor, source *Tensor) {
 	if len(indices.shape) != 1 {
 		panic("ScatterAdd indices must be 1D")
@@ -245,4 +223,55 @@ func (t *Tensor) ScatterAdd(indices *Tensor, source *Tensor) {
 			t.Data[idx*rowSize+j] += source.Data[i*rowSize+j]
 		}
 	}
+}
+
+func (t *Tensor) Gather(indices *Tensor, axis int) *Tensor {
+	inputRank := t.Rank()
+	if axis < 0 {
+		axis += inputRank
+	}
+
+	if axis < 0 || axis >= inputRank {
+		panic(fmt.Errorf("invalid axis %d for tensor of rank %d", axis, inputRank))
+	}
+
+	outputShape := make([]int, 0, inputRank-1+indices.Rank())
+	outputShape = append(outputShape, t.shape[:axis]...)
+	outputShape = append(outputShape, indices.shape...)
+	outputShape = append(outputShape, t.shape[axis+1:]...)
+
+	M := shapeSum(t.shape[:axis])
+	N := indices.Size()
+	blockSize := shapeSum(t.shape[axis+1:])
+
+	inputBatchStride := shapeSum(t.shape[axis:])
+	outputBatchStride := N * blockSize
+
+	axisDimLimit := int(t.shape[axis])
+
+	outputData := make([]float32, shapeSum(outputShape))
+
+	for m := 0; m < M; m++ {
+		srcBatchOffset := m * inputBatchStride
+		dstBatchOffset := m * outputBatchStride
+
+		for i := 0; i < N; i++ {
+			idx := int(indices.Data[i])
+
+			if idx < 0 {
+				idx += axisDimLimit
+			}
+
+			if idx < 0 || idx >= axisDimLimit {
+				panic(fmt.Errorf("gather index out of range: %d is not in [0, %d)", idx, axisDimLimit))
+			}
+
+			srcOffset := srcBatchOffset + idx*blockSize
+			dstOffset := dstBatchOffset + i*blockSize
+
+			copy(outputData[dstOffset:dstOffset+blockSize], t.Data[srcOffset:srcOffset+blockSize])
+		}
+	}
+
+	return NewTensor(outputData, outputShape)
 }

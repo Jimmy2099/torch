@@ -32,13 +32,7 @@ func (m *Range) Forward() *tensor.Tensor {
 }
 
 func (m *Range) Backward(grad *tensor.Tensor) {
-	zeroStart := tensor.NewTensor([]float32{0}, []int{1})
-	zeroLimit := tensor.NewTensor([]float32{0}, []int{1})
-	zeroDelta := tensor.NewTensor([]float32{0}, []int{1})
-
-	m.Children[0].Node.Backward(zeroStart)
-	m.Children[1].Node.Backward(zeroLimit)
-	m.Children[2].Node.Backward(zeroDelta)
+	return
 }
 
 func (g *ComputationalGraph) Range(name string, start, limit, delta *GraphTensor) *GraphTensor {

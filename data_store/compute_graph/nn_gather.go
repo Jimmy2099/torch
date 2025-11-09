@@ -17,20 +17,15 @@ func (m *Gather) Forward() *tensor.Tensor {
 
 	data := m.Children[0].Node.Forward()
 	indices := m.Children[1].Node.Forward()
-	result := data.Gather(indices)
+	//default is '0'
+	result := data.Gather(indices, 0)
 	m.output.value = result
 	m.output.computed = true
 	return result
 }
 
 func (m *Gather) Backward(grad *tensor.Tensor) {
-	data := m.Children[0].Node.Forward()
-	indices := m.Children[1].Node.Forward()
-
-	gradInput := data.ZerosLike()
-
-	gradInput.ScatterAdd(indices, grad)
-	m.Children[0].Node.Backward(gradInput)
+	return
 }
 
 func (t *GraphTensor) Gather(indices *GraphTensor, names ...string) *GraphTensor {

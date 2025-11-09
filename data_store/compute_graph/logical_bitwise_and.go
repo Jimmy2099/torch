@@ -29,18 +29,7 @@ func (m *And) Forward() *tensor.Tensor {
 }
 
 func (m *And) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in AND backward pass")
-	}
-
-	gradA := bVal.Copy().Mul(grad)
-	gradB := aVal.Copy().Mul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
+	return
 }
 
 func (t *GraphTensor) And(other *GraphTensor, names ...string) *GraphTensor {

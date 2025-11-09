@@ -34,24 +34,7 @@ func (m *Equal) Forward() *tensor.Tensor {
 }
 
 func (m *Equal) Backward(grad *tensor.Tensor) {
-	inputShape1 := m.Children[0].Node.GetOutput().GetShape()
-	inputShape2 := m.Children[1].Node.GetOutput().GetShape()
-
-	numElements1 := 1
-	for _, dim := range inputShape1 {
-		numElements1 *= dim
-	}
-
-	numElements2 := 1
-	for _, dim := range inputShape2 {
-		numElements2 *= dim
-	}
-
-	zeroGrad1 := tensor.NewTensor(make([]float32, numElements1), inputShape1)
-	zeroGrad2 := tensor.NewTensor(make([]float32, numElements2), inputShape2)
-
-	m.Children[0].Node.Backward(zeroGrad1)
-	m.Children[1].Node.Backward(zeroGrad2)
+	return
 }
 
 func (t *GraphTensor) Equal(other *GraphTensor, names ...string) *GraphTensor {

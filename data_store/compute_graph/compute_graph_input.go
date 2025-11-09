@@ -53,7 +53,12 @@ func (n *InputNode) ResetComputed() {
 	n.output.computed = false
 }
 
-func (n *InputNode) GetGrad() *tensor.Tensor   { return n.output.grad }
-func (n *InputNode) GetName() string           { return n.Name }
-func (n *InputNode) GetChildren() []node.Node  { return nil }
-func (n *InputNode) GetOutput() *tensor.Tensor { return n.output.value }
+func (n *InputNode) GetGrad() *tensor.Tensor  { return n.output.grad }
+func (n *InputNode) GetName() string          { return n.Name }
+func (n *InputNode) GetChildren() []node.Node { return nil }
+func (n *InputNode) GetOutput() *tensor.Tensor {
+	if n.output == nil {
+		return nil
+	}
+	return n.output.value
+}
