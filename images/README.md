@@ -26,3 +26,6 @@
 
 ## Compute Graph and Visualization 
 ![AutoEncoder Compute Graph and Visualization](07_ae_compute_graph_visualization.png)
+
+## Clear Structure For Highly Customizable Research
+![Clear Structure For Highly Customizable Research](08_clear_structure.png)

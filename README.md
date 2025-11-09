@@ -18,10 +18,19 @@
 #### CNN From Scratch example AND re-design build-in Graphic Renderer that compatible with Tensor data struct:
 <table>
 <tr>
-<td><img src="images/02_cnn.png" alt="CNN From Scratch" width="400"></td>
-<td><img src="images/graphic_01_software_renderer.png" alt="graphic_renderer" width="400"></td>
+<td><img src="images/02_cnn.png" alt="CNN From Scratch" width="1149"></td>
+<td><img src="images/graphic_01_software_renderer.png" alt="graphic_renderer" width="1207"></td>
 </tr>
 </table>
+
+#### Clear Structure For Highly Customizable Research AND Compute Graph and Visualization:
+<table>
+<tr>
+<td><img src="images/08_clear_structure.png" alt="Clear Structure For Highly Customizable Research" width="1149"></td>
+<td><img src="images/07_ae_compute_graph_visualization.png" alt="AutoEncoder Compute Graph and Visualization" width="1207"></td>
+</tr>
+</table>
+
 
 #### More Examples:  [README.md](images/README.md)
 
