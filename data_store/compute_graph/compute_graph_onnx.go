@@ -430,7 +430,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 
 	opset := &onnx_ir.OperatorSetIdProto{
 		Domain:  "",
-		Version: 11,
+		Version: 7,
 	}
 	model.OpsetImport = []*onnx_ir.OperatorSetIdProto{opset}
 
@@ -443,17 +443,22 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			continue
 		}
 
-		tensorType := &onnx_ir.TypeProto_Tensor{
-			ElemType: int32(onnx_ir.TensorProto_FLOAT),
-			Shape: &onnx_ir.TensorShapeProto{
-				Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(t.GetShape())),
-			},
-		}
+		var tensorType *onnx_ir.TypeProto_Tensor
+		{
+			var dims []*onnx_ir.TensorShapeProto_Dimension
+			for _, v := range t.value.GetShape() {
+				dims = append(dims, &onnx_ir.TensorShapeProto_Dimension{
+					Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
+						DimValue: int64(v),
+					},
+				})
 
-		for i, dim := range t.GetShape() {
-			tensorType.Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
-				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
-					DimValue: int64(dim),
+			}
+
+			tensorType = &onnx_ir.TypeProto_Tensor{
+				ElemType: int32(onnx_ir.TensorProto_FLOAT),
+				Shape: &onnx_ir.TensorShapeProto{
+					Dim: dims,
 				},
 			}
 		}
@@ -512,22 +517,22 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		onnxGraph.Node = append(onnxGraph.Node, onnxNode)
 	}
 
-	if g.output != nil {
+	if g.GetOutput() != nil {
 		outputInfo := &onnx_ir.ValueInfoProto{
-			Name: g.output.Name,
+			Name: g.GetOutput().Name,
 			Type: &onnx_ir.TypeProto{
 				Value: &onnx_ir.TypeProto_TensorType{
 					TensorType: &onnx_ir.TypeProto_Tensor{
 						ElemType: int32(onnx_ir.TensorProto_FLOAT),
 						Shape: &onnx_ir.TensorShapeProto{
-							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.output.GetShape())),
+							Dim: make([]*onnx_ir.TensorShapeProto_Dimension, len(g.GetOutput().GetShape())),
 						},
 					},
 				},
 			},
 		}
 
-		for i, dim := range g.output.GetShape() {
+		for i, dim := range g.GetOutput().GetShape() {
 			outputInfo.Type.GetTensorType().Shape.Dim[i] = &onnx_ir.TensorShapeProto_Dimension{
 				Value: &onnx_ir.TensorShapeProto_Dimension_DimValue{
 					DimValue: int64(dim),

@@ -5,7 +5,6 @@ import (
 	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"github.com/Jimmy2099/torch/pkg/graph_visualize"
 	"log"
 	"strings"
 )
@@ -13,7 +12,6 @@ import (
 type ComputationalGraph struct {
 	Nodes     []node.Node
 	Tensors   map[string]*GraphTensor
-	output    *GraphTensor
 	Network   *network.Network
 	NodeCount int
 	*ComputationalGraphCount
@@ -27,18 +25,6 @@ func NewComputationalGraph() *ComputationalGraph {
 		ComputationalGraphCount: NewComputationalGraphCount(),
 		Network:                 network.NewNetwork(),
 		ONNXAttribute:           NewONNXAttribute(),
-	}
-}
-
-func (g *ComputationalGraph) SetOutput(t *GraphTensor) {
-	g.output = t
-}
-
-func (g *ComputationalGraph) SetOutputByName(graphTensorName string) {
-	for k, v := range g.Tensors {
-		if graphTensorName == k {
-			g.output = v
-		}
 	}
 }
 
@@ -185,7 +171,7 @@ func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
 func (g *ComputationalGraph) Forward() {
 	g.Reset()
 
-	if g.output == nil {
+	if len(g.Network.GetOutput()) == 0 {
 		panic("Error: Computational graph output is not set.")
 	}
 	visited := make(map[*network.Node]bool)
@@ -226,6 +212,11 @@ func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.N
 
 	graphNode.Forward()
 }
+func (g *ComputationalGraph) GetOutput() *GraphTensor {
+	nodeList := g.Network.GetOutput()
+	//TODO
+	return g.GetTensorByName(nodeList[0].Name)
+}
 
 func (g *ComputationalGraph) Backward() {
 	for _, node := range g.Nodes {
@@ -234,11 +225,11 @@ func (g *ComputationalGraph) Backward() {
 		}
 	}
 
-	if g.output == nil {
+	if len(g.Network.GetOutput()) == 0 {
 		return
 	}
 
-	outputShape := g.output.value.GetShape()
+	outputShape := g.GetOutput().value.GetShape()
 	num := 1
 	for _, dim := range outputShape {
 		num *= dim
@@ -249,7 +240,7 @@ func (g *ComputationalGraph) Backward() {
 	}
 	gradTensor := tensor.NewTensor(gradData, outputShape)
 
-	g.output.Node.Backward(gradTensor)
+	g.GetOutput().Node.Backward(gradTensor)
 }
 
 func (t *GraphTensor) Multiply(other *GraphTensor, names ...string) *GraphTensor {
@@ -320,19 +311,6 @@ func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
 	return outputTensor
 }
 
-func getNodeType(node node.Node) string {
-	switch node.(type) {
-	case *InputNode:
-		return "Input"
-	case *Multiply:
-		return "Multiply"
-	case *Add:
-		return "Add"
-	default:
-		return "Operation"
-	}
-}
-
 func (g *ComputationalGraph) Reset() {
 	for _, tensor := range g.Tensors {
 		if tensor != nil {
@@ -344,16 +322,16 @@ func (g *ComputationalGraph) Reset() {
 // PrintSmallModelStructure debug purpose
 func (g *ComputationalGraph) PrintSmallModelStructure() {
 	fmt.Println("\nComputation Graph Structure:")
-	if g.output == nil {
+	if g.GetOutput() == nil {
 		fmt.Println("  (No output node set)")
 		return
 	}
-
-	g.debugPrintNode(g.output.Node, "", true, true)
+	//Todo
+	g.debugPrintNode(g.Network.GetOutput()[0], "", true, true)
 }
 
 // debugPrintNode debug purpose
-func (g *ComputationalGraph) debugPrintNode(node node.Node, prefix string, isLast bool, isRoot bool) {
+func (g *ComputationalGraph) debugPrintNode(node *network.Node, prefix string, isLast bool, isRoot bool) {
 	var connector string
 	if isRoot {
 		connector = "Output: "
@@ -364,12 +342,12 @@ func (g *ComputationalGraph) debugPrintNode(node node.Node, prefix string, isLas
 	}
 
 	if node == nil {
-		node = &InputNode{Name: "Input_Nil"}
+		node = &network.Node{Name: "Input_Nil"}
 	}
 
-	fmt.Printf("%s%s%s (%s)\n", prefix, connector, node.GetName(), getNodeType(node))
+	fmt.Printf("%s%s%s (%s)\n", prefix, connector, node.Name, node.Type)
 
-	children := node.GetChildren()
+	children := node.Inputs
 	if len(children) == 0 {
 		return
 	}
@@ -385,124 +363,6 @@ func (g *ComputationalGraph) debugPrintNode(node node.Node, prefix string, isLas
 		isLastChild := i == len(children)-1
 		g.debugPrintNode(child, newPrefix, isLastChild, false)
 	}
-}
-
-func (g *ComputationalGraph) PrintStructure() {
-	fmt.Println("\nComputation Graph Structure:")
-	if g.output == nil {
-		fmt.Println(" (No output node set)")
-		return
-	}
-
-	type stackItem struct {
-		node   node.Node
-		prefix string
-		isLast bool
-		isRoot bool
-	}
-
-	stack := []stackItem{}
-	stack = append(stack, stackItem{node: g.output.Node, prefix: "", isLast: true, isRoot: true})
-
-	for len(stack) > 0 {
-		current := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		if current.node == nil {
-			current.node = &InputNode{Name: "Input_Nil"}
-		}
-
-		var connector string
-		if current.isRoot {
-			connector = "Output: "
-		} else if current.isLast {
-			connector = "└── "
-		} else {
-			connector = "├── "
-		}
-
-		fmt.Printf("%s%s%s (%s)\n", current.prefix, connector, current.node.GetName(), getNodeType(current.node))
-
-		children := current.node.GetChildren()
-		if len(children) == 0 {
-			continue
-		}
-
-		newPrefix := current.prefix
-		if current.isLast {
-			newPrefix += "    "
-		} else {
-			newPrefix += "│   "
-		}
-
-		for i := len(children) - 1; i >= 0; i-- {
-			child := children[i]
-			isLastChild := i == len(children)-1
-			stack = append(stack, stackItem{
-				node:   child,
-				prefix: newPrefix,
-				isLast: isLastChild,
-				isRoot: false,
-			})
-		}
-	}
-}
-
-func (g *ComputationalGraph) PrintStructureIntoGraphVisualizeFile() {
-	if len(g.Tensors) == 0 {
-		return
-	}
-
-	gv := &graph_visualize.GraphVisualize{
-		Nodes: []graph_visualize.Node{},
-		Edges: []graph_visualize.Edge{},
-	}
-
-	nodeIDMap := make(map[node.Node]string)
-	counter := 0
-	visited := make(map[node.Node]bool)
-
-	for _, tensor := range g.Tensors {
-		if tensor != nil && tensor.Node != nil && !visited[tensor.Node] {
-			id := fmt.Sprintf("n%d", counter)
-			counter++
-			nodeIDMap[tensor.Node] = id
-			label := fmt.Sprintf("%s (%s)", tensor.Node.GetName(), getNodeType(tensor.Node))
-			color := getNodeColor(tensor.Node, g.output) // 传递 g.output 而不是 nil
-			gv.Nodes = append(gv.Nodes, graph_visualize.Node{ID: id, Label: label, Color: color})
-			visited[tensor.Node] = true
-		}
-	}
-
-	for _, tensor := range g.Tensors {
-		if tensor != nil && tensor.Node != nil {
-			currentID := nodeIDMap[tensor.Node]
-			children := tensor.Node.GetChildren()
-
-			for _, child := range children {
-				if child == nil || child == tensor.Node {
-					continue
-				}
-
-				if childID, exists := nodeIDMap[child]; exists {
-					gv.Edges = append(gv.Edges, graph_visualize.Edge{From: childID, To: currentID, Label: ""})
-				}
-			}
-		}
-	}
-
-	gv.Save()
-}
-
-func getNodeColor(node node.Node, output *GraphTensor) string {
-	if output != nil && output.Node == node {
-		return "#FF6B6B"
-	}
-	nodeType := getNodeType(node)
-	if nodeType == "Input" {
-		return "#96CEB4"
-	}
-	return "#4ECDC4"
 }
 
 func (g *ComputationalGraph) GetNodeByName(name string) node.Node {

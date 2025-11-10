@@ -42,7 +42,7 @@ class AutoEncoderONNX:
             if os.path.exists(weight_path):
                 weight_data = self.load_tensor_from_csv(weight_path, weight_shape)
                 weight_data = weight_data.reshape(weight_shape).T
-                parameters[f"{name}.weight_transposed"] = weight_data.astype(np.float32)
+                parameters[f"{name}.weight"] = weight_data.astype(np.float32)
                 print(f"Loaded weight {name}: {weight_data.shape}")
             else:
                 print(f"Warning: Weight file not found: {weight_path}")
@@ -177,13 +177,19 @@ def load_numpy_from_csv(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         header = f.readline().strip()
         if not header.startswith("shape,"):
-            raise ValueError("Invalid CSV format: missing shape header")
-        
-        shape = list(map(int, header.split(",")[1:]))
+            # Fallback for old format
+            f.seek(0)
+            data = np.loadtxt(f, delimiter=",")
+            return data
+
+        shape_str = header.split(",")[1:]
+        if not all(s.isdigit() for s in shape_str):
+             raise ValueError("Invalid shape format in CSV header")
+
+        shape = tuple(map(int, shape_str))
         data = np.loadtxt(f, delimiter=",")
     
-    flattened = data.flatten()
-    return (flattened).reshape(*shape)
+    return data.reshape(shape)
 
 def load_data(file_path):
     image_paths = []
@@ -191,28 +197,51 @@ def load_data(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             parts = line.strip().split(',')
-            image_paths.append(parts[0])
-            predictions.append(parts[1])
+            if len(parts) == 2:
+                image_paths.append(parts[0])
+                predictions.append(parts[1])
     return image_paths, predictions
 
 def predict_plot(data_file):
     image_paths, predictions = load_data(data_file)
     num = len(image_paths)
+    if num == 0:
+        print("No valid image-prediction pairs found to plot.")
+        return
+        
     fig, axes = plt.subplots(2, num, figsize=(15, 5)) 
+
+    # Handle case where there is only one image
+    if num == 1:
+        axes = np.array(axes).reshape(2, 1)
 
     for i, (img_path, denoise_csv_path) in enumerate(zip(image_paths, predictions)):
         if not os.path.exists(img_path):
             print(f"Warning: Image file not found: {img_path}")
-            continue
+            axes[0,i].text(0.5, 0.5, 'Original not found', ha='center', va='center')
+            axes[0,i].axis('off')
+        else:
+            try:
+                img = mpimg.imread(img_path)
+                axes[0,i].imshow(img, cmap='gray')
+                axes[0,i].set_title("Original")
+            except Exception as e:
+                print(f"Error reading image {img_path}: {e}")
+                axes[0,i].text(0.5, 0.5, 'Error loading image', ha='center', va='center')
+
         if not os.path.exists(denoise_csv_path):
             print(f"Warning: Denoised CSV file not found: {denoise_csv_path}")
-            continue
-            
-        img = mpimg.imread(img_path)
-        axes[0,i].imshow(img, cmap='gray')
-        print(f"Processing: {img_path} -> {denoise_csv_path}")
-        image_data = load_numpy_from_csv(denoise_csv_path)
-        axes[1,i].imshow(image_data, cmap='gray')
+            axes[1,i].text(0.5, 0.5, 'Denoised not found', ha='center', va='center')
+            axes[1,i].axis('off')
+        else:
+            try:
+                image_data = load_numpy_from_csv(denoise_csv_path)
+                axes[1,i].imshow(image_data, cmap='gray')
+                axes[1,i].set_title("Denoised")
+            except Exception as e:
+                print(f"Error loading denoised CSV {denoise_csv_path}: {e}")
+                axes[1,i].text(0.5, 0.5, 'Error loading CSV', ha='center', va='center')
+
         axes[0,i].axis('off')
         axes[1,i].axis('off')
 
@@ -248,7 +277,7 @@ if __name__ == "__main__":
 
     try:
         result = subprocess.run(['python', tmp_script, tmp_data],
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, check=False)
         print("Python script output:")
         print(result.stdout)
         if result.stderr:
@@ -258,8 +287,12 @@ if __name__ == "__main__":
         results_dir = "results"
         os.makedirs(results_dir, exist_ok=True)
         if os.path.exists("predictions.png"):
-            os.rename("predictions.png", os.path.join(results_dir, "predictions.png"))
-            print(f"Plot saved to {results_dir}/predictions.png")
+            # 解决windows下rename时目标文件已存在的问题
+            target_path = os.path.join(results_dir, "predictions.png")
+            if os.path.exists(target_path):
+                os.remove(target_path)
+            os.rename("predictions.png", target_path)
+            print(f"Plot saved to {target_path}")
 
     finally:
         if os.path.exists(tmp_script):
@@ -313,9 +346,12 @@ if __name__ == "__main__":
             else:
                 print(f"Warning: Original image not found: {original_image_path}")
 
-        print("Generating plot...")
-        predict_plot(image_paths)
-        print("Predictions saved and plotted successfully")
+        if image_paths:
+            print("Generating plot...")
+            predict_plot(image_paths)
+            print("Predictions saved and plotted successfully")
+        else:
+            print("No original images found to generate a plot.")
 
     except Exception as e:
         print(f"Error: {str(e)}")

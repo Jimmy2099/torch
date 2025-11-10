@@ -50,8 +50,23 @@ func NewNetwork() *Network {
 func (g *Network) GetInput() []*Node {
 	return g.inputs
 }
+
+func (g *Network) GetInputName() (result []string) {
+	for i := 0; i < len(g.inputs); i++ {
+		result = append(result, g.inputs[i].Name)
+	}
+	return
+}
+
 func (g *Network) GetOutput() []*Node {
 	return g.outputs
+}
+
+func (g *Network) GetOutputName() (result []string) {
+	for i := 0; i < len(g.outputs); i++ {
+		result = append(result, g.outputs[i].Name)
+	}
+	return
 }
 
 func (g *Network) GetNodes() []*Node {

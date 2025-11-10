@@ -12,6 +12,7 @@ type Node interface {
 
 	GetONNXNodeInfo() *ONNXNodeInfo
 	GetChildren() []Node
+	//GetInput() *tensor.Tensor
 	GetOutput() *tensor.Tensor
 }
 

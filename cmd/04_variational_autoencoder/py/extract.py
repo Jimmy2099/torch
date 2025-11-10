@@ -20,22 +20,17 @@ def model_save(model):
         param_np = param.detach().cpu().numpy()
         print(f"param: {name}, Shape: {param.shape}, dim: {param_np.ndim}")
 
-        # 处理四维张量（卷积层）
         if param_np.ndim == 4:
-            # 重新调整形状为二维: (输出通道数, 输入通道数 * 卷积核高度 * 卷积核宽度)
             param_np = param_np.reshape(param_np.shape[0], -1)
 
-        # 保存参数
         np.savetxt(f"./data/{name}.csv", param_np, delimiter=",", fmt="%.16f")
 
 
-    # 保存所有缓冲区（包括num_batches_tracked）
     for name, buf in model.named_buffers():
         buf_np = buf.detach().cpu().numpy()
         print(f"buf: {name}, Shape: {buf.shape}, dim: {buf.ndim}")
 
-        # 自动处理不同维度的buffer
-        if buf_np.ndim == 0:  # 标量特殊处理
+        if buf_np.ndim == 0:
             buf_np = np.array([buf_np])
 
         np.savetxt(f"./data/{name}.csv", buf_np, delimiter=",", fmt="%.16f")
@@ -48,14 +43,12 @@ def model_save(model):
 if __name__ == "__main__":
     MODEL_PATH = 'output/vae_anime/models/vae_anime_final.pth'
 
-    OUTPUT_DIR = 'output/vae_generated'  # 保存生成图片的目录
-    OUTPUT_NAME = 'random_generated.png'  # 生成的图片网格文件名
-    NUM_IMAGES = 64  # 要生成的图片数量
-    # SEED = 42                           # 不再需要固定种子以获得不同的结果
-    USE_CUDA_IF_AVAILABLE = True  # 如果可用，是否使用 CUDA
-    # --------------------------------
+    OUTPUT_DIR = 'output/vae_generated'
+    OUTPUT_NAME = 'random_generated.png'
+    NUM_IMAGES = 64
+    # SEED = 42
+    USE_CUDA_IF_AVAILABLE = True
 
-    # --- 设置设备 ---
     use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
     DEVICE = torch.device("cuda" if use_cuda else "cpu")
 
@@ -74,17 +67,14 @@ if __name__ == "__main__":
     print(f"  Output Dir: {OUTPUT_DIR}")
     print(f"  Output Name: {OUTPUT_NAME}")
     print(f"  Num Images: {NUM_IMAGES}")
-    # print(f"  Seed: {SEED}") # 可以移除或注释掉这行打印信息
-    print("  Seed: None (Random each run)")  # 更新打印信息
+    # print(f"  Seed: {SEED}")
+    print("  Seed: None (Random each run)")
     print("-" * 20)
 
-    # --- 创建结果目录 ---
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # --- 初始化模型 ---
     model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
 
-    # --- 加载预训练模型 ---
     print(f"Loading model from: {MODEL_PATH}")
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model file not found at '{MODEL_PATH}'")

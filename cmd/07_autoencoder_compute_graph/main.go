@@ -19,9 +19,7 @@ import (
 )
 
 type AutoEncoder struct {
-	graph      *compute_graph.ComputationalGraph
-	inputName  string
-	outputName string
+	graph *compute_graph.ComputationalGraph
 }
 
 func transpose2D(data []float32, rows, cols int) ([]float32, []int) {
@@ -98,8 +96,8 @@ func NewAutoEncoder() *AutoEncoder {
 		createNode(p+".bias", "Tensor_Bias")
 	}
 
-	fmt.Println("\nBuilding computation graph blueprint...")
-	current_x := "input"
+	fmt.Println("Building computation graph blueprint...")
+	currentX := "input"
 
 	buildLayer := func(inputName, layerName, activation string) string {
 		matmulNode := createNode(layerName+"_matmul", "MatMul")
@@ -124,20 +122,20 @@ func NewAutoEncoder() *AutoEncoder {
 		return addOut.Name
 	}
 
-	current_x = buildLayer(current_x, "encoder.0", "Relu")
-	current_x = buildLayer(current_x, "encoder.2", "Relu")
-	current_x = buildLayer(current_x, "encoder.4", "")
+	currentX = buildLayer(currentX, "encoder.0", "Relu")
+	currentX = buildLayer(currentX, "encoder.2", "Relu")
+	currentX = buildLayer(currentX, "encoder.4", "")
 
-	current_x = buildLayer(current_x, "decoder.0", "Relu")
-	current_x = buildLayer(current_x, "decoder.2", "Relu")
-	current_x = buildLayer(current_x, "decoder.4", "Sigmoid")
+	currentX = buildLayer(currentX, "decoder.0", "Relu")
+	currentX = buildLayer(currentX, "decoder.2", "Relu")
+	currentX = buildLayer(currentX, "decoder.4", "Sigmoid")
 
 	net.AddInput(nodes["input"])
 	for _, p := range paramNames {
 		net.AddInput(nodes[p+".weight"])
 		net.AddInput(nodes[p+".bias"])
 	}
-	net.AddOutput(nodes[current_x])
+	net.AddOutput(nodes[currentX])
 
 	fmt.Println("\nLoading and setting parameters...")
 	weights, biases := loadParameters()
@@ -149,16 +147,10 @@ func NewAutoEncoder() *AutoEncoder {
 	}
 
 	ae := &AutoEncoder{
-		graph:      graph,
-		inputName:  "input",
-		outputName: current_x,
+		graph: graph,
 	}
 
-	fmt.Println("\n\nComputation graph structure:")
-	graph.SetOutput(graph.GetTensorByName(ae.outputName))
-	ae.graph.PrintStructure()
-	ae.graph.PrintStructureIntoGraphVisualizeFile()
-
+	fmt.Println("Computation graph structure:")
 	return ae
 }
 
@@ -168,12 +160,15 @@ func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
 	}
 	x.Reshape([]int{1, 784})
 
-	inputTensor := ae.graph.GetTensorByName(ae.inputName)
-	inputTensor.SetValue(x)
+	ae.graph.GetTensorByName("input").SetValue(x)
 
 	ae.graph.Forward()
 
-	outputTensor := ae.graph.GetTensorByName(ae.outputName)
+	outputTensor := ae.graph.GetTensorByName(ae.graph.Network.GetOutputName()[0])
+	_, _, err := compute_graph.ResultCompare(ae.graph)
+	if err != nil {
+		log.Println(err)
+	}
 	return outputTensor.Value()
 }
 
@@ -222,11 +217,25 @@ func main() {
 			fmt.Printf("First Image Label: %s\n", labels[0])
 		}
 
+		model := NewAutoEncoder()
+
 		for num := 0; num < len(images); num++ {
-			model := NewAutoEncoder()
 			prediction := Predict(model, images[num])
 			prediction.SaveToCSV(filepath.Join(directory, strings.Replace(labels[num], ".png.csv", ".png.denoise.csv", -1)))
 		}
+
+		{
+			var onnx *compute_graph.ONNX
+			onnx, err = model.graph.ToONNXModel()
+			if err != nil {
+				log.Fatalf("Error creating ONNX model: %v", err)
+			}
+			err = onnx.SaveONNX("model.onnx")
+			if err != nil {
+				log.Fatalf("Error saving ONNX model: %v", err)
+			}
+		}
+
 		fmt.Println("label:", labels)
 		var fileName []string
 		{

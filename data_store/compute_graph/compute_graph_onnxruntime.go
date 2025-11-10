@@ -15,7 +15,12 @@ import (
 type ONNXRuntime struct {
 }
 
+var DefaultSharedLibPath = ""
+
 func getDefaultSharedLibPath() string {
+	if DefaultSharedLibPath != "" {
+		return DefaultSharedLibPath
+	}
 	var libPatterns []string
 
 	switch runtime.GOOS {
@@ -48,11 +53,14 @@ func getDefaultSharedLibPath() string {
 		{
 			ort.SetSharedLibraryPath(libPath)
 			e := ort.InitializeEnvironment()
-			ort.DestroyEnvironment()
 			if e == nil {
-				fmt.Println("onnxruntime path: ", libPath)
+				fmt.Println("onnxruntime path: ", libPath, "init successes ", "version: ", ort.GetVersion())
+				ort.DestroyEnvironment()
+				DefaultSharedLibPath = libPath
 				return libPath
 			}
+			fmt.Println("onnxruntime path: ", libPath, "init failed: ", e.Error())
+			ort.DestroyEnvironment()
 		}
 	}
 
@@ -61,6 +69,7 @@ func getDefaultSharedLibPath() string {
 
 func NewOnnx() *ONNXRuntime {
 	ort.SetSharedLibraryPath(getDefaultSharedLibPath())
+	ort.DestroyEnvironment()
 	e := ort.InitializeEnvironment()
 	if e != nil {
 		panic(fmt.Errorf("error initializing the onnxruntime library: %w\n", e))
@@ -133,9 +142,7 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 	}
 	fmt.Println(tempFileName)
 
-	session, e := ort.NewAdvancedSession(tempFileName, //"c:\\onnxruntime_go_examples\\model.onnx",
-		inputNameList, outputNameList,
-		inputNameOrtList, outputNameOrtList, nil)
+	session, e := ort.NewAdvancedSession(tempFileName, inputNameList, outputNameList, inputNameOrtList, outputNameOrtList, nil)
 	if e != nil {
 		panic(fmt.Sprintf("error creating  network session: %v\n", e))
 	}

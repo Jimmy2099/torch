@@ -90,9 +90,7 @@ SEED = 42
 LOG_INTERVAL = 50
 SAVE_INTERVAL = 10
 
-# --- Main Execution Block ---
 if __name__ == "__main__":
-    # --- 设置设备和种子 --- (Moved inside main block)
     use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
     DEVICE = torch.device("cuda" if use_cuda else "cpu")
     torch.manual_seed(SEED)
@@ -103,7 +101,6 @@ if __name__ == "__main__":
     print(f"Imported Latent Dim: {LATENT_DIM}")
     print(f"Imported Image Size: {IMAGE_SIZE}")
 
-    # --- 创建结果目录 --- (Moved inside main block)
     results_base_dir = RESULTS_DIR
     reconstruction_dir = os.path.join(results_base_dir, 'reconstructed_train')
     generated_dir = os.path.join(results_base_dir, 'generated_train')
@@ -112,7 +109,6 @@ if __name__ == "__main__":
     os.makedirs(generated_dir, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
 
-    # --- 数据预处理 --- (Moved inside main block)
     transform = transforms.Compose([
         transforms.Resize(IMAGE_SIZE),
         transforms.CenterCrop(IMAGE_SIZE),
@@ -120,7 +116,6 @@ if __name__ == "__main__":
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
 
-    # --- 数据加载 --- (Moved inside main block)
     if not os.path.isdir(DATA_DIR):
         print(f"Error: Dataset directory not found at '{DATA_DIR}'")
         exit()
@@ -138,11 +133,9 @@ if __name__ == "__main__":
         print(f"An error occurred loading the dataset: {e}")
         exit()
 
-    # --- 初始化模型和优化器 --- (Moved inside main block)
     model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    # --- 主训练循环 --- (Already inside, but now follows setup)
     print("Starting training...")
     fixed_noise = torch.randn(64, LATENT_DIM).to(DEVICE)
 

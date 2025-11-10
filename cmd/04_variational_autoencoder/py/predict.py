@@ -17,14 +17,13 @@ from vae_model import VAE, IMAGE_SIZE, CHANNELS_IMG, LATENT_DIM
 if __name__ == "__main__":
     MODEL_PATH = 'output/vae_anime/models/vae_anime_final.pth'
 
-    OUTPUT_DIR = 'output/vae_generated'  # 保存生成图片的目录
-    OUTPUT_NAME = 'random_generated.png'  # 生成的图片网格文件名
-    NUM_IMAGES = 64  # 要生成的图片数量
-    # SEED = 42                           # 不再需要固定种子以获得不同的结果
-    USE_CUDA_IF_AVAILABLE = True  # 如果可用，是否使用 CUDA
+    OUTPUT_DIR = 'output/vae_generated'
+    OUTPUT_NAME = 'random_generated.png'
+    NUM_IMAGES = 64
+    # SEED = 42
+    USE_CUDA_IF_AVAILABLE = True
     # --------------------------------
 
-    # --- 设置设备 ---
     use_cuda = USE_CUDA_IF_AVAILABLE and torch.cuda.is_available()
     DEVICE = torch.device("cuda" if use_cuda else "cpu")
 
@@ -43,17 +42,13 @@ if __name__ == "__main__":
     print(f"  Output Dir: {OUTPUT_DIR}")
     print(f"  Output Name: {OUTPUT_NAME}")
     print(f"  Num Images: {NUM_IMAGES}")
-    # print(f"  Seed: {SEED}") # 可以移除或注释掉这行打印信息
-    print("  Seed: None (Random each run)")  # 更新打印信息
+    print("  Seed: None (Random each run)")
     print("-" * 20)
 
-    # --- 创建结果目录 ---
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # --- 初始化模型 ---
     model = VAE(channels_img=CHANNELS_IMG, latent_dim=LATENT_DIM, image_size=IMAGE_SIZE).to(DEVICE)
 
-    # --- 加载预训练模型 ---
     print(f"Loading model from: {MODEL_PATH}")
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model file not found at '{MODEL_PATH}'")
@@ -78,10 +73,8 @@ if __name__ == "__main__":
     model.eval()
     import numpy as np
 
-    # --- 生成随机图像 ---
     print(f"Generating {NUM_IMAGES} random images...")
     with torch.no_grad():
-        # 因为没有设置种子，每次运行时这里的噪声都会不同
         random_noise = torch.randn(NUM_IMAGES, LATENT_DIM).to(DEVICE)
         np.savetxt(f"noise.csv", random_noise, delimiter=",", fmt="%.16f")
         print(len(random_noise.numpy().shape))
@@ -90,12 +83,10 @@ if __name__ == "__main__":
         generated_images = generated_images * 0.5 + 0.5
         generated_images = generated_images.clamp(0, 1)
 
-        # --- 输出文件名 ---
         # output_path = os.path.join(OUTPUT_DIR, OUTPUT_NAME)
-        timestamp = int(time.time())  # 获取当前时间的 Unix 时间戳 (整数)
-        random_suffix = random.randint(0, 9999)  # 生成一个 0 到 9999 的随机数
-        output_filename = f"random_generated_{timestamp}_{random_suffix:04d}.png"  # 格式化文件名
-        # 使用 :04d 确保随机数至少有4位，不足的前面补0, e.g., 12 -> 0012
+        timestamp = int(time.time())
+        random_suffix = random.randint(0, 9999)
+        output_filename = f"random_generated_{timestamp}_{random_suffix:04d}.png"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         # ---------------------------------
 
