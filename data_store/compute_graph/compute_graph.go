@@ -222,7 +222,15 @@ func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.N
 
 	if g.IsDebugMode() {
 		graphNode.Forward()
-		NewOnnx().NewOneTimeSessionTestByNode(g, g.Network.GetNodeByName(graphNode.GetName()))
+		r1Go, r2Onnx, err := ResultCompareByNode(g, g.Network.GetNodeByName(graphNode.GetName()))
+		if err == nil {
+			return
+		}
+		_, _, _ = r1Go, r2Onnx, err
+		log.Println("ResultCompareByNode error:", err)
+		log.Println("set result by onnxruntime compute result!!!")
+		t := g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0])
+		t.value = r2Onnx[0]
 	} else {
 		graphNode.Forward()
 	}

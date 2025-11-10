@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"errors"
+	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
@@ -15,6 +16,18 @@ func ResultCompare(graph *ComputationalGraph) ([]*tensor.Tensor, []*tensor.Tenso
 
 	onnx := NewOnnx()
 	outputOnnx := onnx.NewOneTimeSessionTest(graph)
+	err := outPutCompare(outputByGO, outputOnnx)
+	return outputByGO, outputOnnx, err
+}
+
+func ResultCompareByNode(graph *ComputationalGraph, node *network.Node) ([]*tensor.Tensor, []*tensor.Tensor, error) {
+	var outputByGO []*tensor.Tensor
+	{
+		outputByGO = append(outputByGO, graph.GetTensorByName(node.GetOutputName()[0]).Value())
+	}
+
+	onnx := NewOnnx()
+	outputOnnx := onnx.NewOneTimeSessionTestByNode(graph, node)
 	err := outPutCompare(outputByGO, outputOnnx)
 	return outputByGO, outputOnnx, err
 }
