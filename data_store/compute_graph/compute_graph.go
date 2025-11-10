@@ -6,6 +6,7 @@ import (
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -20,13 +21,20 @@ type ComputationalGraph struct {
 }
 
 func NewComputationalGraph() *ComputationalGraph {
+	var settings *ComputationalGraphSettings
+	if os.Getenv("DebugMode") == "true" {
+		settings = NewComputationalGraphSettings(ComputationalGraphRunModeDebug)
+	} else {
+		settings = NewComputationalGraphSettings(ComputationalGraphRunModeProduction)
+	}
+
 	return &ComputationalGraph{
 		Tensors:                    make(map[string]*GraphTensor),
 		NodeCount:                  0,
 		ComputationalGraphCount:    NewComputationalGraphCount(),
 		Network:                    network.NewNetwork(),
 		ONNXAttributePool:          NewONNXAttributePool(),
-		ComputationalGraphSettings: NewComputationalGraphSettings(),
+		ComputationalGraphSettings: settings,
 	}
 }
 
@@ -212,8 +220,14 @@ func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.N
 		panic("graphNode is null: " + n.Name)
 	}
 
-	graphNode.Forward()
+	if g.IsDebugMode() {
+		graphNode.Forward()
+		NewOnnx().NewOneTimeSessionTestByNode(g, g.Network.GetNodeByName(graphNode.GetName()))
+	} else {
+		graphNode.Forward()
+	}
 }
+
 func (g *ComputationalGraph) GetOutput() *GraphTensor {
 	nodeList := g.Network.GetOutput()
 	//TODO

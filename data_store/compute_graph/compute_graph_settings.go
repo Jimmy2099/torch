@@ -4,9 +4,9 @@ type ComputationalGraphSettings struct {
 	ComputationalGraphRunMode
 }
 
-func NewComputationalGraphSettings() *ComputationalGraphSettings {
+func NewComputationalGraphSettings(mode ComputationalGraphRunMode) *ComputationalGraphSettings {
 	return &ComputationalGraphSettings{
-		ComputationalGraphRunMode: ComputationalGraphRunModeDebug,
+		ComputationalGraphRunMode: mode,
 	}
 }
 
@@ -17,3 +17,10 @@ const (
 	ComputationalGraphRunModeDebug                    = 1
 	ComputationalGraphRunModeProduction               = 2
 )
+
+func (m *ComputationalGraphSettings) IsDebugMode() bool {
+	if m.ComputationalGraphRunMode == ComputationalGraphRunModeDebug {
+		return true
+	}
+	return false
+}

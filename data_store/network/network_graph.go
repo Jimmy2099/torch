@@ -22,6 +22,20 @@ func (n *Node) AddInput(input *Node) {
 	n.Inputs = append(n.Inputs, input)
 }
 
+func (g *Node) GetInputName() (result []string) {
+	for i := 0; i < len(g.Inputs); i++ {
+		result = append(result, g.Inputs[i].Name)
+	}
+	return
+}
+
+func (g *Node) GetOutputName() (result []string) {
+	for i := 0; i < len(g.Outputs); i++ {
+		result = append(result, g.Outputs[i].Name)
+	}
+	return
+}
+
 type Network struct {
 	nodes   []*Node
 	inputs  []*Node

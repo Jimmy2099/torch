@@ -438,8 +438,15 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		Name: "computational_graph",
 	}
 
-	for name, t := range g.Tensors {
-		if t.Node.GetONNXNodeInfo().ProducedTensor {
+	for _, networkNode := range g.Network.GetNodes() {
+		t := g.GetTensorByName(networkNode.Name)
+		if networkNode.Type == "Tensor_Hidden" {
+			continue
+		}
+		if networkNode.Type == "Tensor_Output" {
+			continue
+		}
+		if strings.LastIndex(networkNode.Type, "Tensor_") != 0 {
 			continue
 		}
 
@@ -464,7 +471,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		}
 
 		valueInfo := &onnx_ir.ValueInfoProto{
-			Name: name,
+			Name: networkNode.Name,
 			Type: &onnx_ir.TypeProto{
 				Value: &onnx_ir.TypeProto_TensorType{
 					TensorType: tensorType,

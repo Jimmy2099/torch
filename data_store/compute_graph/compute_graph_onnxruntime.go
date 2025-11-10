@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"github.com/Jimmy2099/torch/testing"
 	ort "github.com/yalue/onnxruntime_go"
@@ -15,12 +16,7 @@ import (
 type ONNXRuntime struct {
 }
 
-var DefaultSharedLibPath = ""
-
 func getDefaultSharedLibPath() string {
-	if DefaultSharedLibPath != "" {
-		return DefaultSharedLibPath
-	}
 	var libPatterns []string
 
 	switch runtime.GOOS {
@@ -56,7 +52,6 @@ func getDefaultSharedLibPath() string {
 			if e == nil {
 				fmt.Println("onnxruntime path: ", libPath, "init successes ", "version: ", ort.GetVersion())
 				ort.DestroyEnvironment()
-				DefaultSharedLibPath = libPath
 				return libPath
 			}
 			fmt.Println("onnxruntime path: ", libPath, "init failed: ", e.Error())
@@ -67,14 +62,20 @@ func getDefaultSharedLibPath() string {
 	panic("No ONNXRuntime candidates found")
 }
 
+var ONNXRuntimeVal *ONNXRuntime
+
 func NewOnnx() *ONNXRuntime {
+	if ONNXRuntimeVal != nil {
+		return ONNXRuntimeVal
+	}
 	ort.SetSharedLibraryPath(getDefaultSharedLibPath())
 	ort.DestroyEnvironment()
 	e := ort.InitializeEnvironment()
 	if e != nil {
 		panic(fmt.Errorf("error initializing the onnxruntime library: %w\n", e))
 	}
-	return &ONNXRuntime{}
+	ONNXRuntimeVal = &ONNXRuntime{}
+	return ONNXRuntimeVal
 }
 
 func (m *ONNXRuntime) Destroy() {
@@ -177,4 +178,56 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 	}
 	session.Destroy()
 	return
+}
+
+func (m *ONNXRuntime) NewOneTimeSessionTestByNode(inGraph *ComputationalGraph, inNode *network.Node) (outPutTensorList []*tensor.Tensor) {
+	var outGraph *ComputationalGraph
+	{
+		outGraph = NewComputationalGraph()
+		nodeCurrent := outGraph.Network.NewNode()
+		nodeCurrent.Name = inNode.Name
+		nodeCurrent.Type = inNode.Type
+		{
+			for _, v := range inNode.Inputs {
+				node := outGraph.Network.NewNode()
+				node.Name = v.Name
+				node.Type = "Tensor_Input"
+				nodeCurrent.AddInput(node)
+				outGraph.Network.AddInput(node)
+			}
+
+			for _, v := range inNode.Outputs {
+				node := outGraph.Network.NewNode()
+				node.Name = v.Name
+				node.Type = "Tensor_Output"
+				nodeCurrent.AddOutput(node)
+				outGraph.Network.AddOutput(node)
+			}
+		}
+
+		{
+			for _, v := range inNode.GetInputName() {
+				outGraph.Tensors[v] = inGraph.GetTensorByName(v)
+			}
+
+			for _, v := range inNode.GetOutputName() {
+				outGraph.Tensors[v] = inGraph.GetTensorByName(v)
+			}
+		}
+
+		{
+			for _, v := range inNode.GetInputName() {
+				outGraph.Nodes = append(outGraph.Nodes, inGraph.GetNodeByName(v))
+			}
+
+			for _, v := range inNode.GetOutputName() {
+				outGraph.Nodes = append(outGraph.Nodes, inGraph.GetNodeByName(v))
+			}
+
+			outGraph.Nodes = append(outGraph.Nodes, inGraph.GetNodeByName(inNode.Name))
+		}
+
+	}
+
+	return m.NewOneTimeSessionTest(outGraph)
 }
