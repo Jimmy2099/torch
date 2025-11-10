@@ -15,16 +15,18 @@ type ComputationalGraph struct {
 	Network   *network.Network
 	NodeCount int
 	*ComputationalGraphCount
-	*ONNXAttribute
+	*ONNXAttributePool
+	*ComputationalGraphSettings
 }
 
 func NewComputationalGraph() *ComputationalGraph {
 	return &ComputationalGraph{
-		Tensors:                 make(map[string]*GraphTensor),
-		NodeCount:               0,
-		ComputationalGraphCount: NewComputationalGraphCount(),
-		Network:                 network.NewNetwork(),
-		ONNXAttribute:           NewONNXAttribute(),
+		Tensors:                    make(map[string]*GraphTensor),
+		NodeCount:                  0,
+		ComputationalGraphCount:    NewComputationalGraphCount(),
+		Network:                    network.NewNetwork(),
+		ONNXAttributePool:          NewONNXAttributePool(),
+		ComputationalGraphSettings: NewComputationalGraphSettings(),
 	}
 }
 

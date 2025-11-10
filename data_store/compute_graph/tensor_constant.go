@@ -28,7 +28,7 @@ func (m *Constant) Forward() *tensor.Tensor {
 	}
 
 	{
-		attr := ONNXAttr.GetONNXAttributeByName(m.GetName())
+		attr := ONNXAttrPool.GetONNXAttributeByName(m.GetName())
 		if len(attr) > 0 && attr[0].Name == "value" {
 			fmt.Println(attr[0].T.GetInt32Data())
 		}

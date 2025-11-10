@@ -19,7 +19,7 @@ func (m *Transpose) Forward() *tensor.Tensor {
 	m.permutation = []int{1, 0}
 	{
 		//TODO
-		attrs := ONNXAttr.GetONNXAttributeByName(m.GetName())
+		attrs := ONNXAttrPool.GetONNXAttributeByName(m.GetName())
 		if len(attrs) > 0 && attrs[0].Name == "perm" {
 			m.permutation = int642int(attrs[0].GetInts())
 		}
