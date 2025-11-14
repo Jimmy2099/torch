@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"fmt"
+	"github.com/Jimmy2099/torch/data_store/compute_dependency_graph"
 	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
@@ -11,9 +12,11 @@ import (
 )
 
 type ComputationalGraph struct {
-	Nodes     []node.Node
-	Tensors   map[string]*GraphTensor
-	Network   *network.Network
+	Nodes   []node.Node
+	Tensors map[string]*GraphTensor
+	Network *network.Network
+	*compute_dependency_graph.ComputeDependencyGraph
+
 	NodeCount int
 	*ComputationalGraphCount
 	*ONNXAttributePool
@@ -28,13 +31,16 @@ func NewComputationalGraph() *ComputationalGraph {
 		settings = NewComputationalGraphSettings(ComputationalGraphRunModeProduction)
 	}
 
+	net := network.NewNetwork()
+
 	return &ComputationalGraph{
 		Tensors:                    make(map[string]*GraphTensor),
 		NodeCount:                  0,
 		ComputationalGraphCount:    NewComputationalGraphCount(),
-		Network:                    network.NewNetwork(),
+		Network:                    net,
 		ONNXAttributePool:          NewONNXAttributePool(),
 		ComputationalGraphSettings: settings,
+		ComputeDependencyGraph:     compute_dependency_graph.NewComputeDependencyGraph(net),
 	}
 }
 
@@ -176,8 +182,6 @@ func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
 	return t
 }
 
-// Forward TODO output-driven  multi-output node
-// Forward TODO impl input-driven for bio neuro-fire and make bio-neuro like chip
 func (g *ComputationalGraph) Forward() {
 	g.Reset()
 
@@ -201,8 +205,8 @@ func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.N
 	visited[n] = true
 
 	if strings.LastIndex(n.Type, "Tensor_") == 0 || len(n.Outputs) == 0 {
-		if n.Parent != nil {
-			g.forwardNode(n.Parent, visited)
+		if n.Inputs != nil { //if n.Parent != nil {
+			g.forwardNode(n.Inputs[0], visited)
 		} else {
 		}
 		return

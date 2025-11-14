@@ -1,11 +1,15 @@
 package network
 
+import (
+	"strings"
+)
+
 type Node struct {
 	Name    string
 	Type    string
 	Inputs  []*Node
 	Outputs []*Node
-	Parent  *Node
+	//Parent  *Node
 }
 
 func (n *Node) ConnectInput(input *Node) {
@@ -15,7 +19,8 @@ func (n *Node) ConnectInput(input *Node) {
 
 func (n *Node) AddOutput(output *Node) {
 	n.Outputs = append(n.Outputs, output)
-	output.Parent = n
+	//output.Parent = n
+	output.Inputs = []*Node{n}
 }
 
 func (n *Node) AddInput(input *Node) {
@@ -34,6 +39,13 @@ func (g *Node) GetOutputName() (result []string) {
 		result = append(result, g.Outputs[i].Name)
 	}
 	return
+}
+
+func (g *Node) IsTensor() bool {
+	if strings.LastIndex(g.Type, "Tensor_") == 0 {
+		return true
+	}
+	return false
 }
 
 type Network struct {

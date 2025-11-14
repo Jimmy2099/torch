@@ -219,6 +219,14 @@ func main() {
 
 		model := NewAutoEncoder()
 
+		{
+			model.graph.ComputeDependencyGraph.ComputeSortedNodes()
+			err = model.graph.Validate()
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		for num := 0; num < len(images); num++ {
 			prediction := Predict(model, images[num])
 			prediction.SaveToCSV(filepath.Join(directory, strings.Replace(labels[num], ".png.csv", ".png.denoise.csv", -1)))
