@@ -8,7 +8,6 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 	"log"
 	"os"
-	"strings"
 )
 
 type ComputationalGraph struct {
@@ -132,12 +131,12 @@ func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name st
 
 	g.Tensors[name] = te
 
-	node := &InputNode{
+	n := &InputNode{
 		Name:   name,
 		output: te,
 	}
-	te.Node = node
-	g.Nodes = append(g.Nodes, node)
+	te.Node = n
+	g.Nodes = append(g.Nodes, n)
 
 	return te
 }
@@ -161,10 +160,6 @@ type TensorExport struct {
 	Grad  []float32 `json:"grad"`
 }
 
-func (g *ComputationalGraph) GetTensors() map[string]*GraphTensor {
-	return g.Tensors
-}
-
 func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
 	gNode := g.Network.GetNodeByName(name)
 	if gNode == nil {
@@ -180,64 +175,6 @@ func (g *ComputationalGraph) GetTensorByName(name string) *GraphTensor {
 	}
 	g.Tensors[name] = t
 	return t
-}
-
-func (g *ComputationalGraph) Forward() {
-	g.Reset()
-
-	if len(g.Network.GetOutput()) == 0 {
-		panic("Error: Computational graph output is not set.")
-	}
-	visited := make(map[*network.Node]bool)
-
-	for _, output := range g.Network.GetOutput() {
-		g.forwardNode(output, visited)
-	}
-}
-
-func (g *ComputationalGraph) forwardNode(n *network.Node, visited map[*network.Node]bool) {
-	if n == nil {
-		return
-	}
-	if visited[n] {
-		return
-	}
-	visited[n] = true
-
-	if strings.LastIndex(n.Type, "Tensor_") == 0 || len(n.Outputs) == 0 {
-		if n.Inputs != nil { //if n.Parent != nil {
-			g.forwardNode(n.Inputs[0], visited)
-		} else {
-		}
-		return
-	}
-
-	for _, in := range n.Inputs {
-		if in == nil {
-			continue
-		}
-		g.forwardNode(in, visited)
-	}
-
-	graphNode := g.GetNodeByName(n.Name)
-	if graphNode == nil {
-		panic("graphNode is null: " + n.Name)
-	}
-
-	if g.IsDebugMode() {
-		graphNode.Forward()
-		r1Go, r2Onnx, err := ResultCompareByNode(g, g.Network.GetNodeByName(graphNode.GetName()))
-		if err == nil {
-			return
-		}
-		_, _, _ = r1Go, r2Onnx, err
-		log.Println("ResultCompareByNode error:", err)
-		log.Println("set result by onnxruntime compute result!!!")
-		t := g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0])
-		t.value = r2Onnx[0]
-	} else {
-		graphNode.Forward()
-	}
 }
 
 func (g *ComputationalGraph) GetOutput() *GraphTensor {
@@ -271,125 +208,11 @@ func (g *ComputationalGraph) Backward() {
 	g.GetOutput().Node.Backward(gradTensor)
 }
 
-func (t *GraphTensor) Multiply(other *GraphTensor, names ...string) *GraphTensor {
-	var name string
-	if len(names) > 0 {
-		name = names[0]
-	} else {
-		name = fmt.Sprintf("multiply_%d", t.Graph.NodeCount)
-		t.Graph.NodeCount++
-	}
-
-	if t.Graph != other.Graph {
-		panic("tensors belong to different graphs")
-	}
-	g := t.Graph
-
-	multNode := NewMultiply(name, t, other)
-
-	outputTensor := &GraphTensor{
-		Name:  name,
-		value: tensor.NewTensor([]float32{}, []int{0}),
-		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Graph: g,
-		Node:  multNode,
-	}
-	outputTensor.SetShape(t.GetShape())
-
-	if _, exists := g.Tensors[name]; exists {
-		panic("tensor name already exists: " + name)
-	}
-	g.Tensors[name] = outputTensor
-	multNode.output = outputTensor
-	g.Nodes = append(g.Nodes, multNode)
-	return outputTensor
-}
-
-func (t *GraphTensor) Add(other *GraphTensor, names ...string) *GraphTensor {
-	var name string
-	if len(names) > 0 {
-		name = names[0]
-	} else {
-		name = fmt.Sprintf("add_%d", t.Graph.NodeCount)
-		t.Graph.NodeCount++
-	}
-
-	if t.Graph != other.Graph {
-		panic("tensors belong to different graphs")
-	}
-	g := t.Graph
-
-	addNode := NewAdd(name, t, other)
-
-	outputTensor := &GraphTensor{
-		Name:  name,
-		value: tensor.NewTensor([]float32{}, []int{0}),
-		grad:  tensor.NewTensor([]float32{}, []int{0}),
-		Graph: g,
-		Node:  addNode,
-	}
-	outputTensor.SetShape(t.GetShape())
-
-	if _, exists := g.Tensors[name]; exists {
-		panic("tensor name already exists: " + name)
-	}
-	g.Tensors[name] = outputTensor
-	addNode.output = outputTensor
-	g.Nodes = append(g.Nodes, addNode)
-	return outputTensor
-}
-
 func (g *ComputationalGraph) Reset() {
 	for _, tensor := range g.Tensors {
 		if tensor != nil {
 			tensor.SetComputed(false)
 		}
-	}
-}
-
-// PrintSmallModelStructure debug purpose
-func (g *ComputationalGraph) PrintSmallModelStructure() {
-	fmt.Println("\nComputation Graph Structure:")
-	if g.GetOutput() == nil {
-		fmt.Println("  (No output node set)")
-		return
-	}
-	//Todo
-	g.debugPrintNode(g.Network.GetOutput()[0], "", true, true)
-}
-
-// debugPrintNode debug purpose
-func (g *ComputationalGraph) debugPrintNode(node *network.Node, prefix string, isLast bool, isRoot bool) {
-	var connector string
-	if isRoot {
-		connector = "Output: "
-	} else if isLast {
-		connector = "└── "
-	} else {
-		connector = "├── "
-	}
-
-	if node == nil {
-		node = &network.Node{Name: "Input_Nil"}
-	}
-
-	fmt.Printf("%s%s%s (%s)\n", prefix, connector, node.Name, node.Type)
-
-	children := node.Inputs
-	if len(children) == 0 {
-		return
-	}
-
-	newPrefix := prefix
-	if isLast {
-		newPrefix += "    "
-	} else {
-		newPrefix += "│   "
-	}
-
-	for i, child := range children {
-		isLastChild := i == len(children)-1
-		g.debugPrintNode(child, newPrefix, isLastChild, false)
 	}
 }
 
