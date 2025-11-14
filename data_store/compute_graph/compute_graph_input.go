@@ -5,21 +5,21 @@ import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
 
-type InputNode struct {
+type TensorNode struct {
 	Name string
 	//Output *tensor.Tensor
 	//Grad   *tensor.Tensor
 	output *GraphTensor
 }
 
-func (m *InputNode) GetONNXNodeInfo() *node.ONNXNodeInfo {
+func (m *TensorNode) GetONNXNodeInfo() *node.ONNXNodeInfo {
 	return &node.ONNXNodeInfo{
 		Name:           "Input",
 		ProducedTensor: false,
 	}
 }
 
-func (n *InputNode) Forward() *tensor.Tensor {
+func (n *TensorNode) Forward() *tensor.Tensor {
 	if n.output == nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (n *InputNode) Forward() *tensor.Tensor {
 	return n.output.value
 }
 
-func (n *InputNode) Backward(grad *tensor.Tensor) {
+func (n *TensorNode) Backward(grad *tensor.Tensor) {
 	if n.output.grad == nil {
 		n.output.grad = tensor.NewTensor(
 			make([]float32, len(n.output.value.Data)),
@@ -45,18 +45,18 @@ func (n *InputNode) Backward(grad *tensor.Tensor) {
 	}
 }
 
-func (n *InputNode) resetGrad() {
+func (n *TensorNode) resetGrad() {
 	n.output.grad = tensor.NewTensor(make([]float32, len(n.output.value.Data)), n.output.value.GetShape())
 }
 
-func (n *InputNode) ResetComputed() {
+func (n *TensorNode) ResetComputed() {
 	n.output.computed = false
 }
 
-func (n *InputNode) GetGrad() *tensor.Tensor  { return n.output.grad }
-func (n *InputNode) GetName() string          { return n.Name }
-func (n *InputNode) GetChildren() []node.Node { return nil }
-func (n *InputNode) GetOutput() *tensor.Tensor {
+func (n *TensorNode) GetGrad() *tensor.Tensor  { return n.output.grad }
+func (n *TensorNode) GetName() string          { return n.Name }
+func (n *TensorNode) GetChildren() []node.Node { return nil }
+func (n *TensorNode) GetOutput() *tensor.Tensor {
 	if n.output == nil {
 		return nil
 	}

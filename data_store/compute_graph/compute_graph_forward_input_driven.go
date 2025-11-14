@@ -2,6 +2,7 @@ package compute_graph
 
 import (
 	"github.com/Jimmy2099/torch/data_store/network"
+	"github.com/Jimmy2099/torch/data_store/tensor"
 	"log"
 )
 
@@ -25,16 +26,32 @@ func (g *ComputationalGraph) forwardInputDrivenNode(n *network.Node) {
 		panic("graphNode is null: " + n.Name)
 	}
 	if g.IsDebugMode() {
-		graphNode.Forward()
-		r1Go, r2Onnx, err := ResultCompareByNode(g, g.Network.GetNodeByName(graphNode.GetName()))
-		if err == nil {
-			return
+
+		var r1Go []*tensor.Tensor
+		var r2Onnx []*tensor.Tensor
+		var err error
+
+		{
+			{
+				graphNode.Forward()
+				r1Go = append(r1Go, g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0]).Value())
+			}
+
+			{
+				r2Onnx, err = OnnxNodeCompute(g, g.Network.GetNodeByName(graphNode.GetName()))
+				if err != nil {
+					panic(err)
+				}
+			}
 		}
 		_, _, _ = r1Go, r2Onnx, err
-		log.Println("ResultCompareByNode error:", err)
-		log.Println("set result by onnxruntime compute result!!!")
-		t := g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0])
-		t.value = r2Onnx[0]
+		err = OutPutCompare(r1Go, r2Onnx)
+		if err != nil {
+			log.Println("ResultCompareByNode error:", err)
+			log.Println("set result by onnxruntime compute result!!!")
+			t := g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0])
+			t.value = r2Onnx[0]
+		}
 	} else {
 		graphNode.Forward()
 	}

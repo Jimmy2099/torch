@@ -3,6 +3,7 @@ package compute_graph
 import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/node"
+	"github.com/Jimmy2099/torch/testing"
 	onnx_ir "github.com/Jimmy2099/torch/thirdparty/onnx-go/ir"
 	v1proto "github.com/golang/protobuf/proto"
 	"io/ioutil"
@@ -41,19 +42,19 @@ type ONNXOperator struct {
 var ONNXOperators = []ONNXOperator{
 
 	{Name: "Tensor_Input", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		return &InputNode{Name: name, output: output}
+		return &TensorNode{Name: name, output: output}
 	}},
 
 	{Name: "Tensor_Output", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		return &InputNode{Name: name, output: output}
+		return &TensorNode{Name: name, output: output}
 	}},
 
 	{Name: "Tensor", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		return &InputNode{Name: name, output: output}
+		return &TensorNode{Name: name, output: output}
 	}},
 
 	{Name: "Tensor_Hidden", InputPCount: 0, OutputPCount: 1, AliasList: []string{}, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		return &InputNode{Name: name, output: output}
+		return &TensorNode{Name: name, output: output}
 	}},
 
 	{Name: "Abs", InputPCount: 1, OutputPCount: 1},
@@ -437,7 +438,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	onnxGraph := &onnx_ir.GraphProto{
 		Name: "computational_graph",
 	}
-
+	uqc := testing.NewUnique("")
 	for _, networkNode := range g.Network.GetNodes() {
 		t := g.GetTensorByName(networkNode.Name)
 		if networkNode.Type == "Tensor_Hidden" {
@@ -477,6 +478,10 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 					TensorType: tensorType,
 				},
 			},
+		}
+
+		if !uqc.Check(valueInfo.Name) {
+			continue
 		}
 
 		onnxGraph.Input = append(onnxGraph.Input, valueInfo)

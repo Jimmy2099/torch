@@ -165,10 +165,6 @@ func (ae *AutoEncoder) Forward(x *tensor.Tensor) *tensor.Tensor {
 	ae.graph.Forward()
 
 	outputTensor := ae.graph.GetTensorByName(ae.graph.Network.GetOutputName()[0])
-	_, _, err := compute_graph.ResultCompare(ae.graph)
-	if err != nil {
-		log.Println(err)
-	}
 	return outputTensor.Value()
 }
 

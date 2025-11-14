@@ -131,7 +131,7 @@ func (g *ComputationalGraph) NewGraphTensor(data []float32, shape []int, name st
 
 	g.Tensors[name] = te
 
-	n := &InputNode{
+	n := &TensorNode{
 		Name:   name,
 		output: te,
 	}
@@ -185,7 +185,7 @@ func (g *ComputationalGraph) GetOutput() *GraphTensor {
 
 func (g *ComputationalGraph) Backward() {
 	for _, node := range g.Nodes {
-		if inputNode, ok := node.(*InputNode); ok {
+		if inputNode, ok := node.(*TensorNode); ok {
 			inputNode.resetGrad()
 		}
 	}
@@ -254,7 +254,7 @@ func (g *ComputationalGraph) GetNodeByName(name string) node.Node {
 		}
 
 		if inputGraphTensor.Node == nil {
-			newNode := &InputNode{
+			newNode := &TensorNode{
 				Name:   inputGraphTensor.Name,
 				output: inputGraphTensor,
 			}

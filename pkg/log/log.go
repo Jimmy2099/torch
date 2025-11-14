@@ -9,7 +9,7 @@ func Println(a ...any) {
 	if !fmt.EnableLog {
 		return
 	}
-	fmt.Println(a...)
+	log.Println(a...)
 }
 
 func Printf(format string, a ...any) (n int, err error) {
