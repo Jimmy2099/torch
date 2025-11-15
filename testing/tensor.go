@@ -2,6 +2,7 @@ package testing
 
 import (
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/pkg/common"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"os"
 	"path/filepath"
@@ -96,7 +97,7 @@ out = process_data(in1,in2)
 save_tensor_to_csv(out,"%s")
 `, inputPath1, inputPath2, inPyScript, outPutPath)
 
-	RunPyScript(pythonScript)
+	common.RunPyScript(pythonScript)
 
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {

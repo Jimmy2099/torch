@@ -1,4 +1,4 @@
-package testing
+package algorithm
 
 type UniqueCheck struct {
 	exist map[any]struct{}

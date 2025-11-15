@@ -162,7 +162,8 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 			}
 			fmt.Println("shape:", shape)
 			fmt.Println("data:", outTensorList[i].GetData())
-			outPutTensorList = append(outPutTensorList, tensor.NewTensor(outTensorList[i].GetData(), shape))
+			originalData := outTensorList[i].GetData()
+			outPutTensorList = append(outPutTensorList, tensor.NewTensor(originalData, shape))
 		}
 	}
 

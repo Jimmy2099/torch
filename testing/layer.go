@@ -3,6 +3,7 @@ package testing
 import (
 	"github.com/Jimmy2099/torch"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/pkg/common"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	"os"
 	"path/filepath"
@@ -127,7 +128,7 @@ out = process_data(weight,bias,in1)
 save_tensor_to_csv(out,"%s")
 `, dataType, layerWeightsPath, layerBiasPath, inTensorPath, inPyScript, outPutPath)
 
-	RunPyScript(pythonScript)
+	common.RunPyScript(pythonScript)
 
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
@@ -176,7 +177,7 @@ out=out.detach()
 save_tensor_to_csv(out,"%s")
 `, pyScript, outPutPath)
 
-	RunPyScript(pythonScript)
+	common.RunPyScript(pythonScript)
 
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
@@ -253,7 +254,7 @@ out = out.detach().cpu().float()
 save_tensor_to_csv(out,"%s")
 `, dataType, inTensorPath, inPyScript, outPutPath)
 
-	RunPyScript(pythonScript)
+	common.RunPyScript(pythonScript)
 
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {
@@ -336,7 +337,7 @@ out = out.detach().cpu().float()
 save_tensor_to_csv(out,"%s")
 `, dataType, textpy, inPyScript, outPutPath)
 
-	RunPyScript(pythonScript)
+	common.RunPyScript(pythonScript)
 
 	outTensor, err := tensor.LoadFromCSV(outPutPath)
 	if err != nil {

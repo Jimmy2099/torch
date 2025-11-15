@@ -1,4 +1,4 @@
-package testing
+package common
 
 import (
 	"github.com/Jimmy2099/torch/pkg/fmt"

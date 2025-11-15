@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Jimmy2099/torch/pkg/fmt"
 	math "github.com/chewxy/math32"
+	math64 "math"
 )
 
 func (t *Tensor) Dimensions() int {
@@ -513,7 +514,7 @@ func (t *Tensor) GetRow(row int) *Tensor {
 func (t *Tensor) Sigmoid() *Tensor {
 	data := make([]float32, len(t.Data))
 	for i, val := range t.Data {
-		data[i] = 1.0 / (1.0 + math.Exp(-val))
+		data[i] = float32(1.0 / (1.0 + math64.Exp(float64(-val))))
 	}
 	return &Tensor{Data: data, shape: t.shape}
 }
