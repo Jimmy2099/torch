@@ -32,24 +32,6 @@ func (m *MatMul) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *MatMul) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in matmul backward pass")
-	}
-
-	bTransposed := bVal.Transpose()
-	gradA := grad.MatMul(bTransposed)
-
-	aTransposed := aVal.Transpose()
-	gradB := aTransposed.MatMul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-}
-
 func (t *GraphTensor) MatMul(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

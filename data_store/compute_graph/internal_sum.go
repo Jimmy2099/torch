@@ -44,21 +44,6 @@ func (m *Sum) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Sum) Backward(grad *tensor.Tensor) {
-	if len(grad.Data) != 1 {
-		panic("gradient for sum must be scalar")
-	}
-
-	gradValue := grad.Data[0]
-	gradData := make([]float32, len(m.Children[0].value.Data))
-	for i := range gradData {
-		gradData[i] = gradValue
-	}
-
-	gradTensor := tensor.NewTensor(gradData, m.Children[0].value.GetShape())
-	m.Children[0].Node.Backward(gradTensor)
-}
-
 func (m *Sum) ResetComputed() {
 	m.output.computed = false
 }

@@ -28,29 +28,6 @@ func (m *Abs) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Abs) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-
-	if aVal == nil || grad == nil {
-		panic("nil tensor in abs backward pass")
-	}
-
-	signData := make([]float32, len(aVal.Data))
-	for i, v := range aVal.Data {
-		if v > 0 {
-			signData[i] = 1.0
-		} else if v < 0 {
-			signData[i] = -1.0
-		} else {
-			signData[i] = 0.0
-		}
-	}
-	signTensor := tensor.NewTensor(signData, aVal.GetShape())
-	gradInput := grad.Mul(signTensor)
-
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Abs(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

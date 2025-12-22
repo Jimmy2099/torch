@@ -38,10 +38,6 @@ func (m *ScatterND) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ScatterND) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) ScatterND(indices, updates *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

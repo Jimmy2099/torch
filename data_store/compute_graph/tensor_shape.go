@@ -27,10 +27,6 @@ func (m *ShapeOp) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ShapeOp) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) ShapeOp(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

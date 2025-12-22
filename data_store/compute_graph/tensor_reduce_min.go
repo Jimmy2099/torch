@@ -30,30 +30,6 @@ func (m *ReduceMin) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ReduceMin) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].Node.Forward()
-
-	minVal := input.Data[0]
-	minIndices := []int{0}
-	for i, val := range input.Data {
-		if val < minVal {
-			minVal = val
-			minIndices = []int{i}
-		} else if val == minVal {
-			minIndices = append(minIndices, i)
-		}
-	}
-
-	gradData := make([]float32, len(input.Data))
-	gradPerMin := grad.Data[0] / float32(len(minIndices))
-	for _, idx := range minIndices {
-		gradData[idx] = gradPerMin
-	}
-
-	gradInput := tensor.NewTensor(gradData, input.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) ReduceMin(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

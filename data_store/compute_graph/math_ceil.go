@@ -28,11 +28,6 @@ func (m *Ceil) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Ceil) Backward(grad *tensor.Tensor) {
-	gradInput := tensor.NewTensor(make([]float32, len(grad.Data)), grad.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Ceil(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

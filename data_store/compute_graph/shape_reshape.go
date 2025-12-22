@@ -88,23 +88,6 @@ func (m *Reshape) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Reshape) Backward(grad *tensor.Tensor) {
-	if len(m.Children) != 2 {
-		panic("Reshape operation requires 2 inputs: data and shape")
-	}
-
-	dataTensor := m.Children[0]
-
-	if dataTensor.value == nil || grad == nil {
-		panic("nil tensor in reshape backward pass")
-	}
-
-	originalShape := dataTensor.GetShape()
-	gradInput := tensor.NewTensor(grad.Data, originalShape)
-
-	dataTensor.Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Reshape(shape *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

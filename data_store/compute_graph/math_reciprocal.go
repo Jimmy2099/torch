@@ -28,25 +28,6 @@ func (m *Reciprocal) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Reciprocal) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-
-	if aVal == nil || grad == nil {
-		panic("nil tensor in reciprocal backward pass")
-	}
-
-	ones := tensor.NewTensor(make([]float32, len(aVal.Data)), aVal.GetShape())
-	for i := range ones.Data {
-		ones.Data[i] = 1.0
-	}
-
-	aSquared := aVal.Copy().Mul(aVal)
-	negOneOverASquared := ones.Div(aSquared).Negate()
-	gradA := negOneOverASquared.Mul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-}
-
 func (t *GraphTensor) Reciprocal(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

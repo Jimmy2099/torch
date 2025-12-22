@@ -55,29 +55,6 @@ func (m *GlobalMaxPool) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *GlobalMaxPool) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in GlobalMaxPool backward pass")
-	}
-
-	input := m.Children[0].value
-	shape := input.GetShape()
-	B, C, H, W := shape[0], shape[1], shape[2], shape[3]
-
-	gradInput := make([]float32, len(input.Data))
-
-	for b := 0; b < B; b++ {
-		for c := 0; c < C; c++ {
-			pos := m.maxPositions[b][c]
-			if pos != -1 {
-				gradInput[b*(C*H*W)+c*(H*W)+pos] = grad.Data[b*C+c]
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, input.GetShape()))
-}
-
 func (t *GraphTensor) GlobalMaxPool(name string) *GraphTensor {
 	if name == "" {
 		name = fmt.Sprintf("globalmaxpool_%d", t.Graph.NodeCount)

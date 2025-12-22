@@ -21,20 +21,6 @@ func (m *Sqrt) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *Sqrt) Backward(grad *tensor.Tensor) {
-	outputVal := m.output.value
-	if outputVal == nil || grad == nil {
-		panic("nil tensor in sqrt backward pass")
-	}
-
-	gradData := make([]float32, len(outputVal.Data))
-	for i, out := range outputVal.Data {
-		gradData[i] = grad.Data[i] / (2 * out)
-	}
-	gradInput := tensor.NewTensor(gradData, outputVal.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Sqrt(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

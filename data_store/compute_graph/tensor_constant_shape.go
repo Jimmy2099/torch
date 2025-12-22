@@ -39,10 +39,6 @@ func (m *ConstantOfShape) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ConstantOfShape) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) ConstantOfShape(names ...string) *GraphTensor {
 	return t.ConstantOfShapeWithValue(0.0, names...)
 }

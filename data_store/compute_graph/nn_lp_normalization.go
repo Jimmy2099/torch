@@ -70,51 +70,6 @@ func (m *LpNormalization) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *LpNormalization) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].value
-	shape := input.GetShape()
-	stride := 1
-	for i := m.axis + 1; i < len(shape); i++ {
-		stride *= shape[i]
-	}
-	step := stride * shape[m.axis]
-	count := shape[m.axis]
-
-	gradInput := make([]float32, len(input.Data))
-
-	for offset := 0; offset < len(input.Data); offset += step {
-		end := offset + step
-		if end > len(input.Data) {
-			end = len(input.Data)
-		}
-
-		for i := offset; i < end; i += stride {
-			sliceEnd := i + stride*count
-			if sliceEnd > end {
-				sliceEnd = end
-			}
-
-			sum1 := float32(0.0)
-			sum2 := float32(0.0)
-			for j := i; j < sliceEnd; j += stride {
-				sum1 += grad.Data[j]
-				sum2 += grad.Data[j] * input.Data[j]
-			}
-
-			for j := i; j < sliceEnd; j += stride {
-				norm := m.norm.Data[j]
-				x := input.Data[j]
-				term1 := grad.Data[j] / norm
-				term2 := x * float32(math.Pow(math.Abs(float64(x)), float64(m.p-1))) *
-					sum2 / (norm * norm * norm)
-				gradInput[j] = term1 - term2
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, shape))
-}
-
 func (t *GraphTensor) LpNormalization(p float32, axis int, epsilon float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

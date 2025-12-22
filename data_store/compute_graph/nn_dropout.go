@@ -36,10 +36,6 @@ func (d *Dropout) Forward() *tensor.Tensor {
 	return result
 }
 
-func (d *Dropout) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Dropout(p float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

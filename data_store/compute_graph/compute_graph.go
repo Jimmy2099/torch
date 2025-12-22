@@ -183,31 +183,6 @@ func (g *ComputationalGraph) GetOutput() *GraphTensor {
 	return g.GetTensorByName(nodeList[0].Name)
 }
 
-func (g *ComputationalGraph) Backward() {
-	for _, node := range g.Nodes {
-		if inputNode, ok := node.(*TensorNode); ok {
-			inputNode.resetGrad()
-		}
-	}
-
-	if len(g.Network.GetOutput()) == 0 {
-		return
-	}
-
-	outputShape := g.GetOutput().value.GetShape()
-	num := 1
-	for _, dim := range outputShape {
-		num *= dim
-	}
-	gradData := make([]float32, num)
-	for i := range gradData {
-		gradData[i] = 1.0
-	}
-	gradTensor := tensor.NewTensor(gradData, outputShape)
-
-	g.GetOutput().Node.Backward(gradTensor)
-}
-
 func (g *ComputationalGraph) Reset() {
 	for _, tensor := range g.Tensors {
 		if tensor != nil {

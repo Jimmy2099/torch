@@ -29,11 +29,6 @@ func (m *Flatten) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Flatten) Backward(grad *tensor.Tensor) {
-	reshapedGrad := grad.Reshape(m.originalShape)
-	m.Children[0].Node.Backward(reshapedGrad)
-}
-
 func (t *GraphTensor) Flatten(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

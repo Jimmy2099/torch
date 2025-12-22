@@ -22,16 +22,6 @@ func (m *Sigmoid) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Sigmoid) Backward(grad *tensor.Tensor) {
-	y := m.output.value
-	gradData := make([]float32, len(y.Data))
-	for i, val := range y.Data {
-		gradData[i] = grad.Data[i] * val * (1 - val)
-	}
-	gradInput := tensor.NewTensor(gradData, y.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Sigmoid(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

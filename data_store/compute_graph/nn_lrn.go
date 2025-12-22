@@ -44,11 +44,6 @@ func (l *LRN) Forward() *tensor.Tensor {
 	return result
 }
 
-func (l *LRN) Backward(grad *tensor.Tensor) {
-	dInput := grad.Copy().Div(l.output.value.Mul(l.output.value))
-	l.Children[0].Node.Backward(dInput)
-}
-
 func (t *GraphTensor) LRN(size int, alpha, beta, k float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

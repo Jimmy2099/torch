@@ -74,48 +74,6 @@ func (m *InstanceNormalization) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *InstanceNormalization) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].value
-	shape := input.GetShape()
-	n := shape[0]
-	c := shape[1]
-	h := shape[2]
-	w := shape[3]
-	total := h * w
-
-	gradInput := make([]float32, len(input.Data))
-
-	for i := 0; i < n; i++ {
-		for j := 0; j < c; j++ {
-			start := i*c*h*w + j*h*w
-			end := start + h*w
-			gradSlice := grad.Data[start:end]
-			xMinusMean := make([]float32, total)
-			stddev := float32(math.Sqrt(float64(m.variance.Data[start] + m.epsilon)))
-			invStddev := 1.0 / stddev
-
-			sumGrad := float32(0.0)
-			sumGradX := float32(0.0)
-			for k := 0; k < total; k++ {
-				idx := start + k
-				xMinusMean[k] = input.Data[idx] - m.mean.Data[idx]
-				sumGrad += gradSlice[k]
-				sumGradX += gradSlice[k] * xMinusMean[k]
-			}
-
-			for k := 0; k < total; k++ {
-				idx := start + k
-				grad1 := gradSlice[k] * invStddev
-				grad2 := xMinusMean[k] * sumGradX / (float32(total) * stddev * stddev * stddev)
-				grad3 := sumGrad / (float32(total) * stddev)
-				gradInput[idx] = grad1 - grad2 - grad3
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, shape))
-}
-
 func (t *GraphTensor) InstanceNormalization(epsilon float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

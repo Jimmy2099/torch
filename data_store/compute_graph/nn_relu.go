@@ -22,20 +22,6 @@ func (m *ReLU) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ReLU) Backward(grad *tensor.Tensor) {
-	x := m.Children[0].value
-	gradData := make([]float32, len(x.Data))
-	for i, val := range x.Data {
-		if val > 0 {
-			gradData[i] = grad.Data[i]
-		} else {
-			gradData[i] = 0
-		}
-	}
-	gradInput := tensor.NewTensor(gradData, x.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) ReLU(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

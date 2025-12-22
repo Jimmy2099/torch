@@ -29,19 +29,6 @@ func (m *ReduceMean) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ReduceMean) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].Node.Forward()
-
-	gradData := make([]float32, len(input.Data))
-	gradPerElement := grad.Data[0] / float32(len(input.Data))
-	for i := range gradData {
-		gradData[i] = gradPerElement
-	}
-
-	gradInput := tensor.NewTensor(gradData, input.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) ReduceMean(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

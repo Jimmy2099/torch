@@ -32,19 +32,6 @@ func (n *TensorNode) Forward() *tensor.Tensor {
 	return n.output.value
 }
 
-func (n *TensorNode) Backward(grad *tensor.Tensor) {
-	if n.output.grad == nil {
-		n.output.grad = tensor.NewTensor(
-			make([]float32, len(n.output.value.Data)),
-			n.output.value.GetShape(),
-		)
-	}
-
-	for i := range grad.Data {
-		n.output.grad.Data[i] += grad.Data[i]
-	}
-}
-
 func (n *TensorNode) resetGrad() {
 	n.output.grad = tensor.NewTensor(make([]float32, len(n.output.value.Data)), n.output.value.GetShape())
 }

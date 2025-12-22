@@ -70,62 +70,6 @@ func (m *LpPool) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *LpPool) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].value
-	shape := input.GetShape()
-	n := shape[0]
-	c := shape[1]
-	h := shape[2]
-	w := shape[3]
-	kernelH := m.kernel[0]
-	kernelW := m.kernel[1]
-	strideH := m.strides[0]
-	strideW := m.strides[1]
-	outH := (h-kernelH)/strideH + 1
-	outW := (w-kernelW)/strideW + 1
-
-	gradInput := make([]float32, len(input.Data))
-
-	for i := 0; i < n; i++ {
-		for j := 0; j < c; j++ {
-			for k := 0; k < outH; k++ {
-				for l := 0; l < outW; l++ {
-					startH := k * strideH
-					startW := l * strideW
-					endH := startH + kernelH
-					endW := startW + kernelW
-					poolIdx := i*c*outH*outW + j*outH*outW + k*outW + l
-					poolVal := m.output.value.Data[poolIdx]
-					gradVal := grad.Data[poolIdx]
-
-					for x := startH; x < endH; x++ {
-						for y := startW; y < endW; y++ {
-							idx := i*c*h*w + j*h*w + x*w + y
-							xVal := input.Data[idx]
-							absX := float32(math.Abs(float64(xVal)))
-							sign := float32(1.0)
-							if xVal < 0 {
-								sign = -1.0
-							}
-
-							derivative := float32(0.0)
-							if poolVal > 0 {
-								derivative = gradVal *
-									float32(math.Pow(float64(absX), float64(m.p-1))) *
-									sign *
-									float32(math.Pow(float64(poolVal), float64(1-m.p)))
-							}
-							gradInput[idx] += derivative
-						}
-					}
-				}
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, shape))
-}
-
 func (t *GraphTensor) LpPool(kernel, strides []int, p float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

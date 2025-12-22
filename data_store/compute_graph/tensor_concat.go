@@ -28,13 +28,6 @@ func (m *Concat) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Concat) Backward(grad *tensor.Tensor) {
-	grads := m.splitGradient(grad, m.axis)
-	for i, child := range m.Children {
-		child.Node.Backward(grads[i])
-	}
-}
-
 func (m *Concat) concatTensors(tensors []*tensor.Tensor, axis int) *tensor.Tensor {
 	if len(tensors) == 0 {
 		return tensor.NewTensor([]float32{}, []int{})

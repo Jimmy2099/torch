@@ -3,7 +3,6 @@ package neuromorphic_compute
 import (
 	"github.com/Jimmy2099/torch/data_store/compute_graph"
 	"github.com/Jimmy2099/torch/data_store/tensor"
-	"github.com/chewxy/math32"
 )
 
 type LIFNode struct {
@@ -45,29 +44,6 @@ func (n *LIFNode) Forward() *tensor.Tensor {
 	n.output.SetValue(outputTensor)
 	n.output.SetComputed(true)
 	return outputTensor
-}
-
-func (n *LIFNode) Backward(grad *tensor.Tensor) {
-	inputTensor := n.Children[0].Value()
-	inputData := inputTensor.Data
-	surrogateGrad := make([]float32, len(inputData))
-
-	epsilon := n.Tau
-	tolerance := float32(1e-6)
-	for i, val := range inputData {
-		if math32.Abs(val-n.Threshold) <= epsilon+tolerance {
-			surrogateGrad[i] = 1.0
-		} else {
-			surrogateGrad[i] = 0.0
-		}
-	}
-
-	inputGradData := make([]float32, len(grad.Data))
-	for i := range grad.Data {
-		inputGradData[i] = grad.Data[i] * surrogateGrad[i]
-	}
-	inputGrad := tensor.NewTensor(inputGradData, inputTensor.GetShape())
-	n.Children[0].Node.Backward(inputGrad)
 }
 
 func (n *LIFNode) GetName() string { return n.Name }

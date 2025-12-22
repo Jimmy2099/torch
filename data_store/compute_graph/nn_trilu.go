@@ -38,10 +38,6 @@ func (m *Trilu) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Trilu) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Trilu(k *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

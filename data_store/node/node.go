@@ -6,7 +6,6 @@ import (
 
 type Node interface {
 	Forward() *tensor.Tensor
-	Backward(grad *tensor.Tensor)
 	GetName() string
 	ResetComputed()
 

@@ -33,10 +33,6 @@ func (m *Equal) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Equal) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Equal(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

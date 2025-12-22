@@ -28,11 +28,6 @@ func (m *Floor) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Floor) Backward(grad *tensor.Tensor) {
-	gradInput := tensor.NewTensor(make([]float32, len(grad.Data)), grad.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Floor(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

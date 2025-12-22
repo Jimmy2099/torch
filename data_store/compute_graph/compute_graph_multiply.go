@@ -41,23 +41,6 @@ func (m *Multiply) ResetComputed() {
 	m.output.computed = false
 }
 
-func (m *Multiply) Backward(grad *tensor.Tensor) {
-	m.output.grad = grad
-
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in Multiply backward pass")
-	}
-
-	gradA := bVal.Mul(grad)
-	gradB := aVal.Mul(grad)
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-}
-
 func (m *Multiply) GetName() string { return m.Name }
 
 func (m *Multiply) GetChildren() []node.Node {

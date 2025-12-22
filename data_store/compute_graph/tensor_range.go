@@ -31,10 +31,6 @@ func (m *Range) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Range) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (g *ComputationalGraph) Range(name string, start, limit, delta *GraphTensor) *GraphTensor {
 	if len(name) == 0 {
 		name = fmt.Sprintf("range_%d", g.NodeCount)

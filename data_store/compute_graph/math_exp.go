@@ -22,16 +22,6 @@ func (m *Exp) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Exp) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	if aVal == nil || grad == nil {
-		panic("nil tensor in exponential backward pass")
-	}
-
-	gradA := m.output.value.Copy().Mul(grad)
-	m.Children[0].Node.Backward(gradA)
-}
-
 func (t *GraphTensor) Exp(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

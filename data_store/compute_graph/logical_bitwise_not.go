@@ -23,10 +23,6 @@ func (m *Not) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Not) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Not(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

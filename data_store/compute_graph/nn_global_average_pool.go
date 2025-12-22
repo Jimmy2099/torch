@@ -42,33 +42,6 @@ func (m *GlobalAveragePool) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *GlobalAveragePool) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in GlobalAveragePool backward pass")
-	}
-
-	input := m.Children[0].value
-	shape := input.GetShape()
-	B, C, H, W := shape[0], shape[1], shape[2], shape[3]
-	total := float32(H * W)
-
-	gradInput := make([]float32, len(input.Data))
-
-	for b := 0; b < B; b++ {
-		for c := 0; c < C; c++ {
-			gradVal := grad.Data[b*C+c] / total
-			for h := 0; h < H; h++ {
-				for w := 0; w < W; w++ {
-					idx := b*(C*H*W) + c*(H*W) + h*W + w
-					gradInput[idx] = gradVal
-				}
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, input.GetShape()))
-}
-
 func (t *GraphTensor) GlobalAveragePool(name string) *GraphTensor {
 	if name == "" {
 		name = fmt.Sprintf("globalavgpool_%d", t.Graph.NodeCount)

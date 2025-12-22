@@ -85,25 +85,6 @@ func calculateTotalSize(shape []int) int {
 	return total
 }
 
-func (m *Pad) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in pad backward pass")
-	}
-
-	gradTensor := grad
-	for dim := 0; dim < len(m.Pads); dim++ {
-		currentShape := gradTensor.GetShape()
-		if dim >= len(currentShape) {
-			panic(fmt.Sprintf("pad backward: dimension %d out of range (tensor rank %d)", dim, len(currentShape)))
-		}
-		start := m.Pads[dim][0]
-		end := currentShape[dim] - m.Pads[dim][1]
-		gradTensor = gradTensor.Slice(start, end, dim)
-	}
-
-	m.Children[0].Node.Backward(gradTensor)
-}
-
 func (t *GraphTensor) Pad(pads [][2]int, val float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

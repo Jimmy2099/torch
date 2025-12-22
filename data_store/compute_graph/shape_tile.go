@@ -108,16 +108,6 @@ func (m *Tile) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Tile) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in tile backward pass")
-	}
-
-	inputShape := m.Children[0].value.GetShape()
-	gradTensor := untileTensor(grad, inputShape)
-	m.Children[0].Node.Backward(gradTensor)
-}
-
 func (t *GraphTensor) Tile(repeats []int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

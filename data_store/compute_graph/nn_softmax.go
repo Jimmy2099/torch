@@ -65,46 +65,6 @@ func (m *Softmax) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Softmax) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in softmax backward")
-	}
-
-	s := m.output.value
-	prod := grad.Copy().Mul(s)
-
-	shape := s.GetShape()
-	dims := len(shape)
-	var lastDim int
-	if dims == 1 {
-		lastDim = shape[0]
-	} else if dims == 2 {
-		lastDim = shape[1]
-	}
-
-	total := len(s.Data)
-	numRows := total / lastDim
-	sumData := make([]float32, total)
-
-	for i := 0; i < numRows; i++ {
-		start := i * lastDim
-		end := start + lastDim
-		sum := float32(0)
-		for j := start; j < end; j++ {
-			sum += prod.Data[j]
-		}
-		for j := start; j < end; j++ {
-			sumData[j] = sum
-		}
-	}
-
-	sumTensor := tensor.NewTensor(sumData, shape)
-	gradMinusSum := grad.Copy().Sub(sumTensor)
-	gradInput := s.Copy().Mul(gradMinusSum)
-
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Softmax(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

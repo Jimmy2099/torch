@@ -31,14 +31,6 @@ func (u *Unsqueeze) Forward() *tensor.Tensor {
 	return result
 }
 
-func (u *Unsqueeze) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in unsqueeze backward pass")
-	}
-	gradInput := grad.Reshape(u.originalShape)
-	u.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Unsqueeze(axis int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

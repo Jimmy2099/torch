@@ -45,11 +45,6 @@ func (a *Add) ResetComputed() {
 	a.output.computed = false
 }
 
-func (a *Add) Backward(grad *tensor.Tensor) {
-	a.Children[0].Node.Backward(grad)
-	a.Children[1].Node.Backward(grad)
-}
-
 func (a *Add) GetName() string { return a.Name }
 
 func (a *Add) GetChildren() []node.Node {

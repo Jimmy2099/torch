@@ -24,10 +24,6 @@ func (m *Gather) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Gather) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Gather(indices *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

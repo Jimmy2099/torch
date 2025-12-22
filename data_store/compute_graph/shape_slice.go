@@ -43,50 +43,6 @@ func (m *Slice) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Slice) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in slice backward pass")
-	}
-
-	inputShape := m.Children[0].value.GetShape()
-	zeroData := make([]float32, prod(inputShape))
-	zeroGrad := tensor.NewTensor(zeroData, inputShape)
-	gradData := grad.Data
-
-	ndim := len(inputShape)
-	sliceShape := sliceShape(inputShape, m.Starts, m.Ends)
-
-	strides := make([]int, ndim)
-	stride := 1
-	for i := ndim - 1; i >= 0; i-- {
-		strides[i] = stride
-		stride *= inputShape[i]
-	}
-
-	for idx := 0; idx < len(gradData); idx++ {
-		coord := make([]int, ndim)
-		remainder := idx
-		for i := ndim - 1; i >= 0; i-- {
-			coord[i] = remainder % sliceShape[i]
-			remainder /= sliceShape[i]
-		}
-
-		inputCoord := make([]int, ndim)
-		for i := range coord {
-			inputCoord[i] = coord[i] + m.Starts[i]
-		}
-
-		inputIndex := 0
-		for i := range inputCoord {
-			inputIndex += inputCoord[i] * strides[i]
-		}
-
-		zeroData[inputIndex] = gradData[idx]
-	}
-
-	m.Children[0].Node.Backward(zeroGrad)
-}
-
 func (t *GraphTensor) Slice(starts, ends []int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

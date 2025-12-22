@@ -20,10 +20,6 @@ func (m *Neg) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *Neg) Backward(grad *tensor.Tensor) {
-	m.Children[0].Node.Backward(grad.Negate())
-}
-
 func (t *GraphTensor) Neg(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

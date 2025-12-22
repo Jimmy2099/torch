@@ -54,38 +54,6 @@ func (m *Conv) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Conv) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].Node.Forward()
-	weight := m.Children[1].Node.Forward()
-
-	kernelH := m.kernelShape[2]
-	kernelW := m.kernelShape[3]
-
-	gradInput := grad.Conv2DTranspose(
-		weight,
-		kernelH,
-		kernelW,
-		m.StrideH,
-		m.StrideW,
-		m.PadH,
-		m.PadW,
-	)
-
-	gradWeight := computeKernelGradient(
-		input,
-		grad,
-		kernelH,
-		kernelW,
-		m.StrideH,
-		m.StrideW,
-		m.PadH,
-		m.PadW,
-	)
-
-	m.Children[0].Node.Backward(gradInput)
-	m.Children[1].Node.Backward(gradWeight)
-}
-
 func (t *GraphTensor) Conv(weight *GraphTensor, stride, padding []int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

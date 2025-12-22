@@ -39,10 +39,6 @@ func (m *Where) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Where) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Where(trueValues, falseValues *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

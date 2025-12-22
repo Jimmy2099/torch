@@ -28,20 +28,6 @@ func (m *Log) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *Log) Backward(grad *tensor.Tensor) {
-	inputVal := m.Children[0].value
-	if inputVal == nil || grad == nil {
-		panic("nil tensor in log backward pass")
-	}
-
-	gradData := make([]float32, len(inputVal.Data))
-	for i, v := range inputVal.Data {
-		gradData[i] = grad.Data[i] / v
-	}
-	gradInput := tensor.NewTensor(gradData, inputVal.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Log(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

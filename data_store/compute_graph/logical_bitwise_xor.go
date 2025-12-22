@@ -28,10 +28,6 @@ func (m *Xor) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Xor) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Xor(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

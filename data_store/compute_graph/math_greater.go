@@ -33,10 +33,6 @@ func (m *Greater) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Greater) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Greater(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

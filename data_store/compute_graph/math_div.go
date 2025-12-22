@@ -28,29 +28,6 @@ func (m *Div) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Div) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor in division backward pass")
-	}
-
-	ones := tensor.NewTensor(make([]float32, len(bVal.Data)), bVal.GetShape())
-	for i := range ones.Data {
-		ones.Data[i] = 1.0
-	}
-
-	gradA := ones.Copy().Div(bVal).Mul(grad)
-
-	bSquared := bVal.Copy().Mul(bVal)
-	oneOverBSquared := ones.Copy().Div(bSquared)
-	gradB := oneOverBSquared.Mul(aVal).Mul(grad).Negate()
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-}
-
 func (t *GraphTensor) Div(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

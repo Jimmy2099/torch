@@ -102,28 +102,6 @@ func (m *MaxRoiPool) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *MaxRoiPool) Backward(grad *tensor.Tensor) {
-	featureMap := m.Children[0].value
-	rois := m.Children[1].value
-
-	gradFeatureMap := tensor.NewTensor(
-		make([]float32, len(featureMap.Data)),
-		featureMap.GetShape(),
-	)
-
-	gradRois := tensor.NewTensor(
-		make([]float32, len(rois.Data)),
-		rois.GetShape(),
-	)
-
-	for i, inputIdx := range m.argmax {
-		gradFeatureMap.Data[inputIdx] += grad.Data[i]
-	}
-
-	m.Children[0].Node.Backward(gradFeatureMap)
-	m.Children[1].Node.Backward(gradRois)
-}
-
 func clamp(value, min, max int) int {
 	if value < min {
 		return min

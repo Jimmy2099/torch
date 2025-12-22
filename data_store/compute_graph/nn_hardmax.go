@@ -60,10 +60,6 @@ func (m *Hardmax) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Hardmax) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Hardmax(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

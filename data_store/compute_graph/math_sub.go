@@ -41,21 +41,6 @@ func (m *Sub) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Sub) Backward(grad *tensor.Tensor) {
-	aVal := m.Children[0].value
-	bVal := m.Children[1].value
-
-	if aVal == nil || bVal == nil || grad == nil {
-		panic("nil tensor backward pass")
-	}
-
-	gradA := grad.Copy()   // da = grad
-	gradB := grad.Negate() // db = -grad
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-}
-
 func (t *GraphTensor) Sub(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

@@ -30,30 +30,6 @@ func (m *ReduceMax) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *ReduceMax) Backward(grad *tensor.Tensor) {
-	input := m.Children[0].Node.Forward()
-
-	maxVal := input.Data[0]
-	maxIndices := []int{0}
-	for i, val := range input.Data {
-		if val > maxVal {
-			maxVal = val
-			maxIndices = []int{i}
-		} else if val == maxVal {
-			maxIndices = append(maxIndices, i)
-		}
-	}
-
-	gradData := make([]float32, len(input.Data))
-	gradPerMax := grad.Data[0] / float32(len(maxIndices))
-	for _, idx := range maxIndices {
-		gradData[idx] = gradPerMax
-	}
-
-	gradInput := tensor.NewTensor(gradData, input.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) ReduceMax(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

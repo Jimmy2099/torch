@@ -28,10 +28,6 @@ func (m *Or) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Or) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (t *GraphTensor) Or(other *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

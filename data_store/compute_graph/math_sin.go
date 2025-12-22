@@ -27,16 +27,6 @@ func (m *Sin) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Sin) Backward(grad *tensor.Tensor) {
-	x := m.Children[0].Node.Forward()
-	gradData := make([]float32, len(x.Data))
-	for i, val := range x.Data {
-		gradData[i] = grad.Data[i] * float32(math.Cos(float64(val)))
-	}
-	gradInput := tensor.NewTensor(gradData, x.GetShape())
-	m.Children[0].Node.Backward(gradInput)
-}
-
 func (t *GraphTensor) Sin(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

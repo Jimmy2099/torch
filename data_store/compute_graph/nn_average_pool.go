@@ -67,45 +67,6 @@ func (m *AveragePool) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *AveragePool) Backward(grad *tensor.Tensor) {
-	if grad == nil {
-		panic("nil gradient in AveragePool backward pass")
-	}
-
-	input := m.Children[0].value
-	shape := input.GetShape()
-	B, C, H, W := shape[0], shape[1], shape[2], shape[3]
-	kH, kW := m.kernel[0], m.kernel[1]
-	sH, sW := m.stride[0], m.stride[1]
-	padH, padW := m.padding[0], m.padding[1]
-	Hout, Wout := grad.GetShape()[2], grad.GetShape()[3]
-
-	gradInput := make([]float32, len(input.Data))
-
-	for b := 0; b < B; b++ {
-		for c := 0; c < C; c++ {
-			for i := 0; i < Hout; i++ {
-				for j := 0; j < Wout; j++ {
-					gradVal := grad.Data[b*(C*Hout*Wout)+c*(Hout*Wout)+i*Wout+j]
-					for kh := 0; kh < kH; kh++ {
-						for kw := 0; kw < kW; kw++ {
-							h := i*sH + kh - padH
-							w := j*sW + kw - padW
-							if h >= 0 && h < H && w >= 0 && w < W {
-								idx := b*(C*H*W) + c*(H*W) + h*W + w
-								area := float32(kH * kW)
-								gradInput[idx] += gradVal / area
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradInput, input.GetShape()))
-}
-
 func (t *GraphTensor) AveragePool(kernel, stride, padding []int, name string) *GraphTensor {
 	if name == "" {
 		name = fmt.Sprintf("avgpool_%d", t.Graph.NodeCount)

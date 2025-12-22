@@ -52,10 +52,6 @@ func (m *Constant) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *Constant) Backward(grad *tensor.Tensor) {
-	return
-}
-
 func (g *ComputationalGraph) Constant(value []float32, shape []int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

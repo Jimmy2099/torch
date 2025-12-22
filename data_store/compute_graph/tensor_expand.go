@@ -50,25 +50,6 @@ func (m *Expand) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Expand) Backward(grad *tensor.Tensor) {
-	inputShape := m.Children[0].Node.GetOutput().GetShape()
-	outputShape := grad.GetShape()
-
-	var reduceDims []int
-	for i := 0; i < len(outputShape); i++ {
-		if i >= len(inputShape) {
-			reduceDims = append(reduceDims, i)
-		} else if inputShape[i] == 1 && outputShape[i] > 1 {
-			reduceDims = append(reduceDims, i)
-		}
-	}
-
-	summedGrad := grad.SumByDim1(reduceDims, true)
-
-	reshapedGrad := summedGrad.Reshape(inputShape)
-	m.Children[0].Node.Backward(reshapedGrad)
-}
-
 func (t *GraphTensor) Expand(shapeTensor *GraphTensor, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

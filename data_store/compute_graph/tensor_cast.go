@@ -21,10 +21,6 @@ func (m *Cast) Forward() *tensor.Tensor {
 	return a
 }
 
-func (m *Cast) Backward(grad *tensor.Tensor) {
-	m.Children[0].Node.Backward(grad)
-}
-
 func (t *GraphTensor) Cast(names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

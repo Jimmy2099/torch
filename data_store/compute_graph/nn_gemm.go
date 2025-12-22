@@ -29,29 +29,6 @@ func (m *Gemm) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Gemm) Backward(grad *tensor.Tensor) {
-	a := m.Children[0].Value()
-	b := m.Children[1].Value()
-	c := m.Children[2].Value()
-
-	if a == nil || b == nil || c == nil || grad == nil {
-		panic("nil tensor in GEMM backward pass")
-	}
-
-	gradA := gemmGradA(grad, b, a.GetShape(), m.TransA, m.TransB, m.Alpha)
-	gradB := gemmGradB(grad, a, b.GetShape(), m.TransA, m.TransB, m.Alpha)
-
-	gradCData := make([]float32, len(c.Data))
-	for i := range gradCData {
-		gradCData[i] = grad.Data[i] * m.Beta
-	}
-	gradC := tensor.NewTensor(gradCData, c.GetShape())
-
-	m.Children[0].Node.Backward(gradA)
-	m.Children[1].Node.Backward(gradB)
-	m.Children[2].Node.Backward(gradC)
-}
-
 func (t *GraphTensor) Gemm(b, c *GraphTensor, transA, transB bool, alpha, beta float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

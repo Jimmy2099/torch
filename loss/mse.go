@@ -77,24 +77,6 @@ func (m *MSELoss) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *MSELoss) Backward(grad *tensor.Tensor) {
-	if len(grad.Data) != 1 {
-		panic("gradient for MSE loss must be scalar")
-	}
-
-	predVal := m.Pred.Value()
-	targetVal := m.Target.Value()
-	n := float32(len(predVal.Data))
-
-	gradData := make([]float32, len(predVal.Data))
-	for i := range gradData {
-		gradData[i] = (2 / n) * (predVal.Data[i] - targetVal.Data[i]) * grad.Data[0]
-	}
-
-	gradTensor := tensor.NewTensor(gradData, predVal.GetShape())
-	m.Pred.Node.Backward(gradTensor)
-}
-
 func (m *MSELoss) ResetComputed() {
 	m.output.SetComputed(false)
 }

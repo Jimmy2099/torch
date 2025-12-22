@@ -99,34 +99,6 @@ func (m *Pow) Forward() *tensor.Tensor {
 	return m.output.value
 }
 
-func (m *Pow) Backward(grad *tensor.Tensor) {
-	baseVal := m.Children[0].value
-	exponentVal := m.Children[1].value
-
-	if baseVal == nil || exponentVal == nil || grad == nil {
-		panic("nil tensor in power backward pass")
-	}
-
-	gradBase := make([]float32, len(baseVal.Data))
-	for i := range baseVal.Data {
-		gradBase[i] = grad.Data[i] * exponentVal.Data[i] *
-			math.Pow(baseVal.Data[i], exponentVal.Data[i]-1)
-	}
-
-	gradExp := make([]float32, len(exponentVal.Data))
-	for i := range exponentVal.Data {
-		if baseVal.Data[i] <= 0 {
-			panic("cannot compute gradient for exponent when base <= 0")
-		}
-		gradExp[i] = grad.Data[i] *
-			(math.Pow(baseVal.Data[i], exponentVal.Data[i])) *
-			(math.Log(baseVal.Data[i]))
-	}
-
-	m.Children[0].Node.Backward(tensor.NewTensor(gradBase, baseVal.GetShape()))
-	m.Children[1].Node.Backward(tensor.NewTensor(gradExp, exponentVal.GetShape()))
-}
-
 func (m *Pow) GetOutput() *tensor.Tensor {
 	return m.output.value
 }

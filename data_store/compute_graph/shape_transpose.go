@@ -32,11 +32,6 @@ func (m *Transpose) Forward() *tensor.Tensor {
 	return result
 }
 
-func (m *Transpose) Backward(grad *tensor.Tensor) {
-	transposedGrad := grad.Permute(m.inversePermutation)
-	m.Children[0].Node.Backward(transposedGrad)
-}
-
 func (t *GraphTensor) Transpose(perm []int, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {

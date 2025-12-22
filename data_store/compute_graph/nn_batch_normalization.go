@@ -59,37 +59,6 @@ func (bn *BatchNormalization) Forward() *tensor.Tensor {
 	return result
 }
 
-func (bn *BatchNormalization) Backward(grad *tensor.Tensor) {
-	input := bn.Children[0].value
-	gamma := bn.gamma.value
-	beta := bn.beta.value
-
-	normalized := bn.output.value.Sub(beta).Div(gamma)
-
-	stdDev := normalized.AddScalar(bn.epsilon).Sqrt()
-	invStd := tensor.Ones(stdDev.GetShape()).Div(stdDev)
-
-	N := float32(len(input.Data))
-	dNormalized := grad.Mul(gamma)
-
-	dNormalizedMean := dNormalized.MeanTensor()
-	dNormalizedMulNormalizedMean := dNormalized.Mul(normalized).MeanTensor()
-
-	dInput := dNormalized.Mul(invStd)
-
-	term2 := normalized.Mul(dNormalizedMulNormalizedMean.MulScalar(-2.0 / N))
-	dInput = dInput.Add(term2)
-
-	dInput = dInput.Add(dNormalizedMean.MulScalar(-1.0))
-
-	dGamma := grad.Mul(normalized).ReduceSum()
-	dBeta := grad.ReduceSum()
-
-	bn.Children[0].Node.Backward(dInput)
-	bn.gamma.Node.Backward(dGamma)
-	bn.beta.Node.Backward(dBeta)
-}
-
 func (t *GraphTensor) BatchNormalization(gamma, beta *GraphTensor, epsilon, momentum float32, names ...string) *GraphTensor {
 	var name string
 	if len(names) > 0 {
