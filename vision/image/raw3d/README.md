@@ -4,9 +4,8 @@ RAW3D is a 3D tensor built from stacked 2D images.
 
 The third dimension represents:
 
-1. Time (T) — video or image sequences
-2. Depth (Z) — 3D data such as CAD, CT, or mesh
-
+1. **Time (T)** — Video or image sequences
+2. **Depth (Z)** — 3D data such as CAD (Computer Aided Design, math equation models), Mesh Models, or Spatial Scan Data
 ---
 
 ### Video (Time Series)
