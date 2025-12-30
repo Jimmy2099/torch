@@ -24,3 +24,7 @@ Slice(X, Y):
 Slice₁ → Slice₂ → Slice₃ → Slice₄
 
 → Tensor(X, Y, Z)
+
+### RAW3D(X,Y,Z) to Tensor(X*C, Y*R)
+RAW3D(X, Y, Z) can be tiled into a grid Tensor(X * C, Y * R) where C (columns) * R (rows) = Z.  
+*Example: 100 images of 50x50 (Z=100) -> 10x10 grid -> Tensor(500, 500)*
