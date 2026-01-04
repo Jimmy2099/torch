@@ -45,6 +45,32 @@ func NewTensorFromSlice(data [][]float32) *Tensor {
 }
 
 func (t *Tensor) Reshape(shape []int) *Tensor {
+	{
+		inferPos := -1
+		inferPosCount := 0
+		for i := 0; i < len(shape); i++ {
+			if shape[i] == -1 {
+				inferPos = i
+				inferPosCount += 1
+			}
+		}
+
+		if t.Size() != 0 && inferPosCount > 0 {
+			if inferPosCount > 1 {
+				panic("inferPosCount should be less than 2")
+			}
+			total := 1
+			for i := 0; i < len(shape); i++ {
+				if shape[i] < 0 {
+					continue
+				}
+				total *= shape[i]
+			}
+			unKnowPosVal := t.Size() / total
+			shape[inferPos] = unKnowPosVal
+		}
+	}
+
 	newSize := 1
 	if len(shape) > 0 {
 		for _, dim := range shape {

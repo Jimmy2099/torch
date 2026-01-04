@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Tensor struct {
@@ -64,14 +65,18 @@ func (t *Tensor) TensorData() []float32 {
 }
 
 func (t *Tensor) Save(filename string) error {
+	type GobTensor struct {
+		Data []float32
+	}
+
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
+	tt := GobTensor{Data: t.Data}
 	encoder := gob.NewEncoder(file)
-	if err := encoder.Encode(t); err != nil {
+	if err = encoder.Encode(tt); err != nil {
 		return err
 	}
 	return nil
@@ -80,6 +85,34 @@ func (t *Tensor) Save(filename string) error {
 func LoadTensorFromGobFile(filename string) (*Tensor, error) {
 	file, err := os.Open(filename)
 	if err != nil {
+		if true {
+			{
+				csvFileName := strings.Replace(filename, ".gob", ".csv", -1)
+				var data *Tensor
+				data, err = LoadFromCSV(csvFileName)
+				if err != nil {
+					panic(fmt.Sprintf("Error loading %s: %v", filename, err))
+				}
+				if err == nil {
+					{
+						err = data.Save(filename)
+						if err != nil {
+							os.Remove(filename)
+							panic(err)
+						}
+						err = os.Remove(csvFileName)
+						if err != nil {
+							panic(err)
+						}
+					}
+				}
+				if err != nil {
+					panic(err)
+				}
+				return data, nil
+
+			}
+		}
 		return nil, err
 	}
 	defer file.Close()
@@ -87,6 +120,42 @@ func LoadTensorFromGobFile(filename string) (*Tensor, error) {
 	decoder := gob.NewDecoder(file)
 	t := &Tensor{}
 	if err = decoder.Decode(t); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func LoadTensorIntoGobFile(filename string) (*Tensor, error) {
+	t, err := LoadTensorFromGobFile(filename)
+	if err != nil {
+		if true {
+			{
+				csvFileName := strings.Replace(filename, ".gob", ".csv", -1)
+				var data *Tensor
+				data, err = LoadFromCSV(csvFileName)
+				if err != nil {
+					panic(fmt.Sprintf("Error loading %s: %v", filename, err))
+				}
+				if err == nil {
+					{
+						err = data.Save(filename)
+						if err != nil {
+							os.Remove(filename)
+							panic(err)
+						}
+						err = os.Remove(csvFileName)
+						if err != nil {
+							panic(err)
+						}
+					}
+				}
+				if err != nil {
+					panic(err)
+				}
+				return data, nil
+
+			}
+		}
 		return nil, err
 	}
 	return t, nil
