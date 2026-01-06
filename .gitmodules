@@ -1,0 +1,9 @@
+[submodule "thirdparty/onnxruntime"]
+	path = thirdparty/onnxruntime
+	url = https://github.com/microsoft/onnxruntime.git
+[submodule "thirdparty/gogpu"]
+	path = thirdparty/gogpu
+	url = https://github.com/gogpu/gogpu
+[submodule "thirdparty/naga"]
+	path = thirdparty/naga
+	url = https://github.com/gogpu/naga
