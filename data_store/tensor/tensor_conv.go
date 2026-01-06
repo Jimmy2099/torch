@@ -597,9 +597,12 @@ func (t *Tensor) Conv2D(weights *Tensor, kernelSize, stride, padH, padW int) *Te
 			panic(err)
 		}
 
-		reshapedWeights := weights.Reshape([]int{outChannels, kernelSize * kernelSize * inChannels})
+		wMat := &Tensor{
+			Data:  weights.Data,
+			shape: []int{outChannels, inChannels * kernelSize * kernelSize},
+		}
 
-		result := reshapedWeights.MatMul(unfolded)
+		result := wMat.MatMul(unfolded)
 
 		reshapedResult := result.Reshape([]int{outChannels, outHeight, outWidth})
 

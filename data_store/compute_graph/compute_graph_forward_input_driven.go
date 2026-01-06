@@ -3,6 +3,7 @@ package compute_graph
 import (
 	"github.com/Jimmy2099/torch/data_store/network"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	"github.com/Jimmy2099/torch/pkg/fmt"
 	"log"
 )
 
@@ -30,13 +31,15 @@ func (g *ComputationalGraph) forwardInputDrivenNode(n *network.Node) {
 		var r1Go []*tensor.Tensor
 		var r2Onnx []*tensor.Tensor
 		var err error
-
+		{
+			fmt.Println("--------------------")
+			fmt.Println("OPERATOR: ", n.Name)
+		}
 		{
 			{
 				graphNode.Forward()
 				r1Go = append(r1Go, g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0]).Value())
 			}
-
 			{
 				r2Onnx, err = OnnxNodeCompute(g, g.Network.GetNodeByName(graphNode.GetName()))
 				if err != nil {

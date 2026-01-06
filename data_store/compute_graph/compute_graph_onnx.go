@@ -37,6 +37,7 @@ type ONNXOperator struct {
 	NodeRegistryFunc  func(name string, children []*GraphTensor, output *GraphTensor) node.Node
 	ModeAvailable     []ModeAvailable
 	DifferentiableOps BOOLType
+	IsTested          BOOLType // BOOLTrue function that already tested
 }
 
 var ONNXOperators = []ONNXOperator{
@@ -122,7 +123,16 @@ var ONNXOperators = []ONNXOperator{
 		m.output = output
 		return m
 	}},
-	{Name: "Conv", InputPCount: 3, OutputPCount: 1},
+
+	{Name: "Conv",
+		InputPCount:  3,
+		OutputPCount: 1,
+		IsTested:     BOOLFalse,
+		NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+			m := NewConv(name, 1, 1, 1, 1, children[0], children[1])
+			m.output = output
+			return m
+		}},
 	{Name: "ConvInteger", InputPCount: 4, OutputPCount: 1},
 	{Name: "ConvTranspose", InputPCount: 3, OutputPCount: 1},
 	{Name: "Cos", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
@@ -302,11 +312,14 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Scan", InputPCount: -1, OutputPCount: -1},
 	{Name: "Scatter", InputPCount: 3, OutputPCount: 1},
 	{Name: "ScatterElements", InputPCount: 3, OutputPCount: 1},
-	{Name: "ScatterND", InputPCount: 3, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		m := NewScatterND(name, children[0], children[1], children[2])
-		m.output = output
-		return m
-	}},
+	{Name: "ScatterND",
+		InputPCount:  3,
+		OutputPCount: 1,
+		NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+			m := NewScatterND(name, children[0], children[1], children[2])
+			m.output = output
+			return m
+		}},
 	{Name: "Selu", InputPCount: 1, OutputPCount: 1},
 	{Name: "SequenceAt", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "SequenceConstruct", InputPCount: -1, OutputPCount: 1},
@@ -315,11 +328,15 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "SequenceInsert", InputPCount: 3, OutputPCount: 1},
 	{Name: "SequenceLength", InputPCount: 1, OutputPCount: 1, Ignore: true},
 	{Name: "SequenceMap", InputPCount: -1, OutputPCount: -1},
-	{Name: "Shape", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		m := NewShapeOp(name, children[0])
-		m.output = output
-		return m
-	}},
+	{Name: "Shape",
+		InputPCount:  1,
+		OutputPCount: 1,
+		IsTested:     BOOLTrue,
+		NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+			m := NewShapeOp(name, children[0])
+			m.output = output
+			return m
+		}},
 	{Name: "Shrink", InputPCount: 1, OutputPCount: 1},
 	{Name: "Sigmoid", InputPCount: 1, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
 		m := NewSigmoid(name, children[0])
@@ -383,7 +400,12 @@ var ONNXOperators = []ONNXOperator{
 	}},
 	{Name: "Unique", InputPCount: 1, OutputPCount: 4},
 	{Name: "Unsqueeze", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor) node.Node {
-		m := NewUnsqueeze(name, children[0], children[1])
+		var m *Unsqueeze
+		if len(children) == 1 {
+			m = NewUnsqueeze(name, children[0], nil) //)children[1])
+		} else {
+			m = NewUnsqueeze(name, children[0], children[1])
+		}
 		m.output = output
 		return m
 	}},
@@ -421,6 +443,39 @@ var ONNXOperators = []ONNXOperator{
 
 type ONNX struct {
 	model *onnx_ir.ModelProto
+}
+
+func ensureFloatOutput(onnxGraph *onnx_ir.GraphProto, outputName string) {
+	internalName := outputName + "_internal_raw"
+	foundProducer := false
+
+	for _, n := range onnxGraph.Node {
+		for i, name := range n.Output {
+			if name == outputName {
+				n.Output[i] = internalName
+				foundProducer = true
+			}
+		}
+	}
+
+	if !foundProducer {
+		return
+	}
+
+	castNode := &onnx_ir.NodeProto{
+		Name:   "CastToFloat_" + outputName,
+		OpType: "Cast",
+		Input:  []string{internalName},
+		Output: []string{outputName},
+		Attribute: []*onnx_ir.AttributeProto{
+			{
+				Name: "to",
+				Type: onnx_ir.AttributeProto_INT,
+				I:    int64(onnx_ir.TensorProto_FLOAT),
+			},
+		},
+	}
+	onnxGraph.Node = append(onnxGraph.Node, castNode)
 }
 
 func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
@@ -517,9 +572,10 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 		}
 
 		onnxNode = &onnx_ir.NodeProto{
-			OpType: nodeType,
-			Input:  inputNameList,
-			Output: outputNameList,
+			OpType:    nodeType,
+			Input:     inputNameList,
+			Output:    outputNameList,
+			Attribute: g.GetONNXAttributeByName(networkNode.Name),
 		}
 
 		count := nodeCounter[nodeType]
@@ -530,6 +586,10 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	}
 
 	if g.GetOutput() != nil {
+		if strings.Contains(g.GetOutput().Name, "Shape_") || strings.Contains(g.GetOutput().Name, "Size_") ||
+			strings.Contains(g.GetOutput().Name, "ArgMax_") || strings.Contains(g.GetOutput().Name, "ArgMin_") {
+			ensureFloatOutput(onnxGraph, g.GetOutput().Name)
+		}
 		outputInfo := &onnx_ir.ValueInfoProto{
 			Name: g.GetOutput().Name,
 			Type: &onnx_ir.TypeProto{

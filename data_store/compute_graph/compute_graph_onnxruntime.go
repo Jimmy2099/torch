@@ -143,6 +143,21 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 	}
 	fmt.Println(tempFileName)
 
+	{
+		fmt.Println("-----ONNX-----")
+		fmt.Print("INPUT: ")
+		for i := 0; i < len(inputNameOrtList); i++ {
+			fmt.Print(inputNameList[i], ": ", inputNameOrtList[i].GetShape(), "\t")
+		}
+		fmt.Println()
+		fmt.Print("OUTPUT: ")
+		for i := 0; i < len(outputNameOrtList); i++ {
+			fmt.Print(outputNameList[i], ": ", outputNameOrtList[i].GetShape(), "\t")
+		}
+		fmt.Println()
+		fmt.Println("-----ONNX END-----")
+	}
+
 	session, e := ort.NewAdvancedSession(tempFileName, inputNameList, outputNameList, inputNameOrtList, outputNameOrtList, nil)
 	if e != nil {
 		panic(fmt.Sprintf("error creating  network session: %v\n", e))
@@ -185,6 +200,7 @@ func (m *ONNXRuntime) NewOneTimeSessionTestByNode(inGraph *ComputationalGraph, i
 	var outGraph *ComputationalGraph
 	{
 		outGraph = NewComputationalGraph()
+		outGraph.ONNXAttributePool = inGraph.ONNXAttributePool
 		nodeCurrent := outGraph.Network.NewNode()
 		nodeCurrent.Name = inNode.Name
 		nodeCurrent.Type = inNode.Type

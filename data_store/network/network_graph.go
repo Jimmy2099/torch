@@ -42,7 +42,7 @@ func (g *Node) GetOutputName() (result []string) {
 }
 
 func (g *Node) IsTensor() bool {
-	if strings.LastIndex(g.Type, "Tensor_") == 0 {
+	if strings.LastIndex(g.Type, "Tensor") == 0 || strings.LastIndex(g.Type, "Constant") == 0 {
 		return true
 	}
 	return false
