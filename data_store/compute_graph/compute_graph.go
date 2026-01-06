@@ -253,7 +253,7 @@ func (g *ComputationalGraph) GetNodeByName(name string) node.Node {
 	if len(outputs) > 0 {
 		output = outputs[0]
 	}
-	gNode := onnxNodeInfo.NodeRegistryFunc(ne.Name, inputs, output) //TODO outputs[0]
+	gNode := onnxNodeInfo.NodeRegistryFunc(ne.Name, inputs, output, g.GetONNXAttributeByName(ne.Name)) //TODO outputs[0]
 	if gNode == nil {
 		panic(fmt.Sprintf("failed to create node %s of type %s", ne.Name, ne.Type))
 	}

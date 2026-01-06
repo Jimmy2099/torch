@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	onnx_ir "github.com/Jimmy2099/torch/thirdparty/onnx-go/ir"
 )
 
 type Range struct {
@@ -84,7 +85,7 @@ func (m *Range) GetOutput() *tensor.Tensor {
 	return m.output.value
 }
 
-func RangeNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+func RangeNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
 	if len(children) != 3 {
 		panic("Range operation requires exactly 3 inputs")
 	}

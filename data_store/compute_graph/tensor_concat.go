@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
+	onnx_ir "github.com/Jimmy2099/torch/thirdparty/onnx-go/ir"
 )
 
 type Concat struct {
@@ -187,7 +188,7 @@ func (m *Concat) GetOutput() *tensor.Tensor {
 	return m.output.value
 }
 
-func ConcatNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor) node.Node {
+func ConcatNodeRegistryFunc(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
 	axis := 0
 	m := NewConcat(name, children, axis)
 	m.output = output
