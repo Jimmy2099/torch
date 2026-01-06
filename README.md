@@ -3,7 +3,7 @@
 [![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
 
 # Inference Compute Runtime Support (WIP)
-- **[ONNX Runtime](https://github.com/onnx/onnx/blob/main/docs/Operators.md)** (Version 7)
+- **[ONNX Runtime](https://github.com/onnx/onnx/blob/main/docs/Operators.md)** (Version 7 Export Only)
 - **WGPU** (WIP)
 
 
