@@ -1,7 +1,6 @@
 package compute_graph
 
 import (
-	"fmt"
 	"github.com/Jimmy2099/torch/data_store/node"
 	"github.com/Jimmy2099/torch/data_store/tensor"
 )
@@ -56,33 +55,6 @@ func (m *Sum) GetChildren() []node.Node {
 		nodes[i] = t.Node
 	}
 	return nodes
-}
-
-func (t *GraphTensor) Sum(names ...string) *GraphTensor {
-	var name string
-	if len(names) > 0 {
-		name = names[0]
-	} else {
-		name = fmt.Sprintf("sum_%d", t.Graph.NodeCount)
-		t.Graph.NodeCount++
-	}
-	g := t.Graph
-
-	sumNode := NewSum(name, t)
-
-	outputTensor := &GraphTensor{
-		Name:  name,
-		value: tensor.NewTensor([]float32{0}, []int{1}),
-		grad:  tensor.NewTensor([]float32{0}, []int{1}),
-		Graph: g,
-		Node:  sumNode,
-	}
-	outputTensor.SetShape(outputTensor.value.GetShape())
-
-	g.Tensors[name] = outputTensor
-	sumNode.output = outputTensor
-	g.Nodes = append(g.Nodes, sumNode)
-	return outputTensor
 }
 
 func (m *Sum) GetOutput() *tensor.Tensor {

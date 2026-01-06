@@ -32,60 +32,6 @@ func (m *MatMul) Forward() *tensor.Tensor {
 	return result
 }
 
-func (t *GraphTensor) MatMul(other *GraphTensor, names ...string) *GraphTensor {
-	var name string
-	if len(names) > 0 {
-		name = names[0]
-	} else {
-		name = fmt.Sprintf("matmul_%d", t.Graph.NodeCount)
-		t.Graph.NodeCount++
-	}
-
-	if t.Graph != other.Graph {
-		panic("tensors belong to different graphs")
-	}
-	g := t.Graph
-
-	if len(t.GetShape()) < 2 || len(other.GetShape()) < 2 {
-		panic("MatMul requires tensors with at least 2 dimensions")
-	}
-	if t.GetShape()[len(t.GetShape())-1] != other.GetShape()[len(other.GetShape())-2] {
-		panic(fmt.Sprintf("Incompatible dimensions for MatMul: %v and %v",
-			t.GetShape(), other.GetShape()))
-	}
-
-	node := NewMatMul(name, t, other)
-
-	outShape := make([]int, len(t.GetShape()))
-	copy(outShape, t.GetShape())
-	outShape[len(outShape)-1] = other.GetShape()[len(other.GetShape())-1]
-
-	totalElements := 1
-	for _, dim := range outShape {
-		totalElements *= dim
-	}
-
-	valueData := make([]float32, totalElements)
-	gradData := make([]float32, totalElements)
-
-	outputTensor := &GraphTensor{
-		Name:  name,
-		value: tensor.NewTensor(valueData, outShape),
-		grad:  tensor.NewTensor(gradData, outShape),
-		Graph: g,
-		Node:  node,
-	}
-	outputTensor.SetShape(outShape)
-
-	if _, exists := g.Tensors[name]; exists {
-		panic("tensor name already exists: " + name)
-	}
-	g.Tensors[name] = outputTensor
-	node.output = outputTensor
-	g.Nodes = append(g.Nodes, node)
-	return outputTensor
-}
-
 func NewMatMul(name string, a, b *GraphTensor) *MatMul {
 	return &MatMul{
 		OPSNode: NewOPSNode(OPSNode{

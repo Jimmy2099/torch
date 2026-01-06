@@ -301,3 +301,20 @@ func (t *Tensor) Gather(indices *Tensor, axis int) *Tensor {
 
 	return NewTensor(outputData, outputShape)
 }
+
+func (t *Tensor) UnSqueeze(axis int) *Tensor {
+	rank := len(t.shape)
+	if axis < 0 {
+		axis = axis + rank + 1
+	}
+
+	newShape := make([]int, rank+1)
+	copy(newShape[:axis], t.shape[:axis])
+	newShape[axis] = 1
+	copy(newShape[axis+1:], t.shape[axis:])
+
+	return &Tensor{
+		Data:  t.Data,
+		shape: newShape,
+	}
+}

@@ -113,8 +113,13 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Col2Im", InputPCount: 4, OutputPCount: 1},
 	{Name: "Compress", InputPCount: 2, OutputPCount: 1, Ignore: true},
 	{Name: "Concat", InputPCount: -1, OutputPCount: 1, NodeRegistryFunc: ConcatNodeRegistryFunc},
-	{Name: "ConcatFromSequence", InputPCount: 1, OutputPCount: 1, Ignore: true},
+	{Name: "ConcatFromSequence", InputPCount: 1, OutputPCount: 1, Ignore: true, IsTested: BOOLFalse},
 	{Name: "Constant", InputPCount: 0, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
+		for _, attr := range attributes {
+			if attr.Name == "value" {
+				panic("TODO")
+			}
+		}
 		m := NewConstant(name, output)
 		m.output = output
 		return m
@@ -218,7 +223,21 @@ var ONNXOperators = []ONNXOperator{
 	{Name: "Floor", InputPCount: 1, OutputPCount: 1},
 	{Name: "GRU", InputPCount: 6, OutputPCount: 2},
 	{Name: "Gather", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
-		m := NewGather(name, children[0], children[1])
+		var axis int = 0
+		{
+			//Try to Load ONNX Attribute
+			for _, attr := range attributes {
+				switch attr.GetName() {
+				case "axis":
+					ints := attr.GetInts()
+					if len(ints) > 0 {
+						axis = int(ints[0])
+					}
+				}
+			}
+		}
+		_ = axis
+		m := NewGather(name, children[0], children[1], axis)
 		m.output = output
 		return m
 	}},
@@ -444,13 +463,15 @@ var ONNXOperators = []ONNXOperator{
 		return m
 	}},
 	{Name: "Unique", InputPCount: 1, OutputPCount: 4},
-	{Name: "Unsqueeze", InputPCount: 2, OutputPCount: 1, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
-		var m *Unsqueeze
-		if len(children) == 1 {
-			m = NewUnsqueeze(name, children[0], nil) //)children[1])
-		} else {
-			m = NewUnsqueeze(name, children[0], children[1])
+	{Name: "Unsqueeze", InputPCount: 2, OutputPCount: 1, IsTested: BOOLFalse, NodeRegistryFunc: func(name string, children []*GraphTensor, output *GraphTensor, attributes []*onnx_ir.AttributeProto) node.Node {
+		axes := 0
+		for _, attr := range attributes {
+			if attr.Name == "axes" && len(attr.Ints) > 0 {
+				axes = int(attr.Ints[0])
+				break
+			}
 		}
+		m := NewUnsqueeze(name, children, axes)
 		m.output = output
 		return m
 	}},
@@ -490,7 +511,34 @@ type ONNX struct {
 	model *onnx_ir.ModelProto
 }
 
-func ensureFloatOutput(onnxGraph *onnx_ir.GraphProto, outputName string) {
+func ensureInputType(onnxGraph *onnx_ir.GraphProto, inputName string, targetType onnx_ir.TensorProto_DataType) string {
+	castOutputName := fmt.Sprintf("%s_as_type_%d", inputName, targetType)
+
+	for _, n := range onnxGraph.Node {
+		if n.OpType == "Cast" && len(n.Output) > 0 && n.Output[0] == castOutputName {
+			return castOutputName
+		}
+	}
+
+	castNode := &onnx_ir.NodeProto{
+		Name:   "Cast_" + inputName + "_to_" + fmt.Sprint(targetType),
+		OpType: "Cast",
+		Input:  []string{inputName},
+		Output: []string{castOutputName},
+		Attribute: []*onnx_ir.AttributeProto{
+			{
+				Name: "to",
+				Type: onnx_ir.AttributeProto_INT,
+				I:    int64(targetType),
+			},
+		},
+	}
+	onnxGraph.Node = append(onnxGraph.Node, castNode)
+
+	return castOutputName
+}
+
+func ensureOutputType(onnxGraph *onnx_ir.GraphProto, outputName string, targetType onnx_ir.TensorProto_DataType) {
 	internalName := outputName + "_internal_raw"
 	foundProducer := false
 
@@ -516,7 +564,7 @@ func ensureFloatOutput(onnxGraph *onnx_ir.GraphProto, outputName string) {
 			{
 				Name: "to",
 				Type: onnx_ir.AttributeProto_INT,
-				I:    int64(onnx_ir.TensorProto_FLOAT),
+				I:    int64(targetType),
 			},
 		},
 	}
@@ -623,6 +671,23 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 			Attribute: g.GetONNXAttributeByName(networkNode.Name),
 		}
 
+		//--
+		switch nodeType {
+		case "Gather", "Reshape":
+			if len(onnxNode.Input) >= 2 {
+				onnxNode.Input[1] = ensureInputType(onnxGraph, onnxNode.Input[1], onnx_ir.TensorProto_INT64)
+			}
+		case "Slice":
+			for i := 1; i < len(onnxNode.Input); i++ {
+				onnxNode.Input[i] = ensureInputType(onnxGraph, onnxNode.Input[i], onnx_ir.TensorProto_INT64)
+			}
+		case "Unsqueeze", "Squeeze":
+			if len(onnxNode.Input) >= 2 {
+				onnxNode.Input[1] = ensureInputType(onnxGraph, onnxNode.Input[1], onnx_ir.TensorProto_INT64)
+			}
+		}
+		//--
+
 		count := nodeCounter[nodeType]
 		nodeCounter[nodeType] = count + 1
 		onnxNode.Name = fmt.Sprintf("%s_%d", nodeType, count)
@@ -633,7 +698,7 @@ func (g *ComputationalGraph) ToONNXModel() (*ONNX, error) {
 	if g.GetOutput() != nil {
 		if strings.Contains(g.GetOutput().Name, "Shape_") || strings.Contains(g.GetOutput().Name, "Size_") ||
 			strings.Contains(g.GetOutput().Name, "ArgMax_") || strings.Contains(g.GetOutput().Name, "ArgMin_") {
-			ensureFloatOutput(onnxGraph, g.GetOutput().Name)
+			ensureOutputType(onnxGraph, g.GetOutput().Name, onnx_ir.TensorProto_FLOAT)
 		}
 		outputInfo := &onnx_ir.ValueInfoProto{
 			Name: g.GetOutput().Name,
