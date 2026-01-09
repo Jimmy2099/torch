@@ -7,11 +7,11 @@
 - **WGPU** (WIP)
 
 
-#### llama3 example with gpu acceleration built on top of this framework
+#### llama3 and llama3 vision example built on top of this framework
 <table>
 <tr>
 <td><img src="images/r_llama3_1b_01.png" alt="llama3_1b_cpu_01" width="1149"></td>
-<td><img src="images/r_llama3_1b_02.png" alt="llama3_1b_cpu-02" width="1207"></td>
+<td><img src="images/r_llama3_vision_1b_01.png" alt="llama3_1b_cpu-02" width="1207"></td>
 </tr>
 </table>
 

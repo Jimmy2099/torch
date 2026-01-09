@@ -1,5 +1,8 @@
 # Example
 
+## llama3_1b with vision base on this framework
+![Llama3 Vision](r_llama3_vision_1b_01.png)
+
 ## llama3_1b cpu example base on this framework
 <table>
 <tr>
