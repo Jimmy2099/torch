@@ -28,8 +28,8 @@ func (g *ComputationalGraph) forwardInputDrivenNode(n *network.Node) {
 	}
 	if g.IsDebugMode() {
 
-		var r1Go []*tensor.Tensor
-		var r2Onnx []*tensor.Tensor
+		var resultGo []*tensor.Tensor
+		var resultOnnx []*tensor.Tensor
 		var err error
 		{
 			fmt.Println("--------------------")
@@ -37,23 +37,27 @@ func (g *ComputationalGraph) forwardInputDrivenNode(n *network.Node) {
 		}
 		{
 			{
-				graphNode.Forward()
-				r1Go = append(r1Go, g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0]).Value())
-			}
-			{
-				r2Onnx, err = OnnxNodeCompute(g, g.Network.GetNodeByName(graphNode.GetName()))
+				resultOnnx, err = OnnxNodeCompute(g, g.Network.GetNodeByName(graphNode.GetName()))
 				if err != nil {
 					panic(err)
 				}
 			}
+			{
+				if false {
+					resultGo = append(resultGo, nil)
+				} else {
+					graphNode.Forward()
+					resultGo = append(resultGo, g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0]).Value())
+				}
+			}
 		}
-		_, _, _ = r1Go, r2Onnx, err
-		err = OutPutCompare(r1Go, r2Onnx)
+		_, _, _ = resultGo, resultOnnx, err
+		err = OutPutCompare(resultGo, resultOnnx)
 		if err != nil {
 			log.Println("ResultCompareByNode error:", err)
 			log.Println("set result by onnxruntime compute result!!!")
 			t := g.GetTensorByName(g.Network.GetNodeByName(graphNode.GetName()).GetOutputName()[0])
-			t.value = r2Onnx[0]
+			t.value = resultOnnx[0]
 		}
 	} else {
 		graphNode.Forward()

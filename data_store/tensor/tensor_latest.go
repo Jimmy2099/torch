@@ -566,6 +566,9 @@ func shapeSum(shape []int) int {
 }
 
 func (t *Tensor) Shape() []int {
+	if t == nil {
+		return nil
+	}
 	return t.shape
 }
 

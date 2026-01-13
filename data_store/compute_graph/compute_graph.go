@@ -73,8 +73,8 @@ func (t *GraphTensor) UpdateAll(graphTensor *GraphTensor) {
 }
 
 func (t *GraphTensor) GetShape() []int {
-	if t.value.GetShape() == nil {
-		return t.value.GetShape()
+	if t.shape == nil {
+		return nil
 	}
 	return t.shape
 }

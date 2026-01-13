@@ -85,8 +85,8 @@ func (m *ONNXRuntime) Destroy() {
 func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTensorList []*tensor.Tensor) {
 	var inputNameList []string
 	var outputNameList []string
-	var inputNameOrtList []ort.ArbitraryTensor
-	var outputNameOrtList []ort.ArbitraryTensor
+	var inputNameOrtList []ort.Value
+	var outputNameOrtList []ort.Value
 	var inputTensorList []*ort.Tensor[float32]
 	var outTensorList []*ort.Tensor[float32]
 	{
@@ -115,18 +115,28 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 			{
 				t := graph.GetTensorByName(outputName.Name)
 				{
-					for _, s := range t.value.Shape() {
-						shape = append(shape, int64(s))
+					if t.value != nil && t.shape != nil {
+						for _, s := range t.value.Shape() {
+							shape = append(shape, int64(s))
+						}
 					}
 				}
 			}
+			{
+				if shape != nil {
+					xTmp, err := ort.NewEmptyTensor[float32](ort.NewShape(shape...))
+					if err != nil {
+						panic(err)
+					}
+					outTensorList = append(outTensorList, xTmp)
+					outputNameOrtList = append(outputNameOrtList, xTmp)
+				} else {
+					outTensorList = append(outTensorList, nil)
+					outputNameOrtList = append(outputNameOrtList, nil)
+				}
 
-			xTmp, err := ort.NewEmptyTensor[float32](ort.NewShape(shape...))
-			if err != nil {
-				panic(err)
 			}
-			outTensorList = append(outTensorList, xTmp)
-			outputNameOrtList = append(outputNameOrtList, xTmp)
+
 		}
 
 	}
@@ -146,38 +156,62 @@ func (m *ONNXRuntime) NewOneTimeSessionTest(graph *ComputationalGraph) (outPutTe
 	{
 		fmt.Println("-----ONNX-----")
 		fmt.Print("INPUT: ")
-		for i := 0; i < len(inputNameOrtList); i++ {
-			fmt.Print(inputNameList[i], ": ", inputNameOrtList[i].GetShape(), "\t")
+		for i := 0; i < len(inputTensorList); i++ {
+			if inputTensorList[i] == nil {
+				fmt.Print(inputNameList[i], ": NULL", "\t")
+			} else {
+				fmt.Print(inputNameList[i], ": ", inputTensorList[i].GetShape(), "\t")
+			}
 		}
 		fmt.Println()
 		fmt.Print("OUTPUT: ")
-		for i := 0; i < len(outputNameOrtList); i++ {
-			fmt.Print(outputNameList[i], ": ", outputNameOrtList[i].GetShape(), "\t")
+		for i := 0; i < len(outTensorList); i++ {
+			if outTensorList[i] == nil {
+				fmt.Print(outputNameList[i], ": NULL", "\t")
+			} else {
+				fmt.Print(outputNameList[i], ": ", outTensorList[i].GetShape(), "\t")
+			}
 		}
-		fmt.Println()
-		fmt.Println("-----ONNX END-----")
+
 	}
 
-	session, e := ort.NewAdvancedSession(tempFileName, inputNameList, outputNameList, inputNameOrtList, outputNameOrtList, nil)
+	session, e := ort.NewDynamicAdvancedSession(tempFileName, inputNameList, outputNameList, nil)
 	if e != nil {
-		panic(fmt.Sprintf("error creating  network session: %v\n", e))
+		panic(fmt.Sprintf("error creating network session: %v\n", e))
 	}
-
-	e = session.Run()
+	e = session.Run(inputNameOrtList, outputNameOrtList)
 	if e != nil {
 		panic(fmt.Sprintf("error running the  network: %v\n", e))
 	}
+	{
+		for i := 0; i < len(outputNameOrtList); i++ {
+			tmpTensor := outputNameOrtList[i].(*ort.Tensor[float32])
+			outTensorList[i] = tmpTensor
+
+			{
+				var shape []int
+				s := outTensorList[i].GetShape()
+				for ii := 0; ii < len(s); ii++ {
+					shape = append(shape, int(s[ii]))
+				}
+				originalData := outTensorList[i].GetData()
+				outPutTensorList = append(outPutTensorList, tensor.NewTensor(originalData, shape))
+			}
+		}
+	}
 
 	{
+		fmt.Println()
+		fmt.Print("Infer OUTPUT: ")
 		for i := 0; i < len(outTensorList); i++ {
-			var shape []int
-			s := outTensorList[i].GetShape()
-			for ii := 0; ii < len(s); ii++ {
-				shape = append(shape, int(s[ii]))
+			if outTensorList[i] == nil {
+				fmt.Print(outputNameList[i], ": NULL", "\t")
+			} else {
+				fmt.Print(outputNameList[i], ": ", outTensorList[i].GetShape(), "\t")
 			}
-			originalData := outTensorList[i].GetData()
-			outPutTensorList = append(outPutTensorList, tensor.NewTensor(originalData, shape))
 		}
+		fmt.Println()
+		fmt.Println("-----ONNX END-----")
 	}
 
 	{
@@ -243,6 +277,5 @@ func (m *ONNXRuntime) NewOneTimeSessionTestByNode(inGraph *ComputationalGraph, i
 		}
 
 	}
-
 	return m.NewOneTimeSessionTest(outGraph)
 }

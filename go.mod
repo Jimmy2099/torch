@@ -44,6 +44,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xtgo/set v1.0.0 // indirect
 	github.com/yalue/onnxruntime_go v1.22.0 // indirect
+	github.com/yalue/onnxruntime_go_examples v0.0.0-20260109144244-e92789a55f60 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
