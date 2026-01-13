@@ -37,14 +37,6 @@ func NewRMSNorm(features int, eps float32) *RMSNorm {
 	}
 }
 
-func (r *RMSNorm) Backward(gradOutput *tensor.Tensor, learningRate float32) *tensor.Tensor {
-	return nil
-
-}
-
-func (r *RMSNorm) ZeroGrad() {
-}
-
 func (r *RMSNorm) Parameters() []*tensor.Tensor {
 	return []*tensor.Tensor{r.Weights}
 }
@@ -180,4 +172,12 @@ func (r *RMSNorm) ForwardMultiThread(inputTensor *tensor.Tensor) *tensor.Tensor 
 	close(sem)
 
 	return output
+}
+
+func product(shape []int) int {
+	p := 1
+	for _, v := range shape {
+		p *= v
+	}
+	return p
 }

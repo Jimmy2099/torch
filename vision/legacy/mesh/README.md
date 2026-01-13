@@ -1,1 +1,0 @@
-# Mesh based compute graphic (Triangle, Quad, Polygon, Hybrid Mesh)

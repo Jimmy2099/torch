@@ -197,11 +197,12 @@ func loadTensorFromCSV(path string, shape []int) (*tensor.Tensor, error) {
 
 func main() {
 	{
-		{
+		directory := "./py/mnist_noisy_images"
+
+		if _, err := os.Stat(directory); err != nil {
 			d, _ := os.Getwd()
 			runCommand(filepath.Join(d, "py"), filepath.Join(d, "py", "generate_go_testdata.py"))
 		}
-		directory := "./py/mnist_noisy_images"
 
 		images, labels, err := LoadDataFromCSVDir(directory)
 		if err != nil {
