@@ -7,3 +7,6 @@ url=https://github.com/Jimmy2099/onnxruntime
 [submodule "thirdparty/naga"]
 	path = thirdparty/naga
 	url = https://github.com/gogpu/naga
+[submodule "lib"]
+	path = lib
+	url = https://github.com/Jimmy2099/torch_lib.git
