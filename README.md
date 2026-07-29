@@ -1,5 +1,8 @@
 # BioTorch - Neuromorphic Compute(Bio-Neuron Inspired) DeepLearning Engine (WIP)
 
+# Full ONNX Support no longer planned
+# Reason: Move to Go2 language, then we can have compiler support such as llvm-mlir
+
 [![build](https://github.com/Jimmy2099/torch/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/Jimmy2099/torch/actions/workflows/build.yml)
 
 # Inference Compute Runtime Support (WIP)
