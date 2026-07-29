@@ -10,7 +10,7 @@
 - **2.** For commercial licensing, source code access, or business inquiries, please contact us via email.
 - **3.** Future development will continue as a private project, focusing on **Neuromorphic Compute** and **Hardware Acceleration**.
 - **4.** Some selected binary release versions will continue to be provided for users who want to experience and evaluate the framework.
-- **5.** Future development has moved toward a compiler-oriented architecture based on GoFront and MLIR.
+- **5.** Future development has moved toward a compiler-oriented architecture based on **GoFront** and **MLIR**.
 - **6.** The **GoFront** programming language project remains open-source and will continue to be developed publicly.
 
 
