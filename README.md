@@ -1,4 +1,4 @@
-# BioTorch - Neuromorphic Compute(Bio-Neuron Inspired) DeepLearning Engine (WIP)
+# BioTorch - Neuromorphic Compute(Bio-Neuron Inspired) DeepLearning Engine (Deprecated)
 
 # Full ONNX Support no longer planned
 ## Reason: Move to [Go2 language](https://github.com/Jimmy2099/GoFront), then we can have compiler support such as [llvm-mlir](https://mlir.llvm.org)
